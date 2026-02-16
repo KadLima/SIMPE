@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner de Links - Análise PE</title>
+    <title>Scanner de Links - SIMPE | Governo de Pernambuco</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
@@ -12,367 +12,318 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
+        /* --- VARIÁVEIS (Padrão Unificado) --- */
         :root {
             --azul-gov-principal: #002776;
+            --azul-gov-escuro: #001a4d;
+            --azul-gov-claro: #0052CC;
             --amarelo-gov-detalhe: #FFD700;
-            --vermelho-destaque: #FF0000;
-            --verde-destaque: #006400;
-            --cinza-texto: #333333;
-            --cinza-fundo: #f4f4f4;
+            --cinza-texto: #2c3e50;
+            --cinza-claro: #7f8c8d;
+            --cinza-fundo: #f8f9fa;
+            --cinza-card: #ecf0f1;
             --branco: #ffffff;
+            --verde-sucesso: #27ae60;
+            --vermelho-erro: #dc3545;
+            --laranja-alerta: #fd7e14;
+            --sombra-suave: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --sombra-media: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --transicao-padrao: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: var(--cinza-fundo);
-            color: var(--cinza-texto);
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
+            background-color: var(--cinza-fundo); 
+            color: var(--cinza-texto); 
             line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- HEADER --- */
+        .main-header { 
+            background-color: var(--branco); 
+            box-shadow: var(--sombra-suave);
+            padding: 0 5%; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            border-bottom: 3px solid var(--azul-gov-principal);
         }
         
-        main {
-            padding: 40px 5%; 
-        }
-
-        .main-header {
-            background-color: var(--branco);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 0 5%;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .main-nav {
-          max-width: 1200px; 
-          margin: 0 auto;    
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          height: 70px;
-        }
-
-        .logo a {
-            text-decoration: none;
+        .main-nav { 
+            max-width: 1400px; 
+            margin: 0 auto; 
             display: flex; 
-            align-items: center;
-            gap: 12px; 
-            padding: 10px; 
-            padding-top: 0; 
-            padding-bottom: 0;
-            border-bottom: 2px solid transparent; 
-            transition: all 0.3s ease; 
+            justify-content: space-between; 
+            align-items: center; 
+            height: 80px; 
+        }
+
+        .logo a { 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            transition: var(--transicao-padrao);
+        }
+
+        .logo a:hover { transform: translateY(-2px); }
+
+        .logo a > img { 
+            height: 60px; /* Tamanho ajustado conforme solicitado */
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transition: var(--transicao-padrao);
+        }
+
+        .SIMPE-marca-text-group { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .SIMPE-marca-small { height: 60px !important; width: auto; object-fit: contain; }
+
+        /* --- MENU (Igual ao Formulario) --- */
+        #nav-links { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; align-items: center; }
+        #nav-links li { margin: 0; padding: 0; display: flex; }
+        #nav-links a { 
+            text-decoration: none; 
+            color: var(--cinza-texto); 
+            font-weight: 600; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            transition: var(--transicao-padrao); 
+            display: block; 
+            font-size: 0.95em; 
+            position: relative;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        #nav-links a::after {
+            content: ''; position: absolute; bottom: 8px; left: 20px; right: 20px; height: 2px;
+            background-color: var(--amarelo-gov-detalhe); transform: scaleX(0); transition: transform 0.3s ease;
+        }
+        #nav-links a:hover, #nav-links a.active { color: var(--azul-gov-principal); background-color: rgba(0, 39, 118, 0.05); }
+        #nav-links a:hover::after, #nav-links a.active::after { transform: scaleX(1); }
+
+        /* --- MAIN CONTENT --- */
+        main { padding: 40px 5%; flex-grow: 1; display: flex; justify-content: center; }
+        
+        .container { 
+            width: 100%;
+            max-width: 1200px; 
+            background: var(--branco); 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: var(--sombra-media); 
+            border-top: 5px solid var(--azul-gov-principal);
             position: relative;
         }
 
-        .logo a > img {
-          height: 45px; 
-          filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0));
+        /* --- SCANNER SPECIFIC STYLES --- */
+        .alert-box {
+            display: flex; align-items: center; padding: 15px 20px; margin-bottom: 30px; border-radius: 8px; border: 1px solid;
+            font-size: 0.95em;
+        }
+        .alert-box.warning { background-color: #fff9db; border-color: #ffe066; color: #856404; }
+        .alert-box .icon { font-size: 1.5em; margin-right: 15px; }
+        .alert-box.hidden { display: none; }
+        
+        .input-section { display: flex; gap: 15px; margin-bottom: 30px; align-items: center; flex-wrap: wrap; background: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #e9ecef; }
+        
+        .url-input { 
+            flex: 1; padding: 14px 16px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1em; min-width: 300px; 
+            transition: var(--transicao-padrao);
+        }
+        .url-input:focus, #depthInput:focus { border-color: var(--azul-gov-principal); outline: none; box-shadow: 0 0 0 3px rgba(0, 39, 118, 0.1); }
+        
+        #depthInput { padding: 14px; width: 90px; border-radius: 8px; font-size: 1em; border: 2px solid #e1e5e9; text-align: center; }
+        
+        .input-wrapper { position: relative; display: inline-flex; align-items: center; }
+        .ajuda { 
+            margin-left: 8px; cursor: help; background-color: var(--azul-gov-claro); color: white; 
+            width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; 
+            font-size: 12px; font-weight: bold; 
+        }
+
+        /* Botões */
+        .btn { 
+            padding: 14px 24px; background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%); 
+            color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 700; 
+            transition: var(--transicao-padrao); box-shadow: var(--sombra-suave); white-space: nowrap;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: var(--sombra-media); }
+        .btn:disabled { background: #bdc3c7; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .btn-danger { background: linear-gradient(135deg, var(--vermelho-erro) 0%, #c0392b 100%); }
+        .btn-secondary { background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); } /* Export (Verde) */
+
+        /* Stats Cards */
+        .stats-container { background: #ffffff; border: 1px solid #e9ecef; padding: 25px; border-radius: 12px; margin-bottom: 30px; box-shadow: var(--sombra-suave); }
+        .stats-container h3 { margin-top: 0; color: var(--azul-gov-principal); border-bottom: 2px solid var(--amarelo-gov-detalhe); display: inline-block; padding-bottom: 5px; margin-bottom: 20px; }
+        
+        .stats { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
+        .stat-card { 
+            flex: 1; min-width: 180px; background: #f8f9fa; padding: 20px; border-radius: 10px; text-align: center; 
+            box-shadow: inset 0 0 0 1px #e9ecef; transition: var(--transicao-padrao);
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: var(--sombra-suave); background: #fff; }
+        .stat-number { font-size: 2.2em; font-weight: 800; color: var(--azul-gov-principal); line-height: 1.2; }
+        .stat-card div:last-child { color: var(--cinza-claro); font-weight: 600; font-size: 0.9em; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        #progressText { color: var(--cinza-texto); font-style: italic; margin-top: 10px; font-weight: 500; }
+
+        /* Results & Tabs */
+        .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; }
+        .tab-btn { 
+            padding: 10px 20px; background-color: transparent; border: none; border-radius: 6px; cursor: pointer; 
+            font-weight: 600; color: var(--cinza-claro); transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--azul-gov-principal); background-color: #f0f4ff; }
+        .tab-btn.active { background-color: var(--azul-gov-principal); color: white; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Lists */
+        .link-list { max-height: 500px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 0; background: #fff; }
+        .link-item { 
+            padding: 15px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; 
+            flex-wrap: wrap; gap: 15px; transition: background 0.2s;
+        }
+        .link-item:last-child { border-bottom: none; }
+        .link-item:hover { background-color: #f9fbfc; }
+        
+        .link-left { flex: 1; min-width: 200px; word-break: break-all; }
+        .link-left a { color: var(--azul-gov-principal); text-decoration: none; font-weight: 500; }
+        .link-left a:hover { text-decoration: underline; }
+        .link-meta { font-size: 0.85em; color: #999; margin-top: 4px; }
+
+        .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 700; text-transform: uppercase; }
+        .status-funcionando { background-color: #d4edda; color: #155724; }
+        [class*="status-erro"], .status-timeout { background-color: #f8d7da; color: #721c24; }
+        .status-na-fila { background-color: #e9ecef; color: #495057; }
+
+        /* Filters */
+        .filter-bar-v2 { display: flex; gap: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 15px; }
+        .search-wrapper { position: relative; flex-grow: 1; min-width: 300px; }
+        .search-icon { position: absolute; top: 50%; left: 15px; transform: translateY(-50%); color: #aaa; }
+        #filterInput { width: 100%; padding: 10px 15px 10px 40px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.95em; }
+        #filterInput:focus { border-color: var(--azul-gov-principal); outline: none; }
+
+        .toggle-pill { padding: 6px 12px; border-radius: 20px; background-color: #fff; border: 1px solid #ced4da; color: #6c757d; cursor: pointer; font-size: 0.85em; font-weight: 600; transition: all 0.2s; }
+        .toggle-control input:checked + .toggle-pill { background-color: var(--azul-gov-principal); color: white; border-color: var(--azul-gov-principal); }
+        .toggle-control input { display: none; }
+
+        .history-container { margin-top: 40px; }
+        .history-header { 
+            display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; 
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%);
+            color: white; border-radius: 8px; cursor: pointer; box-shadow: var(--sombra-suave);
+        }
+        .session-list-container { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; border: 1px solid #e9ecef; border-top: none; border-radius: 0 0 8px 8px; background: #fff; }
+        .session-list-container.open { max-height: 400px; padding: 10px; }
+        .session-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px; 
+            border-bottom: 1px solid #f0f0f0; 
+            border-radius: 6px; 
+            transition: all 0.2s ease; /* Suaviza animações */
+            margin-bottom: 5px; 
         }
         
-        .logo a::after {
-            content: '';
-            position: absolute;
-            bottom: 29px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: transparent;
-            transition: background-color 0.3s ease;
+        .session-item:hover { 
+            background-color: #e8f4fd; /* Fundo azul claro ao passar o mouse */
+            transform: translateX(5px); /* Move levemente para direita */
+            border-left: 4px solid var(--azul-gov-principal); /* Adiciona detalhe lateral */
+        }
+        
+        .session-info { 
+            font-size: 14px; 
+            flex-grow: 1; 
+            cursor: pointer; /* Adiciona o dedinho no texto */
         }
 
-        .logo a:hover::after {
-            background-color: var(--amarelo-gov-detalhe);
+        .session-info:hover strong {
+            text-decoration: underline; /* Sublinha o link */
+            color: var(--azul-gov-claro);
         }
-
-        .main-nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            gap: 20px;
+        
+        .session-delete-btn {
+            padding: 8px 12px; 
+            border-radius: 4px; 
+            font-size: 1em; 
+            background-color: transparent; 
+            border: none; 
+            margin-left: 15px; 
+            color: #999; 
+            transition: all 0.2s; 
+            cursor: pointer; /* Adiciona o dedinho na lixeira */
         }
-        .main-nav ul a {
-            text-decoration: none;
-            color: var(--cinza-texto);
-            font-weight: 600;
-            padding: 10px;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
+        
+        .session-delete-btn:hover {
+            background-color: #ffe6e6; 
+            color: var(--vermelho-erro); 
+            transform: scale(1.1); /* Aumenta levemente a lixeira */
         }
-        .main-nav ul a:hover, .main-nav ul a.active {
-            color: var(--azul-gov-principal);
-            border-bottom-color: var(--amarelo-gov-detalhe);
-        }
-
-        .container { max-width:1200px; margin:0 auto; background:var(--branco); padding:30px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
-        .input-section { display:flex; gap:15px; margin-bottom:30px; align-items:center; flex-wrap:wrap; }
-        .url-input { flex:1; padding:15px; border:2px solid #ddd; border-radius:6px; font-size:16px; min-width:300px; }
-        .btn { position: relative; overflow: visible; padding:15px 25px; background-color:var(--azul-gov-principal); color:white; border:none; border-radius:6px; cursor:pointer; font-size:16px; font-weight:bold; transition: background-color .3s; white-space:nowrap; }
-        .btn:hover { background-color:#001a4d; }
-        .btn-secondary { background-color:var(--verde-destaque); }
-        .btn-secondary:hover { background-color:#004d00; }
-        .btn-danger { background-color:var(--vermelho-destaque); }
-        .btn-danger:hover { background-color:#cc0000; }
-        .btn:disabled { background-color:#ccc; cursor:not-allowed; }
-        .stats-container { background:var(--cinza-fundo); padding:20px; border-radius:6px; margin-bottom:30px; }
-        .stats { display:flex; flex-wrap: wrap; gap:15px; margin-bottom:20px; }
-        .stat-card {flex: 1; min-width: 180px; background: var(--branco);padding: 15px;border-radius: 6px;text-align: center;box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
-        .stat-number { font-size:2em; font-weight:bold; color:var(--azul-gov-principal); }
-        .results { margin-top:30px; }
-        .tab-buttons { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
-        .tab-btn { padding:10px 20px; background-color:#ddd; border:none; border-radius:4px; cursor:pointer; white-space:nowrap; }
-        .tab-btn.active { background-color:var(--azul-gov-principal); color:white; }
-        .tab-content { display:none; }
-        .tab-content.active { display:block; }
-        .link-list { max-height:500px; overflow-y:auto; border:1px solid #ddd; border-radius:6px; padding:10px;}
-        .link-item { padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-        .link-left { flex:1; min-width: 200px; word-break: break-all; }
-        .link-meta { font-size:12px; color:#666; margin-top:6px; }
-        .status-badge { padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold; flex-shrink: 0; }
-        .status-funcionando { background-color:#e6f7e6; color:#006400; }
-        [class*="status-erro"], .status-timeout { background-color: #ffe6e6; color: var(--vermelho-destaque); }
-        .log-item { padding:5px; border-bottom:1px solid #eee; font-family:monospace; font-size:12px; }
-        .log-info { color:#0066cc; } .log-success { color:#006400; } .log-error { color:#cc0000; }
-        .history-container { margin-top: 40px; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: #e9eef5; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; margin-bottom: 0; }
-        .history-header h3 { margin: 0; font-size: 1.1em; }
-        #historyToggleIcon { font-size: 0.8em; transition: transform 0.3s; }
-        .history-header.open #historyToggleIcon { transform: rotate(90deg); }
-        .session-list-container { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; border: 1px solid #ddd; border-top: none; border-radius: 0 0 6px 6px; }
-        .session-list-container.open { max-height: 250px; padding-top: 10px; }
-        .session-list { max-height: 200px; overflow-y: auto; border-radius: 6px; padding: 10px; background: #fafafa; }
-        .session-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; transition: background-color .2s; }
-        .session-item:hover .session-info { color: var(--azul-gov-principal); }
-        .session-info { font-size: 14px; cursor: pointer; flex-grow: 1; }
-        .session-status { font-size: 12px; font-weight: bold; text-transform: capitalize; padding: 4px 8px; border-radius: 4px; }
-        .status-finalizado { background-color: #e6f7e6; color: #006400; }
-        .status-iniciado { background-color: #e6f2ff; color: #0052cc; }
-        .status-erro { background-color: #ffe6e6; color: #ff0000; }
-        .status-interrompido { background-color: #fff0e6; color: #d95300; }
-        .session-delete-btn {padding: 5px 10px; border-radius: 4px; font-size: 1em; background-color: transparent; border: none; cursor: pointer; margin-left: 15px; color: #999; transition: color 0.2s, background-color 0.2s; }
-        .session-delete-btn:hover {background-color: #ffe6e6; color: var(--vermelho-destaque); }
-        .input-wrapper { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; }
-        .ajuda { margin-left: 8px; cursor: help; background-color: #8a9db8; color: white; width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        
         .export-container { position: relative; display: inline-block; }
-        .export-options { display: none; position: absolute; background-color: #f1f1f1; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 6px; overflow: hidden; }
+        .export-options { display: none; position: absolute; background-color: #fff; min-width: 160px; box-shadow: var(--sombra-media); z-index: 10; border-radius: 8px; overflow: hidden; border: 1px solid #e9ecef; top: 100%; margin-top: 5px; }
         .export-options.show { display: block; }
-        .export-option { color: black; padding: 12px 16px; text-decoration: none; display: block; cursor: pointer; }
-        .export-option:hover { background-color: #ddd; }
+        .export-option { color: var(--cinza-texto); padding: 12px 16px; text-decoration: none; display: block; cursor: pointer; font-size: 0.9em; font-weight: 500; transition: background 0.2s; }
+        .export-option:hover { background-color: #f0f4ff; color: var(--azul-gov-principal); }
 
-        .SIMPE-marca-text-group {
-            display: flex;
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            gap: 0;
-        }
+        .scan-indicator { display: none; width: 10px; height: 10px; background-color: var(--verde-sucesso); border-radius: 50%; margin-left: 10px; animation: pulse 1.5s infinite; vertical-align: middle; }
+        .stats-container.scanning .scan-indicator { display: inline-block; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); } }
 
-        .SIMPE-marca-small {
-            height: 60px; 
-            width: auto;
-            object-fit: contain; 
-            display: block; 
-            margin: 0; 
-            margin-bottom: 5px;
+        .main-footer { 
+            text-align: center; padding: 30px 5%; margin-top: auto;
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-escuro) 100%);
+            color: var(--branco); font-size: 0.95em; position: relative; min-height: 80px; box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
         }
-    
-        .main-footer {
-          text-align: center;
-          padding: 20px;
-          margin-top: 40px;
-          background-color: var(--branco);
-          font-size: 0.9em;
-          position: relative; 
-          height: 60px; 
-        }
-        .main-footer .footer-content {
-            display: flex;
-            justify-content: center; 
-            align-items: center;
-            height: 100%;
-        }
-        .main-footer img {
-            height: 60px; 
-            width: auto; 
+        .main-footer .footer-content { display: flex; justify-content: center; align-items: center; max-width: 1400px; margin: 0 auto; height: 100%; position: relative; }
+        
+        .main-footer .footer-portal-link, .main-footer .footer-logo-link { 
             position: absolute; 
-            right: 5%; 
             top: 50%; 
             transform: translateY(-50%); 
+            display: block; 
+            height: 70px; 
+            width: auto; 
+            transition: var(--transicao-padrao); 
+            cursor: pointer; 
         }
 
-     
-        .main-footer p a {
-            color: var(--cinza-texto);
-            font-weight: 600;
-            text-decoration: none;
-            transition: color 0.2s;
+        .main-footer .footer-portal-link:hover, .main-footer .footer-logo-link:hover { 
+            transform: translateY(-50%) scale(1.1); 
         }
+        .main-footer .footer-portal-link { left: 0.5%; }
+        .main-footer .footer-logo-link { right: 0.5%; }
+        
+        .main-footer img { height: 100%; width: auto; display: block; max-height: 70px; mix-blend-mode: lighten; object-fit: contain; filter: brightness(0) invert(1); }
+        
+        .main-footer p { color: rgba(255, 255, 255, 0.9); font-weight: 400; margin: 0; }
+        .main-footer p a { color: var(--amarelo-gov-detalhe); font-weight: 600; text-decoration: none; padding: 4px 8px; border-radius: 4px; }
+        .main-footer p a:hover { background-color: rgba(255, 215, 0, 0.2); text-decoration: underline; }
 
-        .main-footer p a:hover {
-            text-decoration: underline;
-            color: var(--azul-gov-principal);
-        }
+        .log-item { padding: 8px; border-bottom: 1px solid #eee; font-family: 'Consolas', monospace; font-size: 0.85em; }
+        .log-info { color: var(--azul-gov-claro); }
+        .log-success { color: var(--verde-sucesso); }
+        .log-error { color: var(--vermelho-erro); }
 
-
-        .scan-indicator {
-          display: none; 
-          width: 10px;
-          height: 10px;
-          background-color: var(--verde-destaque);
-          border-radius: 50%;
-          margin-left: 10px;
-          animation: pulse 1.5s infinite;
-          vertical-align: middle; 
+        @media (max-width: 768px) {
+            .main-nav { flex-direction: column; height: auto; padding: 20px 0; }
+            .main-nav ul { flex-direction: column; width: 100%; margin-top: 15px; }
+            .container { padding: 25px; }
+            .input-section { flex-direction: column; align-items: stretch; }
+            .url-input { min-width: 0; }
+            .btn { width: 100%; }
+            .main-footer .footer-content { flex-direction: column; gap: 15px; }
+            .main-footer .footer-portal-link, .main-footer .footer-logo-link { position: static; transform: none; height: 50px; margin: 10px 0; }
         }
-
-      
-        .stats-container.scanning .scan-indicator {
-          display: inline-block;
-        }
-
-      
-        @keyframes pulse {
-          0% {
-              box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
-          }
-          70% {
-              box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
-          }
-          100% {
-              box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
-          }
-        }
-
-        .alert-box {
-          display: flex;
-          align-items: center;
-          padding: 15px;
-          margin-bottom: 30px;
-          border-radius: 6px;
-          border: 1px solid;
-        }
-        .alert-box.warning {
-          background-color: #fff8e1; 
-          border-color: #ffc107; 
-          color: #856404; 
-        }
-        .alert-box .icon {
-          font-size: 1.5em;
-          margin-right: 15px;
-        }
-
-        .alert-box.hidden {
-          display: none; 
-        }
-
-        .alert-box.flash {
-          animation: flash-warning 0.75s 3;
-        }
-
-        @keyframes flash-warning {
-          0% { background-color: #fff8e1; } 
-          50% { background-color: #ffecb3; } 
-          100% { background-color: #fff8e1; } 
-        }
-
-        .disabled-link {
-            cursor: not-allowed; 
-        }
-
-        .filter-container {
-            display: flex;
-            gap: 15px; 
-            margin-bottom: 20px;
-            flex-wrap: wrap; 
-        }
-
-        .filter-bar-v2 {
-            display: flex;
-            gap: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            border-bottom: none;
-            border-radius: 6px 6px 0 0;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .search-wrapper {
-            position: relative;
-            flex-grow: 1;
-            min-width: 300px;
-        }
-
-        .search-icon {
-            position: absolute;
-            top: 50%;
-            left: 15px;
-            transform: translateY(-50%);
-            color: #999;
-        }
-
-        #filterInput {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 0.9em;
-            box-sizing: border-box;
-        }
-
-        .filter-toggles {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .filter-toggles span {
-            font-weight: 600;
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        .toggle-control {
-            position: relative;
-            display: inline-block;
-        }
-
-        .toggle-control input[type="checkbox"] {
-            display: none; 
-        }
-
-        .toggle-pill {
-            padding: 6px 12px;
-            border-radius: 20px;
-            background-color: #e9ecef;
-            color: #495057;
-            cursor: pointer;
-            font-size: 0.8em;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .toggle-control input[type="checkbox"]:checked + .toggle-pill {
-            background-color: var(--azul-gov-principal);
-            color: var(--branco);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .history-header {
-            background-color: var(--azul-gov-principal);
-            color: var(--branco);
-        }
-
-        .url-input, #depthInput {
-            border: 1px solid var(--azul-gov-principal);
-        }
-
-        #logout-btn {
-            cursor: pointer;
-        }
-
     </style>
 </head>
 <body>
@@ -380,18 +331,14 @@
     <header class="main-header">
         <nav class="main-nav">
             <div class="logo">
-                <div class="logo">
-                    <a href="/">
-                        <img src="/assets/logo-header.png" alt="Logo do Governo de Pernambuco">
-                        <div class="SIMPE-marca-text-group">                     
-                            <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                     
-                        </div>
-                    </a>
-                </div>
+                <a href="/">
+                    <img src="/assets/logo-header.png" alt="Logo Governo de Pernambuco">
+                    <div class="SIMPE-marca-text-group">                      
+                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                      
+                    </div>
+                </a>
             </div>
-            <ul id="nav-links">
-                <!-- Menu será carregado pelo global.js -->
-            </ul>
+            <ul id="nav-links"></ul>
         </nav>
     </header>
 
@@ -408,19 +355,19 @@
             <div class="input-section">
                 <input type="url" id="urlInput" class="url-input" placeholder="Digite a URL do site (ex: https://exemplo.com)" />
                 <div class="input-wrapper">
-                  <input type="number" id="depthInput" value="5" min="0" title="Profundidade Máxima" style="padding: 15px; width: 80px; border-radius: 6px; font-size: 16px;">
+                  <input type="number" id="depthInput" value="5" min="0" title="Profundidade Máxima" style="padding: 14px; width: 80px; border-radius: 8px; font-size: 1em; border: 2px solid #e1e5e9; text-align: center;">
                   <span class="ajuda" data-tippy-content="Define a profundidade da varredura. Nível 0 é a página inicial, nível 1 são os links nela, e assim por diante.">?</span>
                 </div>
-                <button id="startBtn" class="btn">Iniciar Varredura</button>
+                <button id="startBtn" class="btn"><i class="fas fa-play"></i> Iniciar Varredura</button>
                 <div data-tippy-content="Interrompe a varredura atual. O progresso feito até o momento será salvo.">
-                  <button id="stopBtn" class="btn btn-danger" disabled>Parar Varredura</button>
+                  <button id="stopBtn" class="btn btn-danger" disabled><i class="fas fa-stop"></i> Parar</button>
                 </div>
                 <div class="export-container" data-tippy-content="Baixa um arquivo com todos os links da sessão exibida no formato selecionado.">
-                  <button id="exportBtn" class="btn btn-secondary" disabled>Exportar Relatório</button>
+                  <button id="exportBtn" class="btn btn-secondary" disabled><i class="fas fa-download"></i> Exportar</button>
                   <div id="exportOptionsMenu" class="export-options">
-                    <div class="export-option" data-format="xlsx">Excel (.xlsx)</div>
-                    <div class="export-option" data-format="csv">CSV</div>
-                    <div class="export-option" data-format="json">JSON</div>
+                    <div class="export-option" data-format="xlsx"><i class="fas fa-file-excel"></i> Excel (.xlsx)</div>
+                    <div class="export-option" data-format="csv"><i class="fas fa-file-csv"></i> CSV</div>
+                    <div class="export-option" data-format="json"><i class="fas fa-file-code"></i> JSON</div>
                   </div>
                 </div>
             </div>
@@ -433,15 +380,15 @@
                         <div>Links Encontrados</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number" id="brokenLinks">0</div>
+                        <div class="stat-number" id="brokenLinks" style="color: var(--vermelho-erro);">0</div>
                         <div>Links com Problemas</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number" id="pendingLinks">0</div>
+                        <div class="stat-number" id="pendingLinks" style="color: var(--laranja-alerta);">0</div>
                         <div>Links a Verificar</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number" id="timeElapsed">0s</div>
+                        <div class="stat-number" id="timeElapsed" style="color: var(--cinza-texto);">0s</div>
                         <div>Tempo Decorrido</div>
                     </div>
                 </div>
@@ -461,7 +408,7 @@
                         <input type="text" id="filterInput" placeholder="Pesquisar por trecho da URL...">
                     </div>
                     <div class="filter-toggles">
-                        <span>Filtrar por tipo de erro:</span>
+                        <span style="font-weight: 600; color: #555; font-size: 0.9em;">Filtrar por erro:</span>
                         <label class="toggle-control">
                             <input type="checkbox" class="error-checkbox" value="4xx">
                             <span class="toggle-pill">4xx</span>
@@ -490,8 +437,8 @@
             
             <div class="history-container">
                 <div class="history-header" id="historyHeader">
-                    <h3>Histórico de Varreduras</h3>
-                    <span id="historyToggleIcon">▶</span>
+                    <h3><i class="fas fa-history"></i> Histórico de Varreduras</h3>
+                    <span id="historyToggleIcon"><i class="fas fa-chevron-down"></i></span>
                 </div>
                 <div class="session-list-container" id="sessionListContainer">
                     <div class="session-list" id="sessionHistoryList"></div>
@@ -502,7 +449,12 @@
 
     <footer class="main-footer">
         <div class="footer-content">
+            <a href="https://transparencia.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-portal-link">
+                <img src="/assets/image-portal.png" alt="Portal da Transparência">
+            </a>
+
             <p>&copy; 2025 Governo de Pernambuco. Todos os direitos reservados. <a id="admin-footer-link" href="/admin" style="display: none;">Área Administrativa</a></p>
+            
             <a href="https://www.scge.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-logo-link">
                 <img src="/assets/logo-footer.png" alt="Logo da Controladoria-Geral do Estado de Pernambuco">
             </a>
@@ -611,7 +563,7 @@
                         item.className = 'session-item';
                         item.setAttribute('data-session-id', session.id);
                         const statusText = session.status === 'iniciado' ? 'Em Andamento' : session.status;
-                        item.innerHTML = `<div class="session-info"><strong>${session.url_base}</strong><br><small>${new Date(session.createdAt).toLocaleString('pt-BR')}</small></div><div style="display: flex; align-items: center;"><span class="session-status status-${session.status}">${statusText}</span><button class="session-delete-btn" title="Apagar esta sessão"><i class="fas fa-trash-alt"></i></button></div>`;
+                        item.innerHTML = `<div class="session-info"><strong>${session.url_base}</strong><br><small>${new Date(session.createdAt).toLocaleString('pt-BR')}</small></div><div style="display: flex; align-items: center;"><span class="status-badge status-${session.status}">${statusText}</span><button class="session-delete-btn" title="Apagar esta sessão"><i class="fas fa-trash-alt"></i></button></div>`;
                         item.querySelector('.session-info').addEventListener('click', () => displaySessionResults(session.id));
                         item.querySelector('.session-delete-btn').addEventListener('click', (event) => {
                             event.stopPropagation();
@@ -711,15 +663,10 @@
                     selectedErrors.push(checkbox.value);
                 });
 
-                console.log(`Texto da pesquisa: '${searchText}'`);
-                console.log("Erros selecionados:", selectedErrors);
-                console.log(`Total de links na memória (allLinksFromSession): ${allLinksFromSession.length}`);
-
                 let allFilteredLinks = allLinksFromSession;
                 if (searchText) {
                     allFilteredLinks = allFilteredLinks.filter(link => link.url.toLowerCase().includes(searchText));
                 }
-                console.log(`-> Links para a aba 'Todos os Links' após filtro de texto: ${allFilteredLinks.length}`);
                 allLinksList.innerHTML = allFilteredLinks.map(link => renderLinkItem(link)).join('');
 
                 let brokenFilteredLinks = allLinksFromSession.filter(link => link.status && (link.status.toLowerCase().includes('erro') || link.status.toLowerCase().includes('timeout')));
@@ -734,7 +681,6 @@
                         return false;
                     });
                 }
-                console.log(`-> Links para a aba 'Links com Problemas' após todos os filtros: ${brokenFilteredLinks.length}`);
                 brokenLinksList.innerHTML = brokenFilteredLinks.map(link => renderLinkItem(link)).join('');
 
                 totalLinksSpan.textContent = allLinksFromSession.length;
@@ -743,7 +689,6 @@
                 
                 document.getElementById('allLinksCount').textContent = `(${allFilteredLinks.length})`;
                 document.getElementById('brokenLinksCount').textContent = `(${brokenFilteredLinks.length})`;
-                console.log("--- RENDERIZAÇÃO CONCLUÍDA ---");
             }
 
             function startMonitoring(sessionId) {
@@ -964,6 +909,14 @@
             historyHeader.addEventListener('click', () => {
                 historyHeader.classList.toggle('open');
                 sessionListContainer.classList.toggle('open');
+                const icon = document.getElementById('historyToggleIcon').querySelector('i');
+                if (sessionListContainer.classList.contains('open')) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                } else {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
             });
             filterInput.addEventListener('input', renderFilteredLists);
             

@@ -1374,6 +1374,24 @@ app.patch('/api/respostas/:id/analise-final', authenticateToken, authenticateAdm
     }
 });
 
+app.patch('/api/requisitos/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { texto, pontuacao, textoAjuda } = req.body;
+    try {
+        const atualizado = await prisma.requisito.update({
+            where: { id: parseInt(id) },
+            data: { 
+                texto, 
+                pontuacao: parseInt(pontuacao), 
+                textoAjuda 
+            }
+        });
+        res.json(atualizado);
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao atualizar requisito." });
+    }
+});
+
 app.post('/api/avaliacoes/:id/devolver', authenticateToken, authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -1460,6 +1478,23 @@ app.post('/api/avaliacoes/:id/recurso', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: "Acesso negado. Você não tem permissão para editar esta avaliação." });
         }
 
+        if (!respostasDoRecurso || respostasDoRecurso.length === 0) {
+            console.log('📝 Recurso de confirmação total recebido - usuário concorda com todas as análises da SCGE');
+            
+            await prisma.avaliacao.update({
+                where: { id: parseInt(avaliacaoId) },
+                data: { status: 'EM_ANALISE_DE_RECURSO' }
+            });
+
+            console.log(`✅ Avaliação ${avaliacaoId} movida para EM_ANALISE_DE_RECURSO (confirmação total)`);
+            
+            return res.json({ 
+                success: true, 
+                message: "Confirmação de aceitação enviada com sucesso!",
+                tipo: "confirmacao_total"
+            });
+        }
+
         const updates = [];
         
         for (const respostaRecurso of respostasDoRecurso) {
@@ -1504,7 +1539,11 @@ app.post('/api/avaliacoes/:id/recurso', authenticateToken, async (req, res) => {
             data: { status: 'EM_ANALISE_DE_RECURSO' }
         });
 
-        res.json({ success: true, message: "Recurso enviado com sucesso!" });
+        res.json({ 
+            success: true, 
+            message: "Recurso enviado com sucesso!",
+            tipo: "recurso_com_alteracoes"
+        });
 
     } catch (error) {
         console.error("Erro ao enviar recurso:", error);
@@ -2077,7 +2116,7 @@ app.post('/api/notificar-controladoria', authenticateToken, async (req, res) => 
 
         const mailOptions = {
             from: `"Sistema de Monitoramento - PE" <${process.env.SMTP_USER}>`,
-            to: ['kadsonlima91@gmail.com','transparencia@scge.pe.gov.br'],
+            to: ['kadsonlima91@gmail.com',/*'transparencia@scge.pe.gov.br'*/],
             subject: `Nova Autoavaliação Recebida - ${nomeSecretaria}`,
             html: `
                 <!DOCTYPE html>
@@ -2281,7 +2320,7 @@ app.post('/api/avaliacoes/:id/notificar-recurso', authenticateToken, async (req,
 
         const mailOptions = {
             from: `"Sistema de Monitoramento - PE" <${process.env.SMTP_USER}>`,
-            to: ['kadsonlima91@gmail.com' , 'transparencia@scge.pe.gov.br'],
+            to: ['kadsonlima91@gmail.com' , /*'transparencia@scge.pe.gov.br'*/],
             subject: `Recurso Recebido - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
             html: `
                 <!DOCTYPE html>
@@ -2908,6 +2947,33 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
     }
 });
 
+// Rota para criar requisitos GLOBAIS (secretariaId = null)
+app.post('/api/requisitos-globais', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { texto, pontuacao, textoAjuda } = req.body;
+
+    if (!texto || !pontuacao) {
+        return res.status(400).json({ error: 'Texto e pontuação são obrigatórios.' });
+    }
+
+    try {
+        const novoRequisito = await prisma.requisito.create({
+            data: {
+                texto: texto,
+                pontuacao: parseInt(pontuacao),
+                secretariaId: null, // NULL = global
+                textoAjuda: textoAjuda && textoAjuda.trim() !== "" ? textoAjuda : "Este é um requisito padrão para todos os órgãos."
+            }
+        });
+        
+        console.log(`[ADMIN] Requisito global criado: ID ${novoRequisito.id}`);
+        res.status(201).json(novoRequisito);
+        
+    } catch (error) {
+        console.error('Erro ao criar requisito global:', error);
+        res.status(500).json({ error: "Erro ao criar o requisito global." });
+    }
+});
+
 app.get('/api/debug-schema', async (req, res) => {
     try {
         console.log('=== VERIFICANDO SCHEMA DO BANCO ===');
@@ -3062,13 +3128,31 @@ app.get('/secretarias', async (req, res) => {
 
 
 app.get('/requisitos', async (req, res) => {
-  try {
-    const requisitos = await prisma.requisito.findMany({ orderBy: { id: 'asc' } });
-    res.json(requisitos);
-  } catch (error) {
-    console.error("[ERRO CRÍTICO] Falha na rota /requisitos:", error);
-    res.status(500).json({ error: "Erro ao buscar a lista de requisitos." });
-  }
+    try {
+        const { secretariaId } = req.query;
+        const whereClause = {
+            OR: [
+                { secretariaId: null },
+            ]
+        };
+
+        if (secretariaId && secretariaId !== 'undefined') {
+            whereClause.OR.push({ secretariaId: parseInt(secretariaId) });
+        }
+
+        const requisitos = await prisma.requisito.findMany({
+            where: whereClause,
+            orderBy: [
+                { secretariaId: { sort: 'asc', nulls: 'first' } },
+                { id: 'asc' }
+            ]
+        });
+        
+        res.json(requisitos);
+    } catch (error) {
+        console.error("[ERRO CRÍTICO] Falha na rota /requisitos:", error);
+        res.status(500).json({ error: "Erro ao buscar a lista de requisitos." });
+    }
 });
 
 app.delete('/avaliacoes/:id', async (req, res) => {
@@ -3661,6 +3745,108 @@ async function enviarEmailNotaFinal(avaliacao) {
 
   await transporter.sendMail(mailOptions);
 }
+
+app.post('/api/requisitos-extras', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { texto, pontuacao, secretariaId, textoAjuda } = req.body;
+
+    if (!texto || !pontuacao || !secretariaId) {
+        return res.status(400).json({ error: 'Texto, pontuação e ID da secretaria são obrigatórios.' });
+    }
+
+    try {
+        const novoRequisito = await prisma.requisito.create({
+            data: {
+                texto: texto,
+                pontuacao: parseInt(pontuacao),
+                secretariaId: parseInt(secretariaId),
+                textoAjuda: textoAjuda && textoAjuda.trim() !== "" ? textoAjuda : "Instrução específica da administração."
+            }
+        });
+        res.json(novoRequisito);
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao criar o requisito extra." });
+    }
+});
+
+// 2. Listar apenas os requisitos extras de uma secretaria
+app.get('/api/secretarias/:id/requisitos-extras', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const extras = await prisma.requisito.findMany({
+            where: { 
+                secretariaId: parseInt(id) 
+            },
+            orderBy: { id: 'asc' }
+        });
+        res.json(extras);
+    } catch (error) {
+        console.error('Erro ao buscar requisitos extras:', error);
+        res.status(500).json({ error: "Erro ao buscar requisitos extras." });
+    }
+});
+
+app.delete('/api/requisitos/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { force } = req.query; 
+    const requisitoId = parseInt(id);
+
+    try {
+        const requisito = await prisma.requisito.findUnique({ where: { id: requisitoId } });
+        
+        if (!requisito) {
+            return res.status(404).json({ error: "Requisito não encontrado." });
+        }
+
+        // Permite exclusão de globais apenas com force=true
+        if (requisito.secretariaId === null && force !== 'true') {
+            return res.status(403).json({ 
+                error: "Não é permitido excluir requisitos globais.",
+                suggestion: "Use ?force=true para forçar a exclusão"
+            });
+        }
+
+        await prisma.$transaction([
+            prisma.evidencia.deleteMany({
+                where: { resposta: { requisitoId: requisitoId } }
+            }),
+            prisma.linkAnalista.deleteMany({
+                where: { resposta: { requisitoId: requisitoId } }
+            }),
+            prisma.linkAnaliseFinal.deleteMany({
+                where: { resposta: { requisitoId: requisitoId } }
+            }),
+            prisma.resposta.deleteMany({
+                where: { requisitoId: requisitoId }
+            }),
+            prisma.requisito.delete({ 
+                where: { id: requisitoId } 
+            })
+        ]);
+        
+        console.log(`[ADMIN] Requisito ${id} e suas dependências foram excluídos.`);
+        res.json({ success: true, message: "Requisito excluído com sucesso." });
+
+    } catch (error) {
+        console.error('Erro ao excluir requisito:', error);
+        res.status(500).json({ error: "Erro ao excluir requisito.", details: error.message });
+    }
+});
+
+app.delete('/api/avaliacoes/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.$transaction([
+            prisma.evidencia.deleteMany({ where: { resposta: { avaliacaoId: parseInt(id) } } }),
+            prisma.linkAnalista.deleteMany({ where: { resposta: { avaliacaoId: parseInt(id) } } }),
+            prisma.linkAnaliseFinal.deleteMany({ where: { resposta: { avaliacaoId: parseInt(id) } } }),
+            prisma.resposta.deleteMany({ where: { avaliacaoId: parseInt(id) } }),
+            prisma.avaliacao.delete({ where: { id: parseInt(id) } })
+        ]);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao excluir avaliação completa." });
+    }
+});
 
 app.listen(PORT, '0.0.0.0', async () => { 
     console.log(`🚀 Servidor rodando na porta ${PORT}`);

@@ -4,665 +4,249 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <title>Área Administrativa - Análise PE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Área Administrativa - SIMPE | Governo de Pernambuco</title>
     <style>
+        /* --- VARIÁVEIS (Design System V2) --- */
         :root {
             --azul-gov-principal: #002776;
+            --azul-gov-escuro: #001a4d;
+            --azul-gov-claro: #0052CC;
             --amarelo-gov-detalhe: #FFD700;
-            --cinza-texto: #333333;
-            --cinza-fundo: #f4f4f4;
+            --cinza-texto: #2c3e50;
+            --cinza-claro: #7f8c8d;
+            --cinza-fundo: #f4f6f9;
+            --cinza-borda: #e1e5e9;
             --branco: #ffffff;
-            --verde-sucesso: #28a745;
-            --vermelho-destaque: #dc3545;
-            --laranja-alerta: #fd7e14;
-            --cinza-borda: #ddd;
+            --verde-sucesso: #27ae60;
+            --vermelho-erro: #c0392b;
+            --laranja-alerta: #d35400;
+            --sombra-suave: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --sombra-media: 0 6px 18px rgba(0, 0, 0, 0.1);
+            --sombra-forte: 0 12px 24px rgba(0, 0, 0, 0.15);
+            --transicao-padrao: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body { 
-            margin: 0; 
-            font-family: 'Segoe UI', Arial, sans-serif; 
+            font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             background-color: var(--cinza-fundo); 
             color: var(--cinza-texto); 
-            line-height: 1.6; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         
+        /* --- HEADER --- */
         .main-header { 
             background-color: var(--branco); 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            box-shadow: var(--sombra-suave);
             padding: 0 5%; 
             position: sticky; 
             top: 0; 
-            z-index: 1000; 
+            z-index: 1000;
+            border-bottom: 4px solid var(--azul-gov-principal);
         }
         
         .main-nav { 
-            max-width: 1200px; 
+            max-width: 1400px; 
             margin: 0 auto; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            height: 70px; 
+            height: 80px; 
         }
 
         .logo a { 
             text-decoration: none; 
             display: flex; 
             align-items: center; 
-            gap: 12px; 
-            padding: 10px; 
-            padding-top: 0; 
-            padding-bottom: 0;
-            border-bottom: 2px solid transparent; 
-            transition: all 0.3s ease; 
-            position: relative;
+            gap: 16px; 
+            transition: var(--transicao-padrao);
         }
+        .logo a:hover { transform: translateY(-1px); }
+        .logo a > img { height: 55px; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1)); }
+        .SIMPE-marca-text-group { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .SIMPE-marca-small { height: 55px !important; width: auto; object-fit: contain; }
 
-        .logo a::after {
-            content: '';
-            position: absolute;
-            bottom: 29px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: transparent;
-            transition: background-color 0.3s ease;
+        #nav-links { list-style: none; margin: 0; padding: 0; display: flex; gap: 10px; align-items: center; }
+        #nav-links a { 
+            text-decoration: none; color: var(--cinza-texto); font-weight: 600; 
+            padding: 10px 18px; border-radius: 6px; transition: var(--transicao-padrao); 
+            display: block; font-size: 0.95em; 
         }
+        #nav-links a:hover, #nav-links a.active { color: var(--azul-gov-principal); background-color: rgba(0, 39, 118, 0.08); }
 
-        .logo a:hover::after {
-            background-color: var(--amarelo-gov-detalhe);
-        }
-
-        .logo a > img { 
-            height: 45px; 
-            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0));
-        }
-        
-        .main-nav ul { 
-            list-style: none; 
-            margin: 0; 
-            padding: 0; 
-            display: flex; 
-            gap: 20px; 
-        }
-
-        .main-nav ul a { 
-            text-decoration: none; 
-            color: var(--cinza-texto); 
-            font-weight: 600; 
-            padding: 10px; 
-            border-bottom: 2px solid transparent; 
-            transition: all 0.3s ease; 
-            display: flex; 
-            align-items: center; 
-            height: 100%; 
-            box-sizing: border-box; 
-        }
-        
-        .main-nav ul a:hover, .main-nav ul a.active { 
-            color: var(--azul-gov-principal); 
-            border-bottom-color: var(--amarelo-gov-detalhe); 
-        }
-
-        .main-footer { 
-            text-align: center; 
-            padding: 20px; 
-            margin-top: auto; 
-            background-color: var(--branco); 
-            font-size: 0.9em; 
-            position: relative; 
-            height: 60px; 
-            box-sizing: content-box; 
-        }
-        
-        .main-footer .footer-content { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100%; 
-            position: relative; 
-        }
-
-        .main-footer .footer-logo-link { 
-            display: block; 
-            position: absolute; 
-            right: 5%; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            z-index: 10; 
-            height: 60px; 
-            width: auto; 
-        }
-
-        .main-footer .footer-logo-link img { 
-            height: 100%; 
-            width: auto; 
-            display: block; 
-            max-height: 60px; 
-            object-fit: contain; 
-        }
-        
-        .main-footer p a { 
-            color: var(--cinza-texto); 
-            font-weight: 600; 
-            text-decoration: none; 
-            transition: color 0.2s;
-        }
-
-        .main-footer p a:hover {
-            text-decoration: underline;
-            color: var(--azul-gov-principal);
-        }
-   
-        main { 
-            padding: 40px 5%; 
-        }
+        /* --- MAIN CONTENT --- */
+        main { padding: 40px 5%; flex-grow: 1; display: flex; justify-content: center; }
         
         .admin-container {
-            max-width: 1000px;
-            margin: 0 auto;
+            width: 100%; max-width: 1200px; background: var(--branco); 
+            padding: 40px; border-radius: 16px; box-shadow: var(--sombra-media); 
+            border-top: 5px solid var(--azul-gov-principal);
         }
         
         .admin-container h1 {
-            color: var(--azul-gov-principal);
-            border-bottom: 2px solid var(--amarelo-gov-detalhe);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            color: var(--azul-gov-principal); font-size: 2em; font-weight: 800; 
+            margin-bottom: 10px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; position: relative;
         }
-        
-        .admin-container > p {
-            margin-bottom: 25px;
-            color: #555;
+        .admin-container h1::after {
+            content: ''; position: absolute; bottom: -2px; left: 0; width: 80px; height: 2px; background-color: var(--amarelo-gov-detalhe);
         }
+        .admin-container > p { margin-bottom: 30px; color: var(--cinza-claro); font-size: 1.05em; }
         
+        /* --- FILTROS --- */
         .filter-controls {
-            margin-bottom: 25px;
-            padding: 15px;
-            background: var(--branco);
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 12px; 
+            border: 1px solid #e9ecef; display: flex; align-items: center; gap: 15px;
         }
-        
-        .filter-controls label {
-            font-weight: 600;
-            margin-right: 10px;
-            color: var(--azul-gov-principal);
-        }
-        
+        .filter-controls label { font-weight: 700; color: var(--azul-gov-principal); }
         #statusFilter {
-            padding: 8px 15px;
-            border-radius: 6px;
-            border: 1px solid var(--cinza-borda);
-            font-size: 1em;
-            background-color: var(--branco);
-            color: var(--cinza-texto);
+            padding: 10px 15px; border-radius: 8px; border: 2px solid #e1e5e9; font-size: 1em; 
+            background-color: var(--branco); color: var(--cinza-texto); flex-grow: 1; max-width: 300px;
         }
-        
+
+        /* --- LISTA GRID --- */
         #avaliacoes-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; margin-bottom: 40px;
         }
 
         .avaliacao-card {
-            background-color: var(--branco);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border-left: 5px solid var(--azul-gov-principal); 
+            background-color: var(--branco); border-radius: 12px; padding: 25px; 
+            box-shadow: var(--sombra-suave); cursor: pointer; transition: var(--transicao-padrao); 
+            border: 1px solid #e1e5e9; border-left: 6px solid var(--azul-gov-principal); overflow: hidden;
         }
-
-        .avaliacao-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        }
-
-        .avaliacao-card h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.2em;
-            color: var(--azul-gov-principal);
-        }
+        .avaliacao-card:hover { transform: translateY(-5px); box-shadow: var(--sombra-media); }
+        .avaliacao-card h3 { margin: 0 0 15px 0; font-size: 1.3em; color: var(--azul-gov-principal); font-weight: 700; }
+        .avaliacao-card p { margin: 8px 0; font-size: 0.95em; color: var(--cinza-claro); }
         
-        .avaliacao-card p {
-            margin: 6px 0;
-            font-size: 0.9em;
-            color: #555;
-        }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 15px; }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .avaliacao-card.status-PENDENTE_SECRETARIA {
-            border-left: 5px solid #6c757d; 
-        }
-        .avaliacao-card.status-EM_ANALISE_SCGE {
-            border-left: 5px solid var(--azul-gov-principal); 
-        }
-        .avaliacao-card.status-AGUARDANDO_RECURSO {
-            border-left: 5px solid #ffb007; 
-        }
-        .avaliacao-card.status-EM_ANALISE_DE_RECURSO {
-            border-left: 5px solid var(--amarelo-gov-detalhe); 
-        }
-        .avaliacao-card.status-FINALIZADA {
-            border-left: 5px solid var(--verde-sucesso); 
-        }
+        /* Status Cores */
+        .status-PENDENTE_SECRETARIA { border-left-color: #6c757d; }
+        .status-EM_ANALISE_SCGE { border-left-color: var(--azul-gov-principal); }
+        .status-AGUARDANDO_RECURSO { border-left-color: var(--laranja-alerta); }
+        .status-EM_ANALISE_DE_RECURSO { border-left-color: var(--amarelo-gov-detalhe); }
+        .status-FINALIZADA { border-left-color: var(--verde-sucesso); }
 
         .avaliacao-status-badge {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
-            white-space: nowrap;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            padding: 6px 12px; border-radius: 50px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
         }
 
-        .avaliacao-status-badge.status-PENDENTE_SECRETARIA { 
-            background-color: #6c757d; 
-            color: var(--branco);
+        /* --- BOTÕES --- */
+        .admin-actions {
+            display: flex; justify-content: center; margin-top: 30px; padding-top: 30px; 
+            border-top: 1px solid #e1e5e9; gap: 15px; flex-wrap: wrap;
         }
-        .avaliacao-status-badge.status-EM_ANALISE_SCGE { 
-            background-color: #007bff; 
-            color: var(--branco);
+        .btn {
+            padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95em; font-weight: 700;
+            transition: var(--transicao-padrao); display: inline-flex; align-items: center; gap: 10px; color: white;
+            box-shadow: var(--sombra-suave);
         }
-        .avaliacao-status-badge.status-AGUARDANDO_RECURSO { 
-            background-color: #ffc107; 
-            color: #333;
-        }
-        .avaliacao-status-badge.status-EM_ANALISE_DE_RECURSO { 
-            background-color: var(--amarelo-gov-detalhe); 
-            color: #333;
-        }
-        .avaliacao-status-badge.status-FINALIZADA { 
-            background-color: var(--verde-sucesso); 
-            color: var(--branco);
-        }
-
-        .disabled-link {
-            cursor: not-allowed; 
-        }
-        #logout-btn {
-            cursor: pointer;
-        }
-
-        .loading-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        .error-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--vermelho-destaque);
-            background: #f8d7da;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            background: var(--branco);
-            border-radius: 8px;
-            border: 2px dashed #ddd;
-        }
+        .btn:hover { transform: translateY(-2px); box-shadow: var(--sombra-media); }
         
-        .SIMPE-marca-text-group {
-            display: flex;
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            gap: 0;
+        .btn-primary { background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%); }
+        .btn-success { background: linear-gradient(135deg, var(--verde-sucesso) 0%, #2ecc71 100%); }
+        .btn-secondary { background: linear-gradient(135deg, #6c757d 0%, #95a5a6 100%); }
+        .btn-warning { background: linear-gradient(135deg, var(--laranja-alerta) 0%, #f39c12 100%); }
+        .btn-danger { background: linear-gradient(135deg, var(--vermelho-erro) 0%, #c0392b 100%); }
+        .btn-danger-icon {
+            background: none; border: none; color: #e74c3c; cursor: pointer; padding: 5px;
+            font-size: 1.1em; transition: 0.2s;
         }
-        .site-subtitle-modified { 
-            color: var(--cinza-texto); 
-            font-size: 0.7em;
-            display: block;
-            text-align: center;
-            margin: 0; 
-            line-height: 1;
-            padding: 0;
-        }
-        .SIMPE-marca-small {
-            height: 60px; 
-            width: auto;
-            object-fit: contain; 
-            display: block; 
-            margin: 0; 
-            margin-bottom: 5px;
-        }
+        .btn-danger-icon:hover { color: #c0392b; transform: scale(1.2); }
 
-        /* NOVOS ESTILOS PARA OS MODAIS */
+        /* --- MODAIS --- */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 20, 60, 0.6); backdrop-filter: blur(4px); z-index: 2000; 
+            justify-content: center; align-items: center; animation: fadeIn 0.3s ease;
         }
-
         .modal {
-            background: var(--branco);
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: modalAppear 0.3s ease-out;
+            background: var(--branco); border-radius: 16px; box-shadow: var(--sombra-forte);
+            width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;
         }
-
-        @keyframes modalAppear {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .modal-header {
-            background-color: var(--azul-gov-principal);
-            color: var(--branco);
-            padding: 20px 25px;
-            border-radius: 8px 8px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%);
+            color: var(--branco); padding: 20px 30px; border-radius: 16px 16px 0 0;
+            display: flex; justify-content: space-between; align-items: center;
         }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.4em;
-        }
-
+        .modal-header h2 { margin: 0; font-size: 1.3em; font-weight: 700; }
         .modal-close {
-            background: none;
-            border: none;
-            color: var(--branco);
-            font-size: 1.5em;
-            cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            transition: background-color 0.2s;
+            background: rgba(255, 255, 255, 0.2); border: none; color: var(--branco); font-size: 1.2em;
+            cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
         }
+        .modal-close:hover { background: var(--vermelho-erro); transform: rotate(90deg); }
 
-        .modal-close:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+        .modal-body { padding: 30px; }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { font-weight: 600; margin-bottom: 8px; font-size: 0.95em; color: var(--cinza-texto); display: block; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px 16px; border: 2px solid var(--cinza-borda); border-radius: 8px; font-size: 1em;
+            transition: var(--transicao-padrao); background-color: #fcfcfc; font-family: inherit;
         }
-
-        .modal-body {
-            padding: 25px;
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--azul-gov-principal); outline: none; background-color: #fff; box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1);
         }
+        .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--cinza-borda); }
 
-        .users-list {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid var(--cinza-borda);
-            border-radius: 6px;
+        /* Lists */
+        .users-list, .req-extras-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--cinza-borda); border-radius: 8px; background: #fff; }
+        .user-item, .req-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 15px;
+            border-bottom: 1px solid var(--cinza-borda); transition: background 0.2s;
         }
+        .user-item:last-child, .req-item:last-child { border-bottom: none; }
+        .user-item:hover, .req-item:hover { background-color: #f8f9fa; }
+        
+        /* Z-INDEX FIX */
+        .swal2-container { z-index: 99999 !important; }
 
-        .user-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid var(--cinza-borda);
-            background: var(--branco);
+        /* --- ESTILOS ESPECÍFICOS DO NOVO MODAL DE REQUISITOS --- */
+        .req-info { flex: 1; padding-right: 15px; }
+        .req-text { 
+            font-weight: 600; 
+            color: var(--cinza-texto); 
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2; 
+            line-clamp: 2;           
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+            max-height: 2.8em; 
         }
-
-        .user-item:last-child {
-            border-bottom: none;
+        .req-points { font-size: 0.85em; color: var(--verde-sucesso); font-weight: 700; background: var(--verde-fundo-tint); padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 5px; }
+        .req-actions button { padding: 6px 10px; font-size: 0.85em; }
+        
+        .add-req-box {
+            background-color: #f8f9fa; border: 1px solid var(--cinza-borda); border-radius: 8px; padding: 20px; margin-top: 20px;
         }
+        .add-req-box h4 { margin-top: 0; color: var(--azul-gov-principal); font-size: 1em; border-bottom: 2px solid var(--amarelo-gov-detalhe); padding-bottom: 8px; display: inline-block; margin-bottom: 15px; }
 
-        .user-info {
-            flex: 1;
-        }
-
-        .user-email {
-            font-weight: 600;
-            color: var(--azul-gov-principal);
-            margin-bottom: 4px;
-        }
-
-        .user-details {
-            font-size: 0.85em;
-            color: #666;
-        }
-
-        .user-role-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: 600;
-            margin-right: 8px;
-        }
-
-        .role-ADMIN {
-            background-color: var(--vermelho-destaque);
-            color: var(--branco);
-        }
-
-        .role-USER {
-            background-color: var(--azul-gov-principal);
-            color: var(--branco);
-        }
-
-        .user-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-danger {
-            background-color: var(--vermelho-destaque);
-            color: var(--branco);
-            padding: 6px 12px;
-            font-size: 0.8em;
-        }
-
-        .btn-danger:hover {
-            background-color: #c82333;
-        }
-
-        .btn-danger:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .empty-users-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            background: var(--branco);
-            border-radius: 6px;
-            border: 2px dashed #ddd;
-        }
-
-        .create-user-form, .create-secretaria-form {
-            background: var(--branco);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px 20px;
-        }
-
-        .form-grid-full {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group-full {
-            grid-column: 1 / -1;
-        }
-
-        .form-group label {
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-            color: var(--cinza-texto);
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-            border: 1px solid var(--cinza-borda);
-            border-radius: 6px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--azul-gov-principal);
-            box-shadow: 0 0 0 2px rgba(0, 39, 118, 0.1);
-        }
-
-        .form-actions {
-            grid-column: 1 / -1;
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-top: 10px;
-            padding-top: 15px;
-            border-top: 1px solid var(--cinza-borda);
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95em;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .btn-primary {
-            background-color: var(--azul-gov-principal);
-            color: var(--branco);
-        }
-
-        .btn-primary:hover {
-            background-color: #001a4d;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            color: var(--branco);
-        }
-
-        .btn-secondary:hover {
-            background-color: #545b62;
-        }
-
-        .btn-success {
-            background-color: var(--verde-sucesso);
-            color: var(--branco);
-        }
-
-        .btn-success:hover {
-            background-color: #218838;
-        }
-
-        .btn-warning {
-            background-color: var(--laranja-alerta);
-            color: var(--branco);
-        }
-
-        .btn-warning:hover {
-            background-color: #e06c1c;
-        }
-
-        .btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .admin-actions {
-            display: flex;
-            justify-content: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid var(--cinza-borda);
-            gap: 15px;
-        }
-
-        .admin-actions .btn {
-            padding: 12px 30px;
-            font-size: 1em;
-        }
-
-        .form-help {
-            font-size: 0.8em;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        .empty-state + .admin-actions {
-            border-top: none;
-            margin-top: 20px;
-        }
-
-        .swal2-container {
-            z-index: 3000 !important;
-        }
-
+        /* FOOTER */
+        .main-footer { text-align: center; padding: 30px 5%; margin-top: auto; background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-escuro) 100%); color: var(--branco); position: relative; min-height: 80px; }
+        .main-footer .footer-content { display: flex; justify-content: center; align-items: center; max-width: 1400px; margin: 0 auto; height: 100%; position: relative; }
+        .main-footer .footer-portal-link, .main-footer .footer-logo-link { position: absolute; top: 50%; transform: translateY(-50%); display: block; height: 70px; width: auto; transition: var(--transicao-padrao); }
+        .main-footer .footer-portal-link { left: 2%; }
+        .main-footer .footer-logo-link { right: 2%; }
+        .main-footer .footer-portal-link:hover, .main-footer .footer-logo-link:hover { transform: translateY(-50%) scale(1.1); filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)); }
+        .main-footer img { height: 100%; width: auto; display: block; max-height: 70px; mix-blend-mode: lighten; object-fit: contain; filter: brightness(0) invert(1); }
+        .main-footer p { color: rgba(255, 255, 255, 0.9); }
+        
         @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .form-actions {
-                grid-column: 1 / 2;
-                flex-direction: column;
-            }
-            
-            .modal {
-                width: 95%;
-                margin: 20px;
-            }
+            .admin-actions { flex-direction: column; }
+            .main-footer .footer-content { flex-direction: column; gap: 15px; }
+            .main-footer .footer-portal-link, .main-footer .footer-logo-link { position: static; transform: none; height: 50px; margin: 10px 0; }
         }
     </style>
 </head>
@@ -672,25 +256,23 @@
         <nav class="main-nav">
             <div class="logo">
                 <a href="/">
-                    <img src="/assets/logo-header.png" alt="Logo do Governo de Pernambuco">
-                    <div class="SIMPE-marca-text-group">                     
-                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                     
+                    <img src="/assets/logo-header.png" alt="Logo Governo de Pernambuco">
+                    <div class="SIMPE-marca-text-group">                      
+                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                      
                     </div>
                 </a>
             </div>
-            <ul id="nav-links">
-                <!-- Menu será carregado pelo global.js -->
-            </ul>
+            <ul id="nav-links"></ul>
         </nav>
     </header>
 
     <main>
         <div class="admin-container">
             <h1>Administração de Avaliações</h1>
-            <p>Clique em uma avaliação para ver os detalhes completos.</p>
+            <p>Gerencie e acompanhe todas as avaliações submetidas no sistema.</p>
 
             <div class="filter-controls">
-                <label for="statusFilter">Filtrar por status:</label>
+                <label for="statusFilter"><i class="fas fa-filter"></i> Filtrar por status:</label>
                 <select id="statusFilter">
                     <option value="">Todas as Avaliações</option>
                     <option value="PENDENTE_SECRETARIA">Enviado</option>
@@ -702,15 +284,21 @@
             </div>
             
             <div id="avaliacoes-list">
-                <div class="loading-state">Carregando avaliações...</div>
+                <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Carregando avaliações...</div>
             </div>
 
             <div class="admin-actions">
                 <button id="create-user-btn" class="btn btn-success" style="display: none;">
-                    <span>Criar Novo Usuário</span> 
+                    <i class="fas fa-user-plus"></i> Criar Novo Usuário
                 </button>
                 <button id="view-users-btn" class="btn btn-primary" style="display: none;">
-                    <span>Ver Todos os Usuários</span> 
+                    <i class="fas fa-users-cog"></i> Ver Todos os Usuários
+                </button>
+                <button id="manage-reqs-btn" class="btn btn-warning" style="display: none;">
+                    <i class="fas fa-list-alt"></i> Formulários Específicos
+                </button>
+                <button id="manage-global-reqs-btn" class="btn btn-primary">
+                    <i class="fas fa-globe"></i> Gerenciar Requisitos Globais
                 </button>
             </div>
         </div>
@@ -723,38 +311,36 @@
                 <button class="modal-close" id="close-user-modal">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="create-user-form" class="create-user-form">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="user-email">E-mail</label>
-                            <input type="email" id="user-email" required>
+                <form id="create-user-form">
+                    <div class="form-group">
+                        <label for="user-email">E-mail</label>
+                        <input type="email" id="user-email" required placeholder="usuario@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-password">Senha Provisória</label>
+                        <input type="password" id="user-password" required placeholder="******">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-role">Papel (Permissão)</label>
+                        <select id="user-role" required>
+                            <option value="USER">Usuário (Secretaria)</option>
+                            <option value="ADMIN">Administrador (SCGE)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-secretaria">Secretaria</label>
+                        <select id="user-secretaria" required>
+                            <option value="">Carregando secretarias...</option>
+                        </select>
+                        <div style="margin-top: 10px; text-align: right;">
+                            <button type="button" id="add-secretaria-btn" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.85em;">
+                                <i class="fas fa-plus"></i> Nova Secretaria
+                            </button>
                         </div>
-                        <div class="form-group">
-                            <label for="user-password">Senha Provisória</label>
-                            <input type="password" id="user-password" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="user-role">Papel (Permissão)</label>
-                            <select id="user-role" required>
-                                <option value="USER">Usuário (Secretaria)</option>
-                                <option value="ADMIN">Administrador (SCGE)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="user-secretaria">Secretaria</label>
-                            <select id="user-secretaria" required>
-                                <option value="">Carregando secretarias...</option>
-                            </select>
-                            <div style="margin-top: 8px;">
-                                <button type="button" id="add-secretaria-btn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85em;">
-                                    + Adicionar Nova Secretaria
-                                </button>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" id="cancel-create-user">Cancelar</button>
-                            <button type="submit" class="btn btn-success">Criar Usuário</button>
-                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-create-user">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Criar Usuário</button>
                     </div>
                 </form>
             </div>
@@ -768,27 +354,22 @@
                 <button class="modal-close" id="close-secretaria-modal">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="create-secretaria-form" class="create-secretaria-form">
-                    <div class="form-grid-full">
-                        <div class="form-group">
-                            <label for="secretaria-nome">Nome Completo da Secretaria</label>
-                            <input type="text" id="secretaria-nome" required placeholder="Ex: Secretaria de Estado da Saúde">
-                            <div class="form-help">Digite o nome completo da secretaria, conforme consta oficialmente</div>
-                        </div>
-                        <div class="form-group">
-                            <label for="secretaria-sigla">Sigla</label>
-                            <input type="text" id="secretaria-sigla" required placeholder="Ex: SES" maxlength="10" style="text-transform: uppercase;">
-                            <div class="form-help">Apenas letras maiúsculas, 2-10 caracteres (Ex: SES, SECTI, SCGE)</div>
-                        </div>
-                        <div class="form-group">
-                            <label for="secretaria-url">URL Oficial</label>
-                            <input type="url" id="secretaria-url" required placeholder="Ex: https://www.saude.pe.gov.br">
-                            <div class="form-help">URL completa do site oficial da secretaria</div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" id="cancel-create-secretaria">Cancelar</button>
-                            <button type="submit" class="btn btn-success">Adicionar Secretaria</button>
-                        </div>
+                <form id="create-secretaria-form">
+                    <div class="form-group">
+                        <label for="secretaria-nome">Nome Completo</label>
+                        <input type="text" id="secretaria-nome" required placeholder="Ex: Secretaria de Estado da Saúde">
+                    </div>
+                    <div class="form-group">
+                        <label for="secretaria-sigla">Sigla</label>
+                        <input type="text" id="secretaria-sigla" required placeholder="Ex: SES" maxlength="10" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label for="secretaria-url">URL Oficial</label>
+                        <input type="url" id="secretaria-url" required placeholder="Ex: https://www.saude.pe.gov.br">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-create-secretaria">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Salvar Secretaria</button>
                     </div>
                 </form>
             </div>
@@ -798,19 +379,139 @@
     <div id="view-users-modal" class="modal-overlay">
         <div class="modal" style="max-width: 800px;">
             <div class="modal-header">
-                <h2>Gerenciar Usuários do Sistema</h2>
+                <h2>Gerenciar Usuários</h2>
                 <button class="modal-close" id="close-users-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="users-list-container">
-                    <div class="loading-state">Carregando usuários...</div>
+                    <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Carregando usuários...</div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="manage-reqs-modal" class="modal-overlay">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Formulários Específicos</h2>
+                <button class="modal-close" id="close-reqs-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--cinza-claro); font-size: 0.9em; margin-bottom: 20px;">
+                    Adicione requisitos extras que aparecerão <strong>apenas</strong> para a secretaria selecionada.
+                </p>
+                
+                <div class="form-group">
+                    <label for="req-secretaria-select">Selecione a Secretaria</label>
+                    <select id="req-secretaria-select">
+                        <option value="">-- Selecione --</option>
+                    </select>
+                </div>
+
+                <div id="extras-container" style="display:none;">
+                    <div style="margin-bottom: 20px;">
+                        <h5 style="color: var(--azul-gov-principal); border-bottom: 1px solid #eee; padding-bottom: 5px;">Requisitos Adicionais Ativos</h5>
+                        <div id="extras-list" class="req-extras-list">
+                            </div>
+                    </div>
+
+                    <div class="add-req-box">
+                        <h4><i class="fas fa-plus-circle"></i> Adicionar Novo Requisito</h4>
+                        <form id="add-req-form">
+                            <div class="form-group">
+                                <label>Texto do Requisito</label>
+                                <textarea id="new-req-text" rows="2" required placeholder="Ex: Disponibilizar relatório de obras em formato aberto..."></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Texto de Ajuda (Guia de Transparência)</label>
+                                <textarea id="new-req-help" rows="2" placeholder="Explique como a secretaria deve comprovar este item..."></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 15px; align-items: flex-end;">
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label>Pontuação</label>
+                                    <input type="number" id="new-req-points" required min="1" value="2">
+                                </div>
+                                <button type="submit" class="btn btn-success">Adicionar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dentro do modal manage-global-modal, após o título -->
+    <div id="manage-global-modal" class="modal-overlay">
+        <div class="modal" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>Gerenciar Requisitos Globais</h2>
+                <button class="modal-close" onclick="fecharModalGlobal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--cinza-claro); margin-bottom: 20px;">
+                    Edite ou remova os requisitos que aparecem para <b>todos</b> os órgãos.
+                </p>
+                
+                <!-- NOVO: Botão para criar requisito global -->
+                <div style="margin-bottom: 25px; text-align: right;">
+                    <button id="btn-criar-requisito-global" class="btn btn-success">
+                        <i class="fas fa-plus-circle"></i> Criar Novo Requisito Global
+                    </button>
+                </div>
+                
+                <div id="global-reqs-list" class="req-extras-list" style="max-height: 500px;">
+                    <!-- Lista será carregada aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOVO: Modal para criar/editar requisito global -->
+    <div id="modal-requisito-global" class="modal-overlay">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 id="modal-requisito-titulo">Criar Requisito Global</h2>
+                <button class="modal-close" onclick="fecharModalRequisitoGlobal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-requisito-global">
+                    <div class="form-group">
+                        <label for="requisito-texto">Texto do Requisito *</label>
+                        <textarea id="requisito-texto" rows="3" required 
+                            placeholder="Ex: A secretaria deve disponibilizar relatório de gestão..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="requisito-ajuda">Texto de Ajuda (Guia de Transparência)</label>
+                        <textarea id="requisito-ajuda" rows="2" 
+                            placeholder="Explique como comprovar este requisito..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requisito-pontuacao">Pontuação *</label>
+                        <input type="number" id="requisito-pontuacao" required min="1" max="10" value="2">
+                    </div>
+
+                    <input type="hidden" id="requisito-id" value="">
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="fecharModalRequisitoGlobal()">Cancelar</button>
+                        <button type="submit" class="btn btn-success" id="btn-salvar-requisito">
+                            <i class="fas fa-save"></i> Salvar Requisito
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <footer class="main-footer">
         <div class="footer-content">
+            <a href="https://transparencia.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-portal-link">
+                <img src="/assets/image-portal.png" alt="Portal da Transparência">
+            </a>
             <p>&copy; 2025 Governo de Pernambuco. Todos os direitos reservados. <a id="admin-footer-link" href="/admin" style="display: none;">Área Administrativa</a></p>
             <a href="https://www.scge.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-logo-link">
                 <img src="/assets/logo-footer.png" alt="Logo da Controladoria-Geral do Estado de Pernambuco">
@@ -819,11 +520,95 @@
     </footer>
 
     <script>
+
+        const authToken = localStorage.getItem('authToken');
+        const statusMap = { 
+            'PENDENTE_SECRETARIA': 'Enviado', 
+            'EM_ANALISE_SCGE': 'Em Análise', 
+            'AGUARDANDO_RECURSO': 'Devolvido', 
+            'EM_ANALISE_DE_RECURSO': 'Recurso', 
+            'FINALIZADA': 'Finalizada' 
+        };
+
+        async function loadAvaliacoes() {
+            const list = document.getElementById('avaliacoes-list');
+            const filter = document.getElementById('statusFilter');
+            const status = filter ? filter.value : '';
+            
+            try {
+                list.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Carregando avaliações...</div>';
+
+                const response = await fetch(`/api/avaliacoes?status=${status}`, {
+                    headers: { 
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    let errorMessage = 'Falha ao carregar avaliações.';
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = await response.text();
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const avaliacoes = await response.json();
+
+                if (avaliacoes.length === 0) {
+                    list.innerHTML = '<div class="empty-state">Nenhuma avaliação encontrada com este status.</div>';
+                    return;
+                }
+
+                list.innerHTML = avaliacoes.map(avaliacao => {
+                    const dataFormatada = new Date(avaliacao.createdAt).toLocaleString('pt-BR');
+                    const statusText = statusMap[avaliacao.status] || avaliacao.status;
+                    
+                    const isRecurso = avaliacao.status === 'EM_ANALISE_DE_RECURSO';
+                    const isFinalizada = avaliacao.status === 'FINALIZADA';
+                    
+                    let detailPage = 'avaliacao'; 
+                    if (isRecurso) {
+                        detailPage = 'analise-final';
+                    } else if (isFinalizada) {
+                        detailPage = 'nota-final'; 
+                    }
+
+                    const statusClass = `status-${avaliacao.status}`;
+
+                    return `
+                        <div class="avaliacao-card ${statusClass}" data-avaliacao-id="${avaliacao.id}" data-page="${detailPage}">
+                            <div class="card-header">
+                                <h3>${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})</h3>
+                                <button class="btn-danger-icon" onclick="event.stopPropagation(); window.excluirAvaliacao(${avaliacao.id})" title="Excluir Avaliação">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                            <p><strong>URL Avaliada:</strong> ${avaliacao.urlSecretaria}</p>
+                            <p><strong>Enviado em:</strong> ${dataFormatada}</p>
+                            <p><strong>Responsável:</strong> ${avaliacao.nomeResponsavel || 'Não informado'}</p>
+                            <span class="avaliacao-status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                addEventListenersToCards();
+
+            } catch (error) {
+                console.error('Erro ao carregar avaliações:', error);
+                list.innerHTML = `<div class="error-state">Ocorreu um erro ao carregar as avaliações: ${error.message}</div>`;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const avaliacoesList = document.getElementById('avaliacoes-list');
             const statusFilter = document.getElementById('statusFilter');
             const authToken = localStorage.getItem('authToken');
             
+            // Elementos dos Modais Antigos
             const createUserBtn = document.getElementById('create-user-btn');
             const createUserModal = document.getElementById('create-user-modal');
             const closeUserModalBtn = document.getElementById('close-user-modal');
@@ -841,6 +626,165 @@
             const viewUsersModal = document.getElementById('view-users-modal');
             const closeUsersModalBtn = document.getElementById('close-users-modal');
             const usersListContainer = document.getElementById('users-list-container');
+
+            // Elementos do Novo Modal de Requisitos
+            const manageReqsBtn = document.getElementById('manage-reqs-btn');
+            const manageReqsModal = document.getElementById('manage-reqs-modal');
+            const closeReqsModalBtn = document.getElementById('close-reqs-modal');
+            const reqSecretariaSelect = document.getElementById('req-secretaria-select');
+            const extrasContainer = document.getElementById('extras-container');
+            const extrasList = document.getElementById('extras-list');
+            const addReqForm = document.getElementById('add-req-form');
+            const manageGlobalBtn = document.getElementById('manage-global-reqs-btn');
+            const globalModal = document.getElementById('manage-global-modal');
+
+            // --- Lógica do Novo Modal de Requisitos ---
+            manageGlobalBtn.addEventListener('click', () => {
+                globalModal.style.display = 'flex';
+                carregarRequisitosGlobais();
+            });
+
+            window.fecharModalGlobal = () => {
+                globalModal.style.display = 'none';
+            };
+
+            manageReqsBtn.addEventListener('click', async () => {
+                manageReqsModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                await loadSecretariasForReqs();
+            });
+
+            closeReqsModalBtn.addEventListener('click', () => {
+                manageReqsModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                extrasContainer.style.display = 'none';
+                reqSecretariaSelect.value = "";
+            });
+
+            reqSecretariaSelect.addEventListener('change', async function() {
+                const secId = this.value;
+                if (secId) {
+                    extrasContainer.style.display = 'block';
+                    await loadRequisitosExtras(secId);
+                } else {
+                    extrasContainer.style.display = 'none';
+                }
+            });
+
+            addReqForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const secretariaId = reqSecretariaSelect.value;
+                const texto = document.getElementById('new-req-text').value;
+                const textoAjuda = document.getElementById('new-req-help').value;
+                const pontuacao = parseInt(document.getElementById('new-req-points').value);
+
+                if (!secretariaId) return;
+
+                try {
+                    const response = await fetch('/api/requisitos-extras', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({ texto, pontuacao, textoAjuda, secretariaId: parseInt(secretariaId) })
+                    });
+
+                    if (!response.ok) throw new Error('Erro ao salvar no servidor');
+                    
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Requisito Adicionado!', showConfirmButton: false, timer: 2000 });
+                    
+                    
+                    addReqForm.reset();                    
+                    await loadRequisitosExtras(secretariaId);
+
+                } catch (error) {
+                    Swal.fire('Erro', error.message, 'error');
+                }
+            });
+
+            window.editarRequisitoGlobal = async function(id, textoAtual, pontosAtuais) {
+                const { value: formValues } = await Swal.fire({
+                    title: 'Editar Requisito Global',
+                    html:
+                        `<label>Texto do Requisito</label><textarea id="swal-input1" class="swal2-textarea">${textoAtual}</textarea>` +
+                        `<label>Pontuação</label><input id="swal-input2" type="number" class="swal2-input" value="${pontosAtuais}">`,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonText: 'Salvar Alterações',
+                    preConfirm: () => {
+                        return {
+                            texto: document.getElementById('swal-input1').value,
+                            pontuacao: document.getElementById('swal-input2').value
+                        }
+                    }
+                });
+
+                if (formValues) {
+                    try {
+                        const response = await fetch(`/api/requisitos/${id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+                            body: JSON.stringify(formValues)
+                        });
+                        if (response.ok) {
+                            Swal.fire('Sucesso', 'Requisito atualizado!', 'success');
+                            carregarRequisitosGlobais();
+                        }
+                    } catch (e) { Swal.fire('Erro', 'Falha ao atualizar', 'error'); }
+                }
+            }
+
+            async function loadSecretariasForReqs() {
+                try {
+                    const response = await fetch('/secretarias', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    const secretarias = await response.json();
+                    secretarias.sort((a, b) => a.sigla.localeCompare(b.sigla));
+                    
+                    reqSecretariaSelect.innerHTML = '<option value="">-- Selecione uma Secretaria --</option>';
+                    secretarias.forEach(sec => {
+                        const opt = document.createElement('option');
+                        opt.value = sec.id;
+                        opt.textContent = `${sec.sigla} - ${sec.nome}`;
+                        reqSecretariaSelect.appendChild(opt);
+                    });
+                } catch (e) { console.error("Erro ao carregar secretarias:", e); }
+            }
+
+            async function loadRequisitosExtras(secretariaId) {
+                extrasList.innerHTML = '<div style="padding:20px; text-align:center;"><i class="fas fa-sync fa-spin"></i> Buscando...</div>';
+                try {
+                    const response = await fetch(`/api/secretarias/${secretariaId}/requisitos-extras`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    const extras = await response.json();
+                    
+                    if (!extras || extras.length === 0) {
+                        extrasList.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-style:italic;">Nenhum requisito específico para este órgão.</div>';
+                    } else {
+                        extrasList.innerHTML = extras.map(req => `
+                            <div class="req-item">
+                                <div class="req-info" style="flex:1;">
+                                    <div class="req-text" title="${req.texto}">${req.texto}</div>
+                                    <div style="font-size: 0.85em; color: var(--cinza-claro); margin-top: 5px; font-style: italic;">
+                                        <strong>Guia:</strong> ${req.textoAjuda || 'Nenhuma instrução cadastrada.'}
+                                    </div>
+                                    <span class="req-points"><i class="fas fa-star"></i> Vale ${req.pontuacao} pontos</span>
+                                </div>
+                                <button class="btn btn-danger" onclick="window.excluirRequisitoExtra(${req.id})" style="padding: 8px 12px; margin-left:15px;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        `).join('');
+
+                    }
+                } catch (e) {
+                    extrasList.innerHTML = `<div style="color:red; padding:10px;">Erro ao carregar requisitos.</div>`;
+                }
+            }
+
 
             function openUsersModal() {
                 viewUsersModal.style.display = 'flex';
@@ -860,15 +804,25 @@
                 if (event.target === viewUsersModal) closeUsersModal();
             });
 
+            // Fechar modais com ESC
             document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && viewUsersModal.style.display === 'flex') {
-                    closeUsersModal();
+                if (event.key === 'Escape') {
+                    if (viewUsersModal.style.display === 'flex') closeUsersModal();
+                    if (createUserModal.style.display === 'flex') closeUserModal();
+                    if (createSecretariaModal.style.display === 'flex') closeSecretariaModal();
+                    if (manageReqsModal.style.display === 'flex') closeReqsModalBtn.click();
+                    if (document.getElementById('modal-requisito-global').style.display === 'flex') {
+                        fecharModalRequisitoGlobal();
+                    }
+                    if (document.getElementById('manage-global-modal').style.display === 'flex') {
+                        fecharModalGlobal();
+                    }
                 }
             });
 
             async function loadUsersList() {
                 try {
-                    usersListContainer.innerHTML = '<div class="loading-state">Carregando usuários...</div>';
+                    usersListContainer.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Carregando usuários...</div>';
                     
                     const response = await fetch('/api/users', {
                         headers: { 
@@ -884,7 +838,7 @@
                     const users = await response.json();
 
                     if (users.length === 0) {
-                        usersListContainer.innerHTML = '<div class="empty-users-state">Nenhum usuário cadastrado no sistema.</div>';
+                        usersListContainer.innerHTML = '<div class="empty-state">Nenhum usuário cadastrado no sistema.</div>';
                         return;
                     }
 
@@ -901,17 +855,17 @@
                                     <div class="user-info">
                                         <div class="user-email">${user.email}</div>
                                         <div class="user-details">
-                                            <span class="user-role-badge role-${user.role}">${user.role}</span>
-                                            ${user.nome || 'Nome não informado'} 
-                                            ${user.secretaria ? `- ${user.secretaria.sigla}` : ''}
+                                            <span class="user-role-badge role-${user.role}">${user.role === 'ADMIN' ? 'Administrador' : 'Usuário'}</span>
+                                            <span>${user.nome || 'Nome não informado'}</span>
+                                            ${user.secretaria ? `<span>• ${user.secretaria.sigla}</span>` : ''}
                                         </div>
                                     </div>
                                     <div class="user-actions">
                                         <button class="btn btn-danger delete-user-btn" 
-                                                data-user-id="${user.id}" 
-                                                data-user-email="${user.email}"
-                                                ${user.role === 'ADMIN' ? 'disabled' : ''}>
-                                            Excluir
+                                            data-user-id="${user.id}" 
+                                            data-user-email="${user.email}"
+                                            ${user.role === 'ADMIN' ? 'disabled title="Não é possível excluir administradores"' : 'title="Excluir usuário"'}>
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -930,17 +884,18 @@
             }
 
             async function handleDeleteUser(event) {
-                const userId = event.target.getAttribute('data-user-id');
-                const userEmail = event.target.getAttribute('data-user-email');
+                const btn = event.target.closest('.delete-user-btn'); 
+                const userId = btn.getAttribute('data-user-id');
+                const userEmail = btn.getAttribute('data-user-email');
                 
                 const result = await Swal.fire({
                     title: 'Confirmar Exclusão',
                     html: `Tem certeza que deseja excluir o usuário <strong>${userEmail}</strong>?<br><br>
-                        <span style="color: var(--vermelho-destaque); font-size: 0.9em;">
+                        <span style="color: var(--vermelho-erro); font-size: 0.9em;">
                         ⚠️ Esta ação não pode ser desfeita!</span>`,
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: 'var(--vermelho-destaque)',
+                    confirmButtonColor: 'var(--vermelho-erro)',
                     cancelButtonColor: 'var(--cinza-texto)',
                     confirmButtonText: 'Sim, excluir!',
                     cancelButtonText: 'Cancelar'
@@ -994,23 +949,25 @@
                     if (userData.user && userData.user.role === 'ADMIN') {
                         createUserBtn.style.display = 'inline-flex';
                         viewUsersBtn.style.display = 'inline-flex'; 
+                        manageReqsBtn.style.display = 'inline-flex'; // Mostra o novo botão
+
                         await popularSelectSecretarias();
                         
                         createUserForm.addEventListener('submit', handleCreateUser);
                         createSecretariaForm.addEventListener('submit', handleCreateSecretaria);
                         
                         const roleSelect = document.getElementById('user-role');
-                        const secretariaGroup = document.querySelector('.form-group:nth-child(4)');
+                        const secretariaGroup = document.querySelector('#create-user-form .form-group:nth-child(4)');
                         
                         roleSelect.addEventListener('change', function() {
                             if (this.value === 'ADMIN') {
-                                secretariaGroup.style.opacity = '0.7';
+                                secretariaGroup.style.opacity = '0.5';
+                                secretariaGroup.style.pointerEvents = 'none'; 
                                 secretariaSelect.value = 'ADMIN';
-                                secretariaSelect.disabled = true;
                             } else {
                                 secretariaGroup.style.opacity = '1';
+                                secretariaGroup.style.pointerEvents = 'auto';
                                 secretariaSelect.value = '';
-                                secretariaSelect.disabled = false;
                             }
                         });
                         
@@ -1058,13 +1015,6 @@
             });
             createSecretariaModal.addEventListener('click', (event) => {
                 if (event.target === createSecretariaModal) closeSecretariaModal();
-            });
-
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') {
-                    if (createUserModal.style.display === 'flex') closeUserModal();
-                    if (createSecretariaModal.style.display === 'flex') closeSecretariaModal();
-                }
             });
 
             async function popularSelectSecretarias() {
@@ -1117,7 +1067,7 @@
                             title: 'Erro!',
                             text: 'Para usuários da secretaria, é necessário selecionar uma secretaria válida.',
                             icon: 'error',
-                            confirmButtonColor: 'var(--vermelho-destaque)'
+                            confirmButtonColor: 'var(--vermelho-erro)'
                         });
                         return;
                     }
@@ -1220,11 +1170,11 @@
                         title: 'Erro!',
                         text: `Não foi possível criar a secretaria: ${error.message}`,
                         icon: 'error',
-                        confirmButtonColor: 'var(--vermelho-destaque)'
+                        confirmButtonColor: 'var(--vermelho-erro)'
                     });
                 } finally {
                     submitButton.disabled = false;
-                    submitButton.textContent = 'Adicionar Secretaria';
+                    submitButton.textContent = 'Salvar Secretaria';
                 }
             }
 
@@ -1239,74 +1189,6 @@
                 'EM_ANALISE_DE_RECURSO': 'Em Recurso',
                 'FINALIZADA': 'Finalizada'
             };
-
-            async function loadAvaliacoes() {
-                const status = statusFilter.value;
-                
-                try {
-                    avaliacoesList.innerHTML = '<div class="loading-state">Carregando avaliações...</div>';
-                    
-                    const response = await fetch(`/api/avaliacoes?status=${status}`, {
-                        headers: { 
-                            'Authorization': `Bearer ${authToken}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    if (!response.ok) {
-                        let errorMessage = 'Falha ao carregar avaliações.';
-                        try {
-                            const errorData = await response.json();
-                            errorMessage = errorData.error || errorMessage;
-                        } catch (e) {
-                            errorMessage = await response.text();
-                        }
-                        throw new Error(errorMessage);
-                    }
-
-                    const avaliacoes = await response.json();
-
-                    if (avaliacoes.length === 0) {
-                        avaliacoesList.innerHTML = '<div class="empty-state">Nenhuma avaliação encontrada com este status.</div>';
-                        return;
-                    }
-
-                    avaliacoesList.innerHTML = avaliacoes.map(avaliacao => {
-                        const dataFormatada = new Date(avaliacao.createdAt).toLocaleString('pt-BR');
-                        const statusText = statusMap[avaliacao.status] || avaliacao.status;
-                        
-                        const isRecurso = avaliacao.status === 'EM_ANALISE_DE_RECURSO';
-                        const isFinalizada = avaliacao.status === 'FINALIZADA';
-                        
-                        let detailPage = 'avaliacao'; 
-                        if (isRecurso) {
-                            detailPage = 'analise-final';
-                        } else if (isFinalizada) {
-                            detailPage = 'nota-final'; 
-                        }
-
-                        const statusClass = `status-${avaliacao.status}`;
-
-                        return `
-                            <div class="avaliacao-card ${statusClass}" data-avaliacao-id="${avaliacao.id}" data-page="${detailPage}">
-                                <div class="card-header">
-                                    <h3>${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})</h3>
-                                    <span class="avaliacao-status-badge ${statusClass}">${statusText}</span>
-                                </div>
-                                <p><strong>URL Avaliada:</strong> ${avaliacao.urlSecretaria}</p>
-                                <p><strong>Enviado em:</strong> ${dataFormatada}</p>
-                                <p><strong>Responsável:</strong> ${avaliacao.nomeResponsavel || 'Não informado'}</p>
-                            </div>
-                        `;
-                    }).join('');
-
-                    addEventListenersToCards();
-
-                } catch (error) {
-                    console.error('Erro ao carregar avaliações:', error);
-                    avaliacoesList.innerHTML = `<div class="error-state">Ocorreu um erro ao carregar as avaliações: ${error.message}</div>`;
-                }
-            }
             
             function addEventListenersToCards() {
                 document.querySelectorAll('.avaliacao-card').forEach(card => {
@@ -1321,8 +1203,188 @@
             statusFilter.addEventListener('change', loadAvaliacoes);
             verificarAdminEConfigurarFormulario();
             loadAvaliacoes();
+
         });
+
+        // --- FUNÇÕES GLOBAIS DE AÇÃO (EXCLUSÃO E EDIÇÃO) ---
+
+        window.abrirModalEdicaoGlobal = async function(id) {
+            const req = window.todosOsGlobais.find(r => r.id === id);
+            if (!req) return;
+            
+            document.getElementById('modal-requisito-titulo').textContent = 'Editar Requisito Global';
+            document.getElementById('requisito-id').value = req.id;
+            document.getElementById('requisito-texto').value = req.texto;
+            document.getElementById('requisito-ajuda').value = req.textoAjuda || '';
+            document.getElementById('requisito-pontuacao').value = req.pontuacao;
+            
+            document.getElementById('modal-requisito-global').style.display = 'flex';
+        };
+
+        window.excluirRequisitoGlobal = async function(id) {
+            const confirm = await Swal.fire({ 
+                title: 'Excluir Requisito Padrão?', 
+                text: "Isso afetará o formulário de TODOS os órgãos!", 
+                icon: 'warning', 
+                showCancelButton: true,
+                confirmButtonColor: '#c0392b',
+                confirmButtonText: 'Sim, excluir!',
+                cancelButtonText: 'Cancelar'  
+            });
+            if (confirm.isConfirmed) {
+                const res = await fetch(`/api/requisitos/${id}?force=true`, { 
+                    method: 'DELETE', 
+                    headers: { 'Authorization': `Bearer ${authToken}` } 
+                });
+                if (res.ok) {
+                    Swal.fire('Excluído!', '', 'success');
+                    carregarRequisitosGlobais();
+                }
+            }
+        };
+
+        window.fecharModalRequisitoGlobal = function() {
+            document.getElementById('modal-requisito-global').style.display = 'none';
+        };
+
+        async function carregarRequisitosGlobais() {
+            const list = document.getElementById('global-reqs-list');
+            list.innerHTML = '<div style="padding:20px; text-align:center;"><i class="fas fa-sync fa-spin"></i> Carregando...</div>';
+            
+            try {
+                const response = await fetch('/requisitos');
+                const reqs = await response.json();
+                const globais = reqs.filter(r => r.secretariaId === null);
+
+                window.todosOsGlobais = globais;
+
+                list.innerHTML = globais.map(r => `
+                    <div class="req-item" style="border-left: 4px solid var(--azul-gov-principal); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div class="req-info" style="flex:1;">
+                            <div class="req-text" style="font-weight: bold; color: var(--azul-gov-principal);">ID ${r.id} - ${r.texto}</div>
+                            <div style="font-size:0.85em; color:var(--cinza-claro); margin: 5px 0;">${r.textoAjuda || 'Sem guia.'}</div>
+                            <div class="req-points" style="color: var(--verde-sucesso); font-size: 0.85em; font-weight: bold;">Pontuação: ${r.pontuacao} pts</div>
+                        </div>
+                        <div class="req-actions" style="display: flex; gap: 8px;">
+                            <button class="btn btn-primary btn-sm" onclick="window.abrirModalEdicaoGlobal(${r.id})" style="padding: 5px 10px;">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="window.excluirRequisitoGlobal(${r.id})" style="padding: 5px 10px;">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { 
+                console.error(e); 
+                list.innerHTML = 'Erro ao carregar requisitos.';
+            }
+        }
+
+        document.getElementById('form-requisito-global').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const texto = document.getElementById('requisito-texto').value;
+            const textoAjuda = document.getElementById('requisito-ajuda').value;
+            const pontuacao = parseInt(document.getElementById('requisito-pontuacao').value);
+            const requisitoId = document.getElementById('requisito-id').value;
+            
+            const submitBtn = document.getElementById('btn-salvar-requisito');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+            
+            try {
+                let response;
+                
+                if (requisitoId) {
+                    response = await fetch(`/api/requisitos/${requisitoId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({ texto, pontuacao, textoAjuda })
+                    });
+                } else {
+                    response = await fetch('/api/requisitos-globais', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({ texto, pontuacao, textoAjuda })
+                    });
+                }
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erro ao salvar requisito');
+                }
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sucesso!',
+                    text: requisitoId ? 'Requisito atualizado com sucesso!' : 'Requisito criado com sucesso!',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                
+                fecharModalRequisitoGlobal();
+                await carregarRequisitosGlobais(); 
+                
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: error.message
+                });
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Salvar Requisito';
+            }
+        });
+
+        // NOVO: Abrir modal para criar novo requisito
+        document.getElementById('btn-criar-requisito-global').addEventListener('click', () => {
+            document.getElementById('modal-requisito-titulo').textContent = 'Criar Requisito Global';
+            document.getElementById('form-requisito-global').reset();
+            document.getElementById('requisito-id').value = '';
+            document.getElementById('modal-requisito-global').style.display = 'flex';
+        });
+
+        // NOVO: Fechar modal ao clicar fora
+        document.getElementById('modal-requisito-global').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('modal-requisito-global')) {
+                fecharModalRequisitoGlobal();
+            }
+        });
+
+        window.excluirAvaliacao = async function(id) {
+            const confirm = await Swal.fire({ 
+                title: 'Excluir Avaliação?', 
+                text: "Isso apagará permanentemente todas as respostas desta secretaria.", 
+                icon: 'warning', 
+                showCancelButton: true, 
+                confirmButtonColor: '#c0392b' 
+            });
+            if (confirm.isConfirmed) {
+                const res = await fetch(`/api/avaliacoes/${id}`, { 
+                    method: 'DELETE', 
+                    headers: { 'Authorization': `Bearer ${authToken}` } 
+                });
+                if (res.ok) { 
+                    await Swal.fire('Excluída!', 'A avaliação sumiu da lista.', 'success');
+                    loadAvaliacoes(); 
+                }
+            }
+        };
+
+        window.excluirRequisitoExtra = (id) => window.excluirRequisitoGlobal(id);
+
+        window.fecharModalGlobal = () => document.getElementById('manage-global-modal').style.display = 'none';
+        
     </script>
     <script src="/global.js"></script>
+
 </body>
 </html>

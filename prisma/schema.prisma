@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -43,6 +43,8 @@ model Requisito {
   textoAjuda  String?
   linkFixo    String?
   pontuacao   Int
+  secretariaId Int?        
+  secretaria   Secretaria? @relation(fields: [secretariaId], references: [id])
   respostas   Resposta[]
 }
 
@@ -105,6 +107,7 @@ model Secretaria {
   url        String
   avaliacoes Avaliacao[]
   users      User[]
+  requisitos  Requisito[]
 }
 
 model User {

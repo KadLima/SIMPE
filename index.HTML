@@ -16,68 +16,93 @@
     <style>
         :root {
             --azul-gov-principal: #002776;
+            --azul-gov-escuro: #001a4d;
+            --azul-gov-claro: #0052CC;
             --amarelo-gov-detalhe: #FFD700;
-            --cinza-texto: #333333;
-            --cinza-fundo: #f4f4f4;
+            --cinza-texto: #2c3e50;
+            --cinza-claro: #7f8c8d;
+            --cinza-fundo: #f8f9fa;
+            --cinza-card: #ecf0f1;
             --branco: #ffffff;
+            --verde-sucesso: #27ae60;
+            --sombra-suave: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --sombra-media: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --sombra-forte: 0 8px 24px rgba(0, 0, 0, 0.15);
+            --transicao-padrao: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body { 
-            margin: 0; 
-            font-family: 'Segoe UI', Arial, sans-serif; 
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
             background-color: var(--cinza-fundo); 
             color: var(--cinza-texto); 
-            line-height: 1.6; 
+            line-height: 1.7; 
+            overflow-x: hidden;
         }
         
         .main-header { 
             background-color: var(--branco); 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            box-shadow: var(--sombra-suave);
             padding: 0 5%; 
             position: sticky; 
             top: 0; 
-            z-index: 1000; 
+            z-index: 1000;
+            border-bottom: 3px solid var(--azul-gov-principal);
         }
         
         .main-nav { 
-            max-width: 1200px; 
+            max-width: 1400px; 
             margin: 0 auto; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            height: 70px; 
+            height: 80px; 
         }
 
         .logo a { 
             text-decoration: none; 
             display: flex; 
             align-items: center; 
-            gap: 12px; 
+            gap: 16px; 
             padding: 0; 
-            border-bottom: 2px solid transparent; 
-            transition: all 0.3s ease; 
-            position: relative;
+            transition: var(--transicao-padrao);
+        }
+
+        .logo a:hover {
+            transform: translateY(-2px);
         }
 
         .logo a > img { 
-            height: 45px; 
-            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0));
+            height: 55px; 
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transition: var(--transicao-padrao);
+        }
+
+        .logo a:hover > img {
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
         }
 
         .logo .site-title { 
             color: var(--azul-gov-principal); 
-            font-size: 1.4em; 
+            font-size: 1.6em; 
             font-weight: 800; 
             line-height: 1.2;
-            font-family: 'Segoe UI', 'Arial Black', sans-serif;
-            letter-spacing: 0.5px;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            letter-spacing: -0.5px;
         }
 
         .logo .site-subtitle { 
-            color: var(--cinza-texto); 
-            font-size: 0.8em; 
+            color: var(--cinza-claro); 
+            font-size: 0.75em; 
             display: block;
             text-align: center;
+            font-weight: 500;
+            letter-spacing: 0.3px;
         }
 
         .logo div {
@@ -92,23 +117,42 @@
             margin: 0; 
             padding: 0; 
             display: flex; 
-            gap: 20px; 
+            gap: 8px; 
         }
 
         .main-nav ul a { 
             text-decoration: none; 
             color: var(--cinza-texto); 
             font-weight: 600; 
-            padding: 10px; 
-            border-bottom: 2px solid transparent; 
-            transition: all 0.3s ease; 
+            padding: 12px 20px; 
+            border-radius: 8px;
+            transition: var(--transicao-padrao);
             display: block;
+            font-size: 0.95em;
+            position: relative;
         }
 
-        .main-nav ul a:hover, 
+        .main-nav ul a::after {
+            content: '';
+            position: absolute;
+            bottom: 8px;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background-color: var(--amarelo-gov-detalhe);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .main-nav ul a:hover,
         .main-nav ul a.active { 
             color: var(--azul-gov-principal); 
-            border-bottom-color: var(--amarelo-gov-detalhe); 
+            background-color: rgba(0, 39, 118, 0.05);
+        }
+
+        .main-nav ul a:hover::after,
+        .main-nav ul a.active::after {
+            transform: scaleX(1);
         }
 
         .hero-section { 
@@ -117,130 +161,391 @@
             justify-content: center; 
             align-items: center; 
             text-align: center; 
-            height: 60vh; 
-            padding: 0 20px; 
-            background-color: #e9eef5; 
+            min-height: 65vh; 
+            padding: 80px 20px; 
+            background: linear-gradient(135deg, #e8f0f7 0%, #f5f8fb 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 39, 118, 0.03) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
         }
 
         .hero-section h1 { 
-            font-size: 2.8em; 
+            font-size: 3.2em; 
             color: var(--azul-gov-principal); 
-            margin-bottom: 15px; 
+            margin-bottom: 24px; 
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -1px;
         }
 
         .hero-section p { 
-            font-size: 1.2em; 
-            max-width: 600px; 
-            margin-bottom: 30px; 
+            font-size: 1.3em; 
+            color: var(--cinza-claro);
+            max-width: 700px; 
+            margin: 0 auto 40px;
+            line-height: 1.6;
+            font-weight: 400;
         }
 
         .cta-button { 
             display: inline-block; 
-            background-color: var(--azul-gov-principal); 
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%);
             color: var(--branco); 
-            padding: 15px 30px; 
-            font-size: 1em; 
-            font-weight: bold; 
+            padding: 16px 40px; 
+            font-size: 1.05em; 
+            font-weight: 700; 
             text-decoration: none; 
-            border-radius: 5px; 
-            transition: transform 0.2s ease, background-color 0.2s ease; 
+            border-radius: 50px; 
+            transition: var(--transicao-padrao);
+            box-shadow: var(--sombra-media);
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
         }
 
         .cta-button:hover { 
-            background-color: #001a4d; 
-            transform: translateY(-3px); 
+            transform: translateY(-3px);
+            box-shadow: var(--sombra-forte);
+        }
+
+        .cta-button:active {
+            transform: translateY(-1px);
         }
     
         .features-section { 
-            padding: 60px 5%; 
+            padding: 100px 5% 120px; 
             text-align: center; 
             overflow: hidden; 
+            background-image: url('/assets/bandeira-pe.jpg');
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;
+            position: relative;
+        }
+
+        .features-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.85);
+            z-index: 1;
+        }
+
+        .features-section > div {
+            position: relative;
+            z-index: 2;
         }
 
         .features-section h2 { 
-            font-size: 2.2em; 
+            font-size: 2.6em; 
             color: var(--azul-gov-principal); 
-            margin-bottom: 40px; 
+            margin-bottom: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .features-section > p {
+            font-size: 1.15em;
+            color: var(--cinza-claro);
+            margin-bottom: 60px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .feature-card { 
             background-color: var(--branco); 
-            border-radius: 8px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: var(--sombra-suave);
+            padding: 40px 30px; 
             height: 100%; 
             display: flex; 
-            flex-direction: column; 
+            flex-direction: column;
+            transition: var(--transicao-padrao);
+            border: 1px solid rgba(0, 39, 118, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--azul-gov-principal), var(--amarelo-gov-detalhe));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-card:hover {
+            box-shadow: var(--sombra-forte);
+            transform: translateY(-8px);
+            border-color: var(--azul-gov-principal);
         }
 
         .feature-card .icon {
-            font-size: 3em; 
+            font-size: 3.5em; 
             color: var(--azul-gov-principal);
-            margin-bottom: 10px; 
+            margin-bottom: 20px;
+            transition: var(--transicao-padrao);
+        }
+
+        .feature-card:hover .icon {
+            transform: scale(1.1);
+            color: var(--azul-gov-claro);
         }
 
         .feature-card h3 { 
-            font-size: 1.5em; 
-            margin: 20px 0 10px 0; 
+            font-size: 1.4em; 
+            margin: 20px 0 15px 0;
+            color: var(--cinza-texto);
+            font-weight: 700;
         }
 
         .feature-card p { 
             font-size: 1em; 
-            margin-bottom: 25px; 
-            flex-grow: 1; 
+            margin-bottom: 30px; 
+            flex-grow: 1;
+            color: var(--cinza-claro);
+            line-height: 1.7;
+        }
+
+        .feature-card .cta-button {
+            padding: 12px 28px;
+            font-size: 0.95em;
         }
 
         .features-section .swiper { 
-            padding: 20px 40px 80px 40px;
+            padding: 20px 40px 100px 40px;
             overflow: visible; 
         }
 
         .swiper-slide { 
-            width: 320px; 
+            width: 340px; 
             height: auto; 
-            transition: transform 0.4s ease, opacity 0.4s ease; 
-            opacity: 0.7; 
+            transition: var(--transicao-padrao);
+            opacity: 0.6; 
         }
 
         .swiper-slide-active { 
-            transform: scale(1.1); 
             opacity: 1; 
             z-index: 10; 
         }
 
         .swiper-slide:hover { 
-            transform: scale(1.15); 
             opacity: 1; 
         }
 
         .swiper-button-next, 
         .swiper-button-prev { 
-            color: var(--azul-gov-principal); 
+            color: var(--azul-gov-principal);
+            background-color: var(--branco);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            box-shadow: var(--sombra-media);
+            transition: var(--transicao-padrao);
+        }
+
+        .swiper-button-next:hover,
+        .swiper-button-prev:hover {
+            background-color: var(--azul-gov-principal);
+            color: var(--branco);
+            transform: scale(1.1);
+        }
+
+        .swiper-button-next::after,
+        .swiper-button-prev::after {
+            font-size: 20px;
+            font-weight: bold;
         }
 
         .swiper-pagination-bullet {
             background: var(--azul-gov-principal); 
-            opacity: 0.3; 
+            opacity: 0.3;
+            width: 12px;
+            height: 12px;
+            transition: var(--transicao-padrao);
         }
 
         .swiper-pagination-bullet-active {
             opacity: 1; 
-            background: var(--azul-gov-principal); 
+            background: var(--azul-gov-principal);
+            width: 32px;
+            border-radius: 6px;
         }
 
         .features-section .swiper .swiper-pagination { 
             position: absolute; 
-            bottom: -40px !important; 
+            bottom: 20px !important; 
         }
-    
+
+        .presentation-section {
+            background: linear-gradient(135deg, var(--branco) 0%, var(--cinza-fundo) 100%);
+            padding: 80px 5% 60px;
+        }
+
+        .presentation-content {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .presentation-content h2 {
+            font-size: 2.6em;
+            color: var(--azul-gov-principal);
+            margin-bottom: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .presentation-content p {
+            font-size: 1.15em;
+            line-height: 1.8;
+            margin-bottom: 40px;
+            color: var(--cinza-claro);
+        }
+
+        .presentation-content img {
+            max-height: 200px; 
+            width: auto;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));
+            transition: var(--transicao-padrao);
+        }
+
+        .presentation-content img:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.15));
+        }
+        
+        .pillars-section {
+            background-color: var(--branco); 
+            padding: 100px 5%;
+        }
+
+        .pillars-section h2 {
+            text-align: center;
+            font-size: 2.6em;
+            color: var(--azul-gov-principal);
+            margin-bottom: 60px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .pillars-grid {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            flex-wrap: wrap;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .pillar-card {
+            width: 340px;
+            min-width: 300px; 
+            text-align: center;
+            padding: 40px 30px;
+            background-color: var(--cinza-fundo);
+            border-radius: 16px;
+            transition: var(--transicao-padrao);
+            border: 2px solid transparent;
+        }
+
+        .pillar-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--sombra-forte);
+            border-color: var(--azul-gov-principal);
+            background-color: var(--branco);
+        }
+
+        .pillar-card .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: var(--azul-gov-principal);
+            transition: var(--transicao-padrao);
+        }
+
+        .pillar-card:hover .icon {
+            transform: scale(1.15) rotate(5deg);
+            color: var(--azul-gov-claro);
+        }
+
+        .pillar-card h3 {
+            font-size: 1.6em;
+            margin: 20px 0 15px 0;
+            color: var(--azul-gov-principal);
+            font-weight: 700;
+        }
+
+        .pillar-card p {
+            font-size: 1.05em;
+            line-height: 1.7;
+            color: var(--cinza-claro);
+        }
+
         .main-footer { 
             text-align: center; 
-            padding: 20px; 
-            margin-top: 40px; 
-            background-color: var(--branco); 
-            font-size: 0.9em; 
+            padding: 30px 5%; 
+            margin-top: 0;
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-escuro) 100%);
+            color: var(--branco);
+            font-size: 0.95em; 
             position: relative; 
-            height: 60px; 
+            min-height: 80px;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .main-footer .footer-content { 
@@ -254,106 +559,76 @@
         .main-footer .footer-logo-link { 
             display: block; 
             position: absolute; 
-            right: 5%; 
+            right: 0.5%; 
             top: 50%; 
             transform: translateY(-50%); 
             z-index: 10; 
-            height: 60px; 
-            width: auto; 
+            height: 70px; 
+            width: auto;
+            transition: var(--transicao-padrao);
+        }
+
+        .main-footer .footer-logo-link:hover {
+            transform: translateY(-50%) scale(1.05);
         }
 
         .main-footer .footer-logo-link img { 
             height: 100%; 
             width: auto; 
             display: block; 
-            max-height: 60px; 
-            object-fit: contain; 
+            max-height: 70px; 
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
         
+        .main-footer p {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+        }
+
         .main-footer p a {
-            color: var(--cinza-texto);
+            color: var(--amarelo-gov-detalhe);
             font-weight: 600;
             text-decoration: none;
-            transition: color 0.2s;
+            transition: var(--transicao-padrao);
+            padding: 4px 8px;
+            border-radius: 4px;
         }
 
         .main-footer p a:hover {
+            background-color: rgba(255, 215, 0, 0.2);
             text-decoration: underline;
-            color: var(--azul-gov-principal);
         }
 
-        .presentation-section {
-            background-color: var(--branco);
-            padding: 60px 5% 20px;
+        .main-footer .footer-portal-link {
+            display: block;
+            position: absolute;
+            left: 0.5%;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            height: 70px;
+            width: auto;
+            transition: var(--transicao-padrao);
         }
 
-        .presentation-content {
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
+        .main-footer .footer-portal-link:hover {
+            transform: translateY(-50%) scale(1.05);
         }
 
-        .presentation-content h2 {
-            font-size: 2.2em;
-            color: var(--azul-gov-principal);
-            margin-bottom: 20px;
+        .main-footer .footer-portal-link img {
+            height: 100%;
+            width: auto;
+            display: block;
+            max-height: 70px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+            mix-blend-mode: lighten; 
         }
-
-        .presentation-content p {
-            font-size: 1.1em;
-            line-height: 1.7;
-            margin-bottom: 30px;
-        }
-
-        .presentation-content img {
-            max-height: 250px; 
-            width: auto; 
-        }
-        
-        .pillars-section {
-            background-color: var(--branco); 
-            padding: 60px 5%;
-        }
-
-        .pillars-section h2 {
-            text-align: center;
-            font-size: 2.2em;
-            color: var(--azul-gov-principal);
-            margin-bottom: 40px;
-        }
-
-        .pillars-grid {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            flex-wrap: wrap;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .pillar-card {
-            width: 300px;
-            min-width: 280px; 
-            text-align: center;
-        }
-
-        .pillar-card .icon {
-            font-size: 3.5em;
-        }
-
-        .pillar-card h3 {
-            font-size: 1.5em;
-            margin: 15px 0 10px 0;
-            color: var(--cinza-texto);
-        }
-
-        .pillar-card p {
-            font-size: 1em;
-            line-height: 1.6;
-        }   
 
         .disabled-link {
             cursor: not-allowed; 
+            opacity: 0.6;
         }
 
         #logout-btn {
@@ -369,112 +644,138 @@
             flex-direction: column; 
             align-items: center; 
             justify-content: center;
-            gap: 0;
         }
 
-        .site-subtitle-modified { 
-            color: var(--cinza-texto); 
-            font-size: 0.7em;
-            display: block;
-            text-align: center;
-            margin: 0; 
-            line-height: 1;
-            padding: 0;
+        @media (max-width: 768px) {
+            .main-nav {
+                flex-direction: column;
+                height: auto;
+                padding: 20px 0;
+            }
+
+            .main-nav ul {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+                align-items: center;
+            }
+
+            .hero-section h1 {
+                font-size: 2.2em;
+            }
+
+            .hero-section p {
+                font-size: 1.1em;
+            }
+
+            .features-section h2,
+            .presentation-content h2,
+            .pillars-section h2 {
+                font-size: 2em;
+            }
+
+            .main-footer .footer-logo-link {
+                position: static;
+                transform: none;
+                margin-top: 20px;
+                height: 50px;
+            }
+
+            .main-footer .footer-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .pillars-grid {
+                gap: 30px;
+            }
+
+            .pillar-card {
+                width: 100%;
+                min-width: 280px;
+            }
+
+            .logo a .gov-logo {
+                height: 35px;
+                filter: brightness(0) invert(0); 
+                margin-right: 8px;
+            }
+            
+            .main-footer .footer-portal-link {
+                position: static;
+                transform: none;
+                margin-bottom: 15px;
+                height: 40px;
+            }
+            
+            .main-footer .footer-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
         }
 
-        .SIMPE-marca-small {
-            height: 60px; 
-            width: auto;
-            object-fit: contain; 
-            display: block; 
-            margin: 0; 
-            margin-bottom: 5px;
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .logo a {
-            position: relative;
-            padding-bottom: 5px;
+        .hero-content {
+            animation: fadeInUp 0.8s ease-out;
         }
-
-        .logo a::after {
-            content: '';
-            position: absolute;
-            bottom: 30px; 
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: transparent;
-            transition: background-color 0.3s ease;
-        }
-
-        .logo a:hover::after {
-            background-color: var(--amarelo-gov-detalhe);
-        }
-        
     </style>
 </head>
 <body>
-
     <header class="main-header">
         <nav class="main-nav">
             <div class="logo">
                 <a href="/">
-                    <img src="/assets/logo-header.png" alt="Logo do Governo de Pernambuco">
-                    <div class="SIMPE-marca-text-group">                     
-                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                     
-                    </div>
+                    <img src="/assets/logo-header.png" alt="Logo Governo de Pernambuco" class="gov-logo">
+                    <img src="/assets/simpe.png" alt="Logo SIMPE">
                 </a>
             </div>
             <ul id="nav-links">
-                <!-- Menu é carregado pelo global.js -->
+                <li><a href="/login">Entrar</a></li>
             </ul>
         </nav>
     </header>
 
     <main>
         <section class="hero-section">
-            <h1>Plataforma de Análise de Sites</h1>
-            <p>Ferramentas digital para verificação de integridade para portais do Governo de Pernambuco.</p>
-            <a href="/scanner" class="cta-button">Acessar o Scanner de Links</a>
-        </section>
-
-        <section class="presentation-section" data-aos="fade-up">
-            <div class="presentation-content">
-                <h2>Uma Iniciativa para a Transparência</h2>
-                <p>Esta plataforma é uma ferramenta desenvolvida pela Secretaria da Controladoria-Geral do Estado (SCGE) para auxiliar os órgãos e entidades do Poder Executivo Estadual a aprimorar a transparência de seus portais, em conformidade com a legislação e as boas práticas de acesso à informação.</p>
-                <img src="/assets/simpe.png" alt="Logo do SIMPE">
+            <div class="hero-content">
+                <h1>Sistema de Monitoramento da Transparência de Pernambuco</h1>
+                <p>Ferramentas inteligentes para garantir transparência, integridade e conformidade dos portais públicos de Pernambuco.</p>
+                <a href="#ferramentas" class="cta-button">Conheça as Ferramentas</a>
             </div>
         </section>
 
-        <section class="features-section" style="
-            background-image: url('/assets/bandeira-pe.jpg');
-            background-size: cover;
-            background-position: center center;
-            background-attachment: fixed;
-            position: relative;
-        ">
-            <div class="section-overlay" style="
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(255, 255, 255, 0.8); 
-                z-index: 1;
-            "></div>
+        <section class="presentation-section">
+            <div class="presentation-content" data-aos="fade-up">
+                <h2>O que é o SIMPE?</h2>
+                <p>O SIMPE é uma plataforma desenvolvida pela Controladoria-Geral do Estado de Pernambuco para auxiliar órgãos e entidades públicas na gestão e monitoramento de seus portais de transparência. Com ferramentas automatizadas e inteligentes, o sistema facilita a conformidade com as diretrizes de transparência ativa.</p>
+                <img src="/assets/simpe.png" alt="Logo SIMPE">
+            </div>
+        </section>
 
-            <div class="container" style="position: relative; z-index: 2;">
+        <section class="features-section" id="ferramentas">
+            <div data-aos="fade-up">
+                <h2>Ferramentas Disponíveis</h2>
+                <p>Explore nossas soluções para monitoramento e avaliação de portais públicos</p>
                 
-                <h2 data-aos="fade-up">Nossas Ferramentas</h2>
-                
-                <div class="swiper" data-aos="fade-up" data-aos-delay="200">
+                <div class="swiper">
                     <div class="swiper-wrapper">
                         <div class="swiper-slide">
                             <div class="feature-card">
                                 <div class="icon"><i class="fas fa-search"></i></div>
                                 <h3>Scanner de Links</h3>
                                 <p>Uma ferramenta completa para verificar todos os links de um site, identificar links quebrados e garantir a integridade do seu portal.</p>
-                                <a href="#" class="cta-button" style="background-color: grey; cursor: not-allowed;">Utilizar Ferramenta</a>
+                                <a href="#" class="cta-button disabled-link" style="background-color: grey; cursor: not-allowed;">Em Breve</a>
                             </div>
                         </div>
                         
@@ -499,9 +800,9 @@
                         <div class="swiper-slide">
                             <div class="feature-card">
                                 <div class="icon"><i class="fas fa-universal-access"></i></div>
-                                <h3>Auditoria de Acessibilidade (Em Breve)</h3>
+                                <h3>Auditoria de Acessibilidade</h3>
                                 <p>Verifique se o seu site atende às diretrizes de acessibilidade, garantindo que todos os cidadãos possam navegar com facilidade.</p>
-                                <a href="#" class="cta-button" style="background-color: grey; cursor: not-allowed;">Indisponível</a>
+                                <a href="#" class="cta-button disabled-link" style="background-color: grey; cursor: not-allowed;">Em Breve</a>
                             </div>
                         </div>
 
@@ -510,7 +811,7 @@
                                 <div class="icon"><i class="fas fa-search"></i></div>
                                 <h3>Scanner de Links</h3>
                                 <p>Uma ferramenta completa para verificar todos os links de um site, identificar links quebrados e garantir a integridade do seu portal.</p>
-                                <a href="#" class="cta-button" style="background-color: grey; cursor: not-allowed;">Utilizar Ferramenta</a>
+                                <a href="#" class="cta-button disabled-link" style="background-color: grey; cursor: not-allowed;">Em Breve</a>
                             </div>
                         </div>
                         
@@ -535,9 +836,9 @@
                         <div class="swiper-slide">
                             <div class="feature-card">
                                 <div class="icon"><i class="fas fa-universal-access"></i></div>
-                                <h3>Auditoria de Acessibilidade (Em Breve)</h3>
+                                <h3>Auditoria de Acessibilidade</h3>
                                 <p>Verifique se o seu site atende às diretrizes de acessibilidade, garantindo que todos os cidadãos possam navegar com facilidade.</p>
-                                <a href="#" class="cta-button" style="background-color: grey; cursor: not-allowed;">Indisponível</a>
+                                <a href="#" class="cta-button disabled-link" style="background-color: grey; cursor: not-allowed;">Em Breve</a>
                             </div>
                         </div>
                     </div>
@@ -575,6 +876,9 @@
 
     <footer class="main-footer">
         <div class="footer-content">
+            <a href="https://transparencia.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-portal-link">
+                <img src="/assets/image-portal.png" alt="Portal da Transparência">
+            </a>
             <p>&copy; 2025 Governo de Pernambuco. Todos os direitos reservados. <a id="admin-footer-link" href="/admin" style="display: none;">Área Administrativa</a></p>
             <a href="https://www.scge.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-logo-link">
                 <img src="/assets/logo-footer.png" alt="Logo da Controladoria-Geral do Estado de Pernambuco">
@@ -635,6 +939,7 @@
                     if (!authToken) {
                         Swal.fire({
                             icon: 'warning',
+                            iconColor: 'var(--amarelo-gov-detalhe)',
                             title: 'Login necessário',
                             text: 'Faça login para consultar suas notas.',
                             confirmButtonColor: 'var(--azul-gov-principal)'
@@ -652,6 +957,7 @@
                         e.preventDefault();
                         Swal.fire({
                             icon: 'warning',
+                            iconColor: 'var(--amarelo-gov-detalhe)',
                             title: 'Login necessário',
                             text: 'Faça login para acessar o formulário de avaliação.',
                             confirmButtonColor: 'var(--azul-gov-principal)'
@@ -710,13 +1016,20 @@
             document.querySelectorAll('.disabled-link').forEach(link => {
                 link.addEventListener('click', (event) => {
                     event.preventDefault(); 
-                    alert('Indisponível no momento');
+                    Swal.fire({
+                        icon: 'info',
+                        iconColor: 'var(--azul-gov-principal)',
+                        title: 'Em breve',
+                        text: 'Esta funcionalidade estará disponível em breve.',
+                        confirmButtonColor: 'var(--azul-gov-principal)'
+                    });
                 });
             });
             
             AOS.init({
                 duration: 800,
                 once: true, 
+                offset: 100,
             });
             
             const swiper = new Swiper('.swiper', {
@@ -730,7 +1043,7 @@
                 autoplay: {
                 delay: 3000,
                 disableOnInteraction: false,
-                pauseOnMouseEnter: false,
+                pauseOnMouseEnter: true,
                 },
                 breakpoints: {
                     768: {

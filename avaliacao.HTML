@@ -4,413 +4,361 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <title>Análise de Avaliação - Análise PE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>Análise de Avaliação - SIMPE | Governo de Pernambuco</title>
     <style>
+        /* --- VARIÁVEIS (Padrão Unificado) --- */
         :root {
             --azul-gov-principal: #002776;
+            --azul-gov-escuro: #001a4d;
+            --azul-gov-claro: #0052CC;
             --amarelo-gov-detalhe: #FFD700;
-            --cinza-texto: #333333;
-            --cinza-fundo: #f4f4f4;
+            --cinza-texto: #2c3e50;
+            --cinza-claro: #7f8c8d;
+            --cinza-fundo: #f8f9fa;
+            --cinza-card: #ecf0f1;
             --branco: #ffffff;
-            --verde-sucesso: #28a745;
-            --vermelho-destaque: #dc3545;
-            --cinza-borda: #ddd;
+            --verde-sucesso: #27ae60;
+            --vermelho-erro: #dc3545;
+            --laranja-alerta: #fd7e14;
+            --sombra-suave: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --sombra-media: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --transicao-padrao: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--cinza-fundo); color: var(--cinza-texto); line-height: 1.6; display: flex; flex-direction: column; min-height: 100vh; }
-        .main-header { background-color: var(--branco); box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 0 5%; position: sticky; top: 0; z-index: 1000; }
-        .main-nav { display: flex; justify-content: space-between; align-items: center; height: 70px; max-width: 1200px; margin: 0 auto; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
+            background-color: var(--cinza-fundo); 
+            color: var(--cinza-texto); 
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- HEADER --- */
+        .main-header { 
+            background-color: var(--branco); 
+            box-shadow: var(--sombra-suave);
+            padding: 0 5%; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            border-bottom: 3px solid var(--azul-gov-principal);
+        }
+        
+        .main-nav { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            height: 80px; 
+        }
+
         .logo a { 
             text-decoration: none; 
             display: flex; 
             align-items: center; 
-            gap: 12px; 
-            padding: 10px;
-            padding-top: 0;
-            padding-bottom: 0;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .logo a > img { height: 45px; filter: drop-shadow(1px 1px 1.2px rgba(0, 0, 0, 0.5)); }
-
-        .logo a::after {
-            content: '';
-            position: absolute;
-            bottom: 29px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: transparent;
-            transition: background-color 0.3s ease;
+            gap: 16px; 
+            transition: var(--transicao-padrao);
         }
 
-        .logo a:hover::after {
-            background-color: var(--amarelo-gov-detalhe);
-        }
+        .logo a:hover { transform: translateY(-2px); }
 
-        .SIMPE-marca-text-group {
-            display: flex;
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            gap: 0;
-        }
-
-        .SIMPE-marca-small {
+        .logo a > img { 
             height: 60px; 
-            width: auto;
-            object-fit: contain; 
-            display: block; 
-            margin: 0; 
-            margin-bottom: 5px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transition: var(--transicao-padrao);
         }
 
-        .main-nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
-        .main-nav ul a { text-decoration: none; color: var(--cinza-texto); font-weight: 600; padding: 10px; border-bottom: 2px solid transparent; transition: all 0.3s ease; }
-        .main-nav ul a:hover, .main-nav ul a.active { color: var(--azul-gov-principal); border-bottom-color: var(--amarelo-gov-detalhe); }
-        .main-footer { text-align: center; padding: 20px; margin-top: auto; background-color: var(--branco); font-size: 0.9em; position: relative; height: 60px; box-sizing: content-box; }
-        .main-footer .footer-content { display: flex; justify-content: center; align-items: center; height: 100%; }
-        .main-footer img { height: 60px; width: auto; position: absolute; right: 5%; top: 50%; transform: translateY(-50%); }
-        .main-footer p a { color: var(--cinza-texto); font-weight: 600; text-decoration: none; }
-        main { padding: 40px 5%; }
-        .report-container { max-width: 900px; margin: 0 auto; }
-        .report-header { background: var(--branco); padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
-        .report-header h1 { margin: 0 0 10px 0; color: var(--azul-gov-principal); }
-        .report-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em; color: #555; }
+        .SIMPE-marca-text-group { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .SIMPE-marca-small { height: 60px !important; width: auto; object-fit: contain; }
+
+        /* --- MENU --- */
+        #nav-links { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; align-items: center; }
+        #nav-links li { margin: 0; padding: 0; display: flex; }
+        #nav-links a { 
+            text-decoration: none; 
+            color: var(--cinza-texto); 
+            font-weight: 600; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            transition: var(--transicao-padrao); 
+            display: block; 
+            font-size: 0.95em; 
+            position: relative;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        #nav-links a::after {
+            content: ''; position: absolute; bottom: 8px; left: 20px; right: 20px; height: 2px;
+            background-color: var(--amarelo-gov-detalhe); transform: scaleX(0); transition: transform 0.3s ease;
+        }
+        #nav-links a:hover, #nav-links a.active { color: var(--azul-gov-principal); background-color: rgba(0, 39, 118, 0.05); }
+        #nav-links a:hover::after, #nav-links a.active::after { transform: scaleX(1); }
+
+        /* --- MAIN CONTENT --- */
+        main { padding: 40px 5%; flex-grow: 1; display: flex; justify-content: center; }
+        
+        .report-container { 
+            width: 100%;
+            max-width: 1000px; 
+        }
+
+        /* --- CABEÇALHO DO RELATÓRIO --- */
+        .report-header { 
+            background: var(--branco); 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: var(--sombra-suave); 
+            margin-bottom: 30px; 
+            border-left: 5px solid var(--azul-gov-principal);
+        }
+        
+        .report-header h1 { 
+            margin: 0 0 15px 0; 
+            color: var(--azul-gov-principal); 
+            font-size: 1.8em; 
+            font-weight: 700; 
+        }
+        
+        .report-summary { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            font-size: 0.95em; 
+            color: var(--cinza-texto); 
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        /* --- PLACAR DE PONTUAÇÃO (STICKY) --- */
         .score-container { 
             text-align: center; 
-            background-color: var(--azul-gov-principal); 
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%);
             color: var(--branco); 
             padding: 20px; 
-            border-radius: 8px; 
+            border-radius: 12px; 
             margin-bottom: 30px; 
             display: flex;
             gap: 20px;
             position: sticky;
-            top: 80px;
-            z-index: 999;
+            top: 90px; /* Abaixo do header fixo */
+            z-index: 900;
+            box-shadow: var(--sombra-media);
         }
+        
         .score-box {
             flex: 1;
             text-align: center;
-            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .score-box:last-child {
-            border-right: none;
-        }
+        .score-box:last-child { border-right: none; }
+        
         .score-box h2 { 
             margin: 0 0 5px 0; 
             text-transform: uppercase; 
-            font-size: 1em; 
-            opacity: 0.8; 
+            font-size: 0.85em; 
+            font-weight: 600;
+            opacity: 0.9; 
+            letter-spacing: 0.5px;
         }
+        
         .score-box .score-value { 
-            font-size: 2.2em; 
-            font-weight: bold; 
-        }
-        .resposta-card { 
-            background-color: var(--branco); 
-            border-radius: 8px; 
-            margin-bottom: 15px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            position: relative;
-        }
-        .resposta-card.aprovado {
-            border-left: 5px solid var(--verde-sucesso);
-        }
-        .resposta-card.rejeitado {
-            border-left: 5px solid var(--vermelho-destaque);
-        }
-        .resposta-card.pendente {
-            border-left: 5px solid #ffc107;
-        }
-        .resposta-header { 
-            padding: 15px; 
-            border-bottom: 1px solid #eee; 
-            display: flex; 
-            justify-content: flex-start; 
-            align-items: center; 
-            flex-wrap: wrap; 
-            gap: 15px; 
-        }
-        .resposta-header strong {
-            flex-grow: 1;
-        }
-        .resposta-body { padding: 15px; }
-        .resposta-body > :first-child {
-            margin-top: 0;
-            padding-top: 0;
-            border-top: none;
-        }
-        .resposta-status { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
-        .atende-badge { font-weight: bold; padding: 5px 10px; border-radius: 20px; color: var(--branco); font-size: 0.9em; }
-        .atende-sim { background-color: var(--verde-sucesso); }
-        .atende-nao { background-color: var(--vermelho-destaque); }
-        .evidence-section, .comment-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0; }
-        .evidence-section h4, .comment-section h4 { font-size: 1em; color: #555; margin: 0 0 10px 0; }
-        .evidence-list { list-style: none; padding-left: 0; margin: 0; }
-        .evidence-item { display: flex; justify-content: space-between; align-items: center; background-color: #f8f9fa; padding: 8px 12px; border-radius: 6px; margin-bottom: 5px; font-size: 0.9em; }
-        .evidence-item a { word-break: break-all; }
-        .comment-section p { 
-            margin: 0; 
-            font-style: italic; 
-            color: #555; 
-            word-wrap: break-word; 
-            white-space: pre-wrap; 
-            overflow-wrap: break-word; 
-        }
-        .validation-section { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--cinza-borda); }
-        .admin-comment { 
-            width: 100%; 
-            box-sizing: border-box; 
-            padding: 10px; 
-            border: 1px solid var(--cinza-borda); 
-            border-radius: 6px; 
-            font-size: 0.9em; 
-            min-height: 80px; 
-            margin-bottom: 10px; 
-            resize: none;
-            word-wrap: break-word; 
-            white-space: pre-wrap; 
-            overflow-wrap: break-word; 
+            font-size: 2em; 
+            font-weight: 800; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        .admin-feedback-box p {
-            word-wrap: break-word; 
-            white-space: pre-wrap; 
-            overflow-wrap: break-word; 
-            margin: 5px 0;
-        }
-        .validation-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
-        .btn { 
-            padding: 12px 25px; 
-            background-color: var(--azul-gov-principal); 
-            color: white; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 1em; 
-            font-weight: bold; 
-            transition: background-color .3s; 
-        }
-        .btn:hover { background-color: #001a4d; }
-        
-        .btn-validation { 
-            padding: 8px 16px; 
-            border: 1px solid var(--cinza-borda); 
+        /* --- CARDS DE RESPOSTA --- */
+        .resposta-card { 
             background-color: var(--branco); 
-            border-radius: 20px; 
-            cursor: pointer; 
-            font-weight: 600;
-            transition: all 0.3s ease;
-            color: var(--cinza-texto);
-        }
-        .btn-validation.atende.active { 
-            background-color: var(--verde-sucesso); 
-            color: var(--branco); 
-            border-color: var(--verde-sucesso); 
-        }
-        .btn-validation.nao-atende.active { 
-            background-color: var(--vermelho-destaque); 
-            color: var(--branco); 
-            border-color: var(--vermelho-destaque); 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            box-shadow: var(--sombra-suave); 
+            position: relative;
+            border: 1px solid #e1e5e9;
+            overflow: hidden;
+            transition: var(--transicao-padrao);
         }
         
-        .status-validacao, .sub-status-badge { 
-            font-weight: bold; 
-            padding: 3px 8px; 
-            border-radius: 4px; 
-            font-size: 0.8em; 
-            text-transform: uppercase; 
-            color: var(--branco); 
-            margin-right: auto; 
-            position: relative;
-            cursor: help;
+        .resposta-card:hover { box-shadow: var(--sombra-media); }
+
+        /* Bordas laterais de status */
+        .resposta-card.aprovado { border-left: 6px solid var(--verde-sucesso); }
+        .resposta-card.rejeitado { border-left: 6px solid var(--vermelho-erro); }
+        .resposta-card.pendente { border-left: 6px solid #ffc107; }
+
+        .resposta-header { 
+            padding: 15px 20px; 
+            border-bottom: 1px solid #f0f0f0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background-color: #fcfcfc;
+            flex-wrap: wrap; 
+            gap: 10px; 
+        }
+        
+        .resposta-header strong { 
+            flex-grow: 1; 
+            color: var(--azul-gov-principal); 
+            font-size: 1.05em; 
+        }
+        
+        .resposta-body { padding: 20px; }
+        
+        /* Badges de Atendimento */
+        .atende-badge { 
+            font-weight: 700; padding: 5px 12px; border-radius: 20px; color: var(--branco); 
+            font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .atende-sim { background-color: var(--verde-sucesso); }
+        .atende-nao { background-color: var(--vermelho-erro); }
+
+        /* Seções Internas do Card */
+        .evidence-section, .comment-section { 
+            margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0; 
+        }
+        
+        .evidence-section h4, .comment-section h4 { 
+            font-size: 0.9em; color: var(--cinza-claro); margin: 0 0 8px 0; text-transform: uppercase; font-weight: 700;
+        }
+        
+        .evidence-list { list-style: none; padding-left: 0; margin: 0; }
+        
+        .evidence-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background-color: #f8f9fa; padding: 10px 14px; border-radius: 6px; 
+            margin-bottom: 6px; font-size: 0.9em; border: 1px solid #e1e5e9;
+        }
+        
+        .evidence-item a { color: var(--azul-gov-claro); text-decoration: none; font-weight: 500; word-break: break-all; }
+        .evidence-item a:hover { text-decoration: underline; }
+
+        .comment-section p { 
+            margin: 0; font-style: italic; color: var(--cinza-texto); background: #f9f9f9; padding: 10px; border-radius: 6px; border-left: 3px solid #ddd;
+        }
+
+        /* --- ÁREA DE VALIDAÇÃO DO ADMIN --- */
+        .validation-section { 
+            margin-top: 20px; padding-top: 20px; border-top: 2px dashed #e1e5e9; 
+        }
+
+        .admin-comment { 
+            width: 100%; box-sizing: border-box; padding: 12px; 
+            border: 2px solid #e1e5e9; border-radius: 8px; font-size: 0.95em; font-family: 'Inter', sans-serif;
+            min-height: 80px; margin-bottom: 15px; resize: none; /* Fixa a altura */
+            transition: var(--transicao-padrao);
+        }
+        .admin-comment:focus { border-color: var(--azul-gov-principal); outline: none; }
+
+        .validation-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+
+        /* Botões de Validação (Estilo Pílula) */
+        .btn-validation { 
+            padding: 8px 20px; border: 2px solid #e1e5e9; background-color: var(--branco); 
+            border-radius: 50px; cursor: pointer; font-weight: 700; transition: var(--transicao-padrao); 
+            color: var(--cinza-claro); font-size: 0.9em;
+        }
+        .btn-validation:hover { background-color: #f8f9fa; }
+
+        .btn-validation.atende.active { 
+            background-color: var(--verde-sucesso); color: var(--branco); border-color: var(--verde-sucesso); 
+            box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-validation.nao-atende.active { 
+            background-color: var(--vermelho-erro); color: var(--branco); border-color: var(--vermelho-erro); 
+            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+        }
+
+        /* Badge de Status da Validação */
+        .status-validacao { 
+            font-weight: 700; padding: 6px 12px; border-radius: 6px; font-size: 0.8em; 
+            text-transform: uppercase; color: var(--branco); margin-right: auto; 
+            position: relative; cursor: help;
         }
         .status-pendente { background-color: #ffc107; color: #333; }
         .status-aprovado { background-color: var(--verde-sucesso); }
-        .status-rejeitado { background-color: var(--vermelho-destaque); }
-        .sub-validation-container { 
-            margin-top: 15px; 
-            padding-top: 15px; 
-            border-top: 1px solid #f0f0f0; 
-            margin-bottom: 15px;
-        }
-        .sub-validation-container:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
-        .sub-validation-container h4 { margin-top: 0; margin-bottom: 10px; font-size: 1em; color: var(--azul-gov-principal); }
-        #logout-btn {
-            cursor: pointer;
-        }
-        
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-        
+        .status-rejeitado { background-color: var(--vermelho-erro); }
+
+        /* --- TOOLTIP --- */
         .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.8em;
-            font-weight: normal;
-            text-transform: none;
+            visibility: hidden; width: 200px; background-color: #333; color: #fff; text-align: center; 
+            border-radius: 6px; padding: 8px; position: absolute; z-index: 1; 
+            bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s; 
+            font-size: 0.8em; font-weight: normal; text-transform: none; box-shadow: var(--sombra-media);
         }
-        
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
 
-        .split-requisito-display {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        /* --- BOTÕES DE AÇÃO PRINCIPAL --- */
+        .btn { 
+            padding: 14px 28px; background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%); 
+            color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1em; font-weight: 700; 
+            transition: var(--transicao-padrao); box-shadow: var(--sombra-suave);
         }
-        .split-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 8px 0;
-        }
-        .split-label {
-            font-weight: 600;
-            min-width: 120px;
-        }
+        .btn:hover { transform: translateY(-2px); box-shadow: var(--sombra-media); }
 
-        .remove-evidence-btn, .remove-link-analista-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 10px;
-            flex-shrink: 0;
+        /* Botão de Adicionar/Remover Link */
+        .btn-add-evidence { 
+            background-color: rgba(0, 39, 118, 0.1); color: var(--azul-gov-principal); 
+            border: 1px dashed var(--azul-gov-principal); padding: 6px 12px; border-radius: 6px; 
+            font-size: 0.85em; font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
+        .btn-add-evidence:hover { background-color: var(--azul-gov-principal); color: white; border-style: solid; }
 
-        .remove-evidence-btn, .remove-link-analista-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 10px;
-            flex-shrink: 0;
-            transition: all 0.2s ease;
+        .remove-evidence-btn {
+            background: var(--vermelho-erro); color: white; border: none; border-radius: 50%; 
+            width: 24px; height: 24px; cursor: pointer; font-size: 14px; display: flex; 
+            align-items: center; justify-content: center; margin-left: 10px; flex-shrink: 0; transition: all 0.2s;
         }
-
-        .btn-add-evidence, .btn-add-link-analista {
-            background-color: var(--azul-gov-principal);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn-add-evidence:hover, .btn-add-link-analista:hover {
-            background-color: #001a4d;
-        }
+        .remove-evidence-btn:hover { background: #c0392b; transform: scale(1.1); }
 
         .link-analista-container {
-            margin-bottom: 15px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 6px;
-            border-left: 4px solid var(--azul-gov-principal);
+            margin-bottom: 15px; padding: 15px; background-color: #f0f7ff; 
+            border-radius: 8px; border: 1px solid #d0e3ff;
         }
-
-        .link-analista-container h5 {
-            margin: 0 0 10px 0;
-            font-size: 0.95em;
-            color: var(--azul-gov-principal);
-            font-weight: 600;
-        }
-
+        .link-analista-container h5 { margin: 0 0 10px 0; font-size: 0.9em; color: var(--azul-gov-principal); font-weight: 700; text-transform: uppercase; }
+        
         .link-analista-display {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 8px;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            background-color: #f8f9fa;
+            display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; 
+            padding: 10px; border: 1px solid #e1e5e9; border-radius: 6px; background-color: var(--branco);
         }
 
-        .link-analista-display .evidence-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-            transition: all 0.2s ease;
+        /* --- FOOTER --- */
+        .main-footer { 
+            text-align: center; padding: 30px 5%; margin-top: auto;
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-escuro) 100%);
+            color: var(--branco); font-size: 0.95em; position: relative; min-height: 80px; box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
         }
-
-        .link-analista-display .evidence-item:hover {
-            background-color: #f8f9fa;
-            border-color: #007bff;
+        .main-footer .footer-content { display: flex; justify-content: center; align-items: center; max-width: 1400px; margin: 0 auto; height: 100%; position: relative; }
+        
+        .main-footer .footer-portal-link, .main-footer .footer-logo-link { 
+            position: absolute; top: 50%; transform: translateY(-50%); display: block; height: 70px; width: auto; transition: var(--transicao-padrao); cursor: pointer;
         }
+        .main-footer .footer-portal-link { left: 0.5%; }
+        .main-footer .footer-logo-link { right: 0.5%; }
+        .main-footer .footer-portal-link:hover, .main-footer .footer-logo-link:hover { transform: translateY(-50%) scale(1.1); }
+        
+        .main-footer img { height: 100%; width: auto; display: block; max-height: 70px; mix-blend-mode: lighten; object-fit: contain; filter: brightness(0) invert(1); }
+        .main-footer p { color: rgba(255, 255, 255, 0.9); font-weight: 400; margin: 0; }
+        .main-footer p a { color: var(--amarelo-gov-detalhe); font-weight: 600; text-decoration: none; padding: 4px 8px; border-radius: 4px; }
+        .main-footer p a:hover { background-color: rgba(255, 215, 0, 0.2); text-decoration: underline; }
 
-        .link-analista-display .evidence-item a {
-            flex: 1;
-            word-break: break-all;
-            margin-right: 10px;
-            color: #0056b3;
-            text-decoration: none;
+        @media (max-width: 768px) {
+            .main-nav { flex-direction: column; height: auto; padding: 20px 0; }
+            .report-container { padding: 0; }
+            .score-container { top: 0; flex-direction: column; gap: 10px; }
+            .score-box { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+            .score-box:last-child { border-bottom: none; padding-bottom: 0; }
+            .main-footer .footer-content { flex-direction: column; gap: 15px; }
+            .main-footer .footer-portal-link, .main-footer .footer-logo-link { position: static; transform: none; height: 50px; margin: 10px 0; }
         }
-
-        .link-analista-display .evidence-item a:hover {
-            text-decoration: underline;
-        }
-
-        .link-analista-display .remove-link-analista-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            transition: background-color 0.2s ease;
-        }
-
-        .link-analista-display .remove-link-analista-btn:hover {
-            background: #c82333;
-        }
-
     </style>
 </head>
 <body>
@@ -418,18 +366,20 @@
         <nav class="main-nav">
             <div class="logo">
                 <a href="/">
-                    <img src="/assets/logo-header.png" alt="Logo do Governo de Pernambuco">
-                    <div class="SIMPE-marca-text-group">                     
-                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                     
+                    <img src="/assets/logo-header.png" alt="Logo Governo de Pernambuco">
+                    <div class="SIMPE-marca-text-group">                      
+                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                      
                     </div>
                 </a>
             </div>
             <ul id="nav-links"></ul>
         </nav>
     </header>
+
     <main>
         <div class="report-container">
             <div id="summary-container" class="report-header"><p>Carregando dados...</p></div>
+            
             <div class="score-container">
                 <div class="score-box">
                     <h2>Nota da Autoavaliação</h2>
@@ -440,13 +390,21 @@
                     <div id="score-admin" class="score-value">-- / --</div>
                 </div>
             </div>
+
             <div id="respostas-container"></div>
-            <div id="actions-container" style="text-align: right; margin-top: 30px;"></div>
+            
+            <div id="actions-container" style="text-align: center; margin-top: 40px; padding-bottom: 20px;"></div>
         </div>
     </main>
+
     <footer class="main-footer">
         <div class="footer-content">
+            <a href="https://transparencia.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-portal-link">
+                <img src="/assets/image-portal.png" alt="Portal da Transparência">
+            </a>
+
             <p>&copy; 2025 Governo de Pernambuco. Todos os direitos reservados. <a id="admin-footer-link" href="/admin" style="display: none;">Área Administrativa</a></p>
+            
             <a href="https://www.scge.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-logo-link">
                 <img src="/assets/logo-footer.png" alt="Logo da Controladoria-Geral do Estado de Pernambuco">
             </a>
@@ -628,9 +586,9 @@
                                             <div class="evidence-item" data-link="${link.url}">
                                                 <a href="${link.url}" target="_blank" title="${link.url}">${link.url}</a>
                                                 <button class="remove-evidence-btn remove-link-analista-btn" 
-                                                        data-resposta-id="${resposta.id}" 
-                                                        data-link="${link.url}" 
-                                                        title="Remover Link">&times;</button>
+                                                    data-resposta-id="${resposta.id}" 
+                                                    data-link="${link.url}" 
+                                                    title="Remover Link">&times;</button>
                                             </div>
                                         `).join('') 
                                         : '<span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>'
@@ -657,11 +615,11 @@
                         const statusTexto = !resposta.statusValidacao || resposta.statusValidacao === 'pendente' ? 'Pendente' : (houveDivergencia ? 'Alterado' : 'Mantido');
 
                         adminInterfaceHTML = `
-                            <div class="admin-feedback-box">
-                                <h4>Sua Análise (Enviada)</h4>
+                            <div class="admin-feedback-box" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                                <h4 style="color: var(--azul-gov-principal); margin-bottom: 10px;">Análise da SCGE</h4>
                                 <p><strong>Resultado:</strong> <span class="status-validacao status-${resposta.statusValidacao || 'pendente'}">${statusTexto}</span></p>
                                 ${(resposta.comentarioAdmin && resposta.comentarioAdmin.trim() !== "") ?
-                                    `<p><strong>Seu Comentário:</strong> "${resposta.comentarioAdmin}"</p>` :
+                                    `<p style="margin-top: 5px;"><strong>Comentário:</strong> "${resposta.comentarioAdmin}"</p>` :
                                     ''
                                 }
                             </div>`;
@@ -826,13 +784,18 @@
 
                         await salvarAnaliseAutomatica(respostaId);
                         
-                        Swal.fire({ 
-                            toast: true, 
+                        Swal.fire({
+                            toast: true,
                             position: 'top-end', 
-                            icon: 'success', 
-                            title: 'Link adicionado!', 
+                            icon: 'success',
+                            title: 'Link adicionado!',
                             showConfirmButton: false, 
-                            timer: 1500 
+                            timer: 2000, 
+                            timerProgressBar: true, 
+                            didOpen: (toast) => {
+                                toast.onmouseenter = Swal.stopTimer; 
+                                toast.onmouseleave = Swal.resumeTimer; 
+                            }
                         });
                     }
                 }
@@ -875,7 +838,6 @@
 
                     console.log("=== DEBUG SALVAMENTO ===");
                     console.log("Resposta ID:", respostaId);
-                    console.log("Requisito:", card.querySelector('strong').textContent);
                     console.log("Botão clicado:", target.classList.contains('atende') ? 'Atende' : 'Não Atende');
                     
                     let payload = {};
@@ -888,9 +850,6 @@
 
                     const comentarioGeral = card.querySelector('.admin-comment').value;
                     
-                    console.log("Tipo: normal");
-                    console.log("Comentário digitado:", comentarioGeral);
-                    
                     payload.statusValidacao = novoStatus;
                     payload.comentarioAdmin = comentarioGeral;
                     const displayArea = document.getElementById(`link-analista-display-${respostaId}`);
@@ -902,17 +861,12 @@
 
                     if (novoStatus === 'aprovado') {
                         payload.recursoAtende = true;
-                        console.log("   Preenchendo recursoAtende como true (aprovado pela SCGE)");
                     } else {
                         const respostaOriginal = avaliacaoCompleta.respostas.find(r => r.id === respostaId);
                         payload.recursoAtende = respostaOriginal.atende; 
                         payload.recursoAtende = (novoStatus === 'aprovado'); 
-                        console.log(`   Definindo recursoAtende como ${payload.recursoAtende} (rejeitado pela SCGE)`);
                     }
                     
-                    console.log("Payload a ser enviado:", payload);
-                    console.log("===================");
-
                     target.disabled = true;
                     try {
                         const response = await fetch(`/api/respostas/${respostaId}`, {
@@ -928,8 +882,6 @@
                         }
                         
                         const respostaAtualizada = await response.json();
-                        
-                        console.log("Dados retornados:", respostaAtualizada);
                         
                         const index = avaliacaoCompleta.respostas.findIndex(r => r.id === respostaId);
                         if (index !== -1) {
@@ -979,9 +931,6 @@
                         const respostaId = parseInt(card.dataset.respostaId);
                         const linkAnalistaInput = card.querySelector(`#link-analista-${respostaId}`);
                         
-                        console.log("=== SALVAMENTO AUTOMÁTICO (COMENTÁRIO) ===");
-                        console.log("Resposta ID:", respostaId);
-                        
                         const displayArea = document.getElementById(`link-analista-display-${respostaId}`);
                         const linksAnalista = [];
                         displayArea.querySelectorAll('.evidence-item').forEach(item => {
@@ -994,16 +943,12 @@
                             linksAnalista: linksAnalista
                         };
 
-                        console.log("Payload automático:", payload);
-
                         try {
                             const response = await fetch(`/api/respostas/${respostaId}`, {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
                                 body: JSON.stringify(payload)
                             });
-                            
-                            console.log("Status da resposta automática:", response.status);
                             
                             if (response.ok) {
                                 const respostaAtualizada = await response.json();
@@ -1025,8 +970,6 @@
                         } catch (error) {
                             console.error("❌ Erro ao salvar comentário:", error);
                         }
-                        
-                        console.log("===================");
                     }, 500); 
                 }
             });

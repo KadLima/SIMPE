@@ -3,332 +3,540 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Autoavaliação - SIMPE | Governo de Pernambuco</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <title>Formulário de Autoavaliação - Análise PE</title>
     <style>
+        /* --- VARIÁVEIS (Padrão Unificado) --- */
         :root {
             --azul-gov-principal: #002776;
+            --azul-gov-escuro: #001a4d;
+            --azul-gov-claro: #0052CC;
             --amarelo-gov-detalhe: #FFD700;
-            --cinza-texto: #333333;
-            --cinza-fundo: #f4f4f4;
+            --cinza-texto: #2c3e50;
+            --cinza-claro: #7f8c8d;
+            --cinza-fundo: #f8f9fa;
+            --cinza-card: #ecf0f1;
             --branco: #ffffff;
-            --verde-sucesso: #28a745;
-            --vermelho-destaque: #dc3545;
-            --cinza-borda: #ddd;
+            --verde-sucesso: #27ae60;
+            --vermelho-erro: #dc3545;
+            --laranja-alerta: #fd7e14;
+            --sombra-suave: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --sombra-media: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --transicao-padrao: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--cinza-fundo); color: var(--cinza-texto); line-height: 1.6; }
-        .main-header { background-color: var(--branco); box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 0 5%; position: sticky; top: 0; z-index: 1000; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
+            background-color: var(--cinza-fundo); 
+            color: var(--cinza-texto); 
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- HEADER (Corrigido para garantir design do menu) --- */
+        .main-header { 
+            background-color: var(--branco); 
+            box-shadow: var(--sombra-suave);
+            padding: 0 5%; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            border-bottom: 3px solid var(--azul-gov-principal);
+        }
         
         .main-nav { 
-            max-width: 1200px; 
+            max-width: 1400px; 
             margin: 0 auto; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            height: 70px; 
+            height: 80px; 
         }
 
         .logo a { 
             text-decoration: none; 
             display: flex; 
             align-items: center; 
-            gap: 12px; 
-            padding-top: 0; 
-            padding-bottom: 0; 
-            border-bottom: 2px solid transparent; 
-            transition: all 0.3s ease; 
-            position: relative;
-            padding: 10px; 
-            padding-top: 0; 
-            padding-bottom: 0; 
+            gap: 16px; 
+            transition: var(--transicao-padrao);
         }
 
-        .logo a::after {
-            content: '';
-            position: absolute;
-            bottom: 29px; 
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: transparent;
-            transition: background-color 0.3s ease;
-        }
-
-        .logo a:hover::after {
-            background-color: var(--amarelo-gov-detalhe);
-        }
+        .logo a:hover { transform: translateY(-2px); }
 
         .logo a > img { 
-            height: 45px; 
-            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0));
+            height: 55px; 
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transition: var(--transicao-padrao);
         }
 
-        .logo .site-title {
-            color: var(--azul-gov-principal); 
-            font-size: 1.4em; 
-            font-weight: 800; 
-            line-height: 1.2;
-            font-family: 'Segoe UI', 'Arial Black', sans-serif;
-            letter-spacing: 0.5px;
-        }
+        .SIMPE-marca-text-group { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .SIMPE-marca-small { height: 55px !important; width: auto; object-fit: contain; }
 
-        .logo .site-subtitle { 
-            color: var(--cinza-texto); 
-            font-size: 0.8em; 
-            display: block;
-            text-align: center;
-        }
-
-        .logo div { 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .main-nav ul { 
+        /* --- CORREÇÃO DO MENU (NAV-LINKS) --- */
+        #nav-links { 
             list-style: none; 
             margin: 0; 
             padding: 0; 
             display: flex; 
-            gap: 20px; 
+            gap: 8px; 
+            align-items: center;
         }
 
-        .main-nav ul a { 
+        /* Garante que os LIs não atrapalhem o layout */
+        #nav-links li {
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        /* Estilos dos links (A) dentro do menu */
+        #nav-links a { 
             text-decoration: none; 
             color: var(--cinza-texto); 
             font-weight: 600; 
-            padding: 10px; 
-            border-bottom: 2px solid transparent; 
-            transition: all 0.3s ease; 
-            display: flex; 
-            align-items: center; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            transition: var(--transicao-padrao); 
+            display: block; 
+            font-size: 0.95em; 
+            position: relative;
+            cursor: pointer;
+            white-space: nowrap;
         }
 
-        .main-nav ul a:hover, 
-        .main-nav ul a.active { 
+        #nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 8px;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background-color: var(--amarelo-gov-detalhe);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        #nav-links a:hover,
+        #nav-links a.active { 
             color: var(--azul-gov-principal); 
-            border-bottom-color: var(--amarelo-gov-detalhe); 
+            background-color: rgba(0, 39, 118, 0.05); 
         }
 
+        #nav-links a:hover::after,
+        #nav-links a.active::after {
+            transform: scaleX(1);
+        }
+        
+        /* --- MAIN CONTENT --- */
+        main { padding: 40px 5%; flex-grow: 1; display: flex; justify-content: center; }
+        
+        .container { 
+            width: 100%;
+            max-width: 1000px; 
+            background: var(--branco); 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: var(--sombra-media); 
+            border-top: 5px solid var(--azul-gov-principal);
+            position: relative;
+        }
+
+        /* --- BARRA DE PROGRESSO --- */
+        .progress-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            margin-bottom: 50px; 
+            position: relative; 
+            padding: 0 20px;
+        }
+        
+        .progress-bar::before { 
+            content: ''; 
+            position: absolute; 
+            top: 15px; 
+            left: 40px; 
+            right: 40px; 
+            height: 4px; 
+            background-color: #e9ecef; 
+            z-index: 0; 
+            border-radius: 2px;
+        }
+        
+        .step { 
+            text-align: center; 
+            position: relative; 
+            z-index: 1; 
+            width: 100px; 
+        }
+        
+        .step-number { 
+            width: 35px; 
+            height: 35px; 
+            border-radius: 50%; 
+            background-color: var(--branco); 
+            color: var(--cinza-claro); 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 800; 
+            border: 3px solid #e9ecef; 
+            transition: all 0.4s ease; 
+            font-size: 1.1em;
+        }
+        
+        .step-label { 
+            margin-top: 10px; 
+            font-size: 0.85em; 
+            color: var(--cinza-claro); 
+            font-weight: 600; 
+            transition: color 0.4s; 
+        }
+        
+        .step.active .step-number { 
+            background-color: var(--azul-gov-principal); 
+            border-color: var(--azul-gov-principal); 
+            color: var(--branco); 
+            box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1);
+        }
+        
+        .step.active .step-label { 
+            color: var(--azul-gov-principal); 
+            font-weight: 800; 
+        }
+
+        /* --- FORMULÁRIO --- */
+        .form-section { margin-bottom: 40px; }
+        
+        .form-section h2 { 
+            color: var(--azul-gov-principal); 
+            font-size: 1.6em;
+            font-weight: 700;
+            margin-bottom: 25px; 
+            border-left: 5px solid var(--amarelo-gov-detalhe);
+            padding-left: 15px;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        
+        .form-group label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 8px; 
+            color: var(--cinza-texto);
+        }
+        
+        .form-group input, .form-group select { 
+            width: 100%; 
+            box-sizing: border-box; 
+            padding: 12px 16px; 
+            border: 2px solid #e1e5e9; 
+            border-radius: 8px; 
+            font-size: 1em; 
+            transition: var(--transicao-padrao);
+            background-color: #fcfcfc;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--azul-gov-principal);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 39, 118, 0.1);
+            background-color: var(--branco);
+        }
+
+        /* --- BOTÕES --- */
+        .btn { 
+            padding: 12px 24px; 
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%);
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 1em; 
+            font-weight: 700; 
+            transition: var(--transicao-padrao); 
+            box-shadow: var(--sombra-suave);
+        }
+        
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: var(--sombra-media); 
+        }
+        
+        .btn:disabled { 
+            background: #bdc3c7; 
+            cursor: not-allowed; 
+            transform: none; 
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--verde-sucesso) 0%, #2ecc71 100%);
+        }
+
+        /* --- REQUISITOS --- */
+        .requisito-card { 
+            border: 1px solid #e1e5e9; 
+            border-radius: 12px; 
+            margin-bottom: 25px; 
+            overflow: hidden; 
+            box-shadow: var(--sombra-suave);
+            transition: var(--transicao-padrao);
+            background-color: var(--branco);
+        }
+
+        .requisito-card:hover {
+            box-shadow: var(--sombra-media);
+            border-color: var(--azul-gov-claro);
+        }
+        
+        .requisito-header { 
+            background-color: #f8f9fa; 
+            padding: 15px 20px; 
+            font-weight: 700; 
+            color: var(--azul-gov-principal);
+            border-bottom: 1px solid #e1e5e9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .requisito-body { padding: 20px; }
+        
+        .requisito-ajuda { 
+            font-size: 0.95em; 
+            color: #555; 
+            background-color: #e8f4fd; 
+            padding: 12px 15px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            border-left: 4px solid var(--azul-gov-claro);
+        }
+        
+        .requisito-actions { 
+            display: flex; 
+            gap: 12px; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            margin-bottom: 15px; 
+        }
+        
+        .btn-toggle { 
+            padding: 8px 20px; 
+            border: 2px solid #e1e5e9; 
+            background-color: var(--branco); 
+            border-radius: 50px; 
+            cursor: pointer; 
+            font-weight: 700; 
+            transition: var(--transicao-padrao);
+            color: var(--cinza-claro);
+        }
+        
+        .btn-toggle:hover { background-color: #f8f9fa; }
+
+        .btn-toggle.active { 
+            background-color: var(--verde-sucesso); 
+            color: var(--branco); 
+            border-color: var(--verde-sucesso); 
+            box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-toggle[data-action*="nao"].active { 
+            background-color: var(--vermelho-erro); 
+            border-color: var(--vermelho-erro); 
+            color: var(--branco); 
+            box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
+        }
+
+        /* --- EVIDÊNCIAS E COMENTÁRIOS --- */
+        .evidence-container { padding-top: 15px; border-top: 1px solid #f0f0f0; margin-top: 15px; }
+        
+        .evidence-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            border: 1px solid #e1e5e9;
+        }
+        
+        .evidence-item a { 
+            color: var(--azul-gov-principal); 
+            font-weight: 600;
+            text-decoration: none;
+        }
+        
+        .evidence-item a:hover { text-decoration: underline; }
+
+        .remove-evidence-btn {
+            background: none;
+            border: none;
+            color: var(--cinza-claro);
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: color 0.2s;
+        }
+        
+        .remove-evidence-btn:hover { color: var(--vermelho-erro); }
+
+        .add-evidence-buttons { display: flex; gap: 10px; margin-top: 10px; }
+        
+        .btn-add-evidence {
+            padding: 8px 16px;
+            font-size: 0.85em;
+            border-radius: 6px;
+            border: 1px dashed var(--azul-gov-principal);
+            background-color: rgba(0, 39, 118, 0.05);
+            color: var(--azul-gov-principal);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-add-evidence:hover { 
+            background-color: rgba(0, 39, 118, 0.1); 
+            border-style: solid;
+        }
+
+        .secretaria-comment {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95em;
+            min-height: 80px;
+            resize: none;
+            margin-top: 15px;
+            transition: var(--transicao-padrao);
+        }
+
+        .secretaria-comment:focus {
+            border-color: var(--azul-gov-principal);
+            outline: none;
+        }
+
+        /* --- EXTRAS --- */
+        .download-guide { 
+            background-color: #e3f2fd; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 30px; 
+            text-align: center; 
+            border: 1px solid #bbdefb;
+            color: var(--azul-gov-escuro);
+        }
+        
+        .download-guide a { font-weight: 700; color: var(--azul-gov-principal); text-decoration: none; }
+        .download-guide a:hover { text-decoration: underline; }
+
+        .secretaria-display-box {
+            background-color: #e9ecef;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--cinza-texto);
+            border: 1px solid #dee2e6;
+        }
+
+        .link-comprovante-wrapper { display: none; width: 100%; margin-top: 10px; }
+        .link-comprovante-wrapper.show { display: block; }
+        .link-input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+
+        /* --- FOOTER (Padrão Unificado) --- */
         .main-footer { 
             text-align: center; 
-            padding: 20px; 
-            margin-top: 40px; 
-            background-color: var(--branco); 
-            font-size: 0.9em; 
+            padding: 30px 5%; 
+            margin-top: auto;
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-escuro) 100%);
+            color: var(--branco);
+            font-size: 0.95em; 
             position: relative; 
-            height: 60px; 
+            min-height: 80px;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .main-footer .footer-content { 
             display: flex; 
             justify-content: center; 
             align-items: center; 
+            max-width: 1400px;
+            margin: 0 auto;
             height: 100%; 
             position: relative;
         }
 
-        .main-footer .footer-logo-link { 
-            display: block; 
-            position: absolute; 
-            right: 5%; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            z-index: 10; 
-            height: 60px; 
-            width: auto; 
+        .main-footer .footer-portal-link {
+            position: absolute;
+            left: 0.5%;
+            top: 50%;
+            transform: translateY(-50%);
+            display: block;
+            z-index: 10;
+            height: 70px;
+            width: auto;
+            transition: var(--transicao-padrao);
         }
+
+        .main-footer .footer-portal-link:hover { transform: translateY(-50%) scale(1.05); }
+
+        .main-footer .footer-portal-link img {
+            height: 100%;
+            width: auto;
+            display: block;
+            max-height: 70px;
+            mix-blend-mode: lighten;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+        }
+
+        .main-footer .footer-logo-link {
+            position: absolute; 
+            right: 0.5%; 
+            top: 50%; 
+            transform: translateY(-50%);
+            display: block; 
+            height: 70px; 
+            width: auto; 
+            transition: var(--transicao-padrao);
+        }
+
+        .main-footer .footer-logo-link:hover { transform: translateY(-50%) scale(1.05); }
 
         .main-footer .footer-logo-link img { 
             height: 100%; 
             width: auto; 
             display: block; 
-            max-height: 60px; 
-            object-fit: contain; 
+            max-height: 70px; 
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
 
-        .main-footer p a {
-            color: var(--cinza-texto);
-            font-weight: 600;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
+        .main-footer p { color: rgba(255, 255, 255, 0.9); font-weight: 400; margin: 0; }
+        .main-footer p a { color: var(--amarelo-gov-detalhe); font-weight: 600; text-decoration: none; padding: 4px 8px; border-radius: 4px; }
+        .main-footer p a:hover { background-color: rgba(255, 215, 0, 0.2); text-decoration: underline; }
 
-        .main-footer p a:hover {
-            text-decoration: underline;
-            color: var(--azul-gov-principal);
+        /* --- RESPONSIVIDADE --- */
+        @media (max-width: 768px) {
+            .main-nav { flex-direction: column; height: auto; padding: 20px 0; }
+            .main-nav ul { flex-direction: column; width: 100%; margin-top: 15px; }
+            .container { padding: 25px; }
+            .progress-bar { padding: 0; }
+            .progress-bar::before { left: 20px; right: 20px; }
+            .step { width: auto; flex: 1; }
+            .step-label { font-size: 0.75em; }
+            
+            .main-footer .footer-content { flex-direction: column; gap: 15px; }
+            .main-footer .footer-portal-link, .main-footer .footer-logo-link { position: static; transform: none; height: 50px; margin: 10px 0; }
         }
-
-        .SIMPE-marca-text-group {
-            display: flex;
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            gap: 0;
-        }
-
-        .site-subtitle-modified {
-            color: var(--cinza-texto); 
-            font-size: 0.7em;
-            display: block;
-            text-align: center;
-            margin: 0; 
-            line-height: 1;
-            padding: 0;
-        }
-
-        .SIMPE-marca-small {
-            height: 60px; 
-            width: auto;
-            object-fit: contain; 
-            display: block; 
-            margin: 0; 
-            margin-bottom: 5px; 
-        }
-
-        main { padding: 40px 5%; }
-        .container { max-width: 900px; margin: 0 auto; background: var(--branco); padding: 30px 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .form-section { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-        .form-section:last-of-type { border-bottom: none; }
-        .form-section h2 { color: var(--azul-gov-principal); border-bottom: 2px solid var(--amarelo-gov-detalhe); padding-bottom: 10px; margin-bottom: 20px; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; }
-        .form-group input, .form-group select { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid var(--cinza-borda); border-radius: 6px; font-size: 1em; }
-        .btn { padding: 12px 25px; background-color: var(--azul-gov-principal); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; font-weight: bold; transition: background-color .3s; }
-        .btn:hover { background-color: #001a4d; }
-        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
-        #requisitos-container { margin-top: 20px; }
-        .requisito-card { border: 1px solid var(--cinza-borda); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
-        .requisito-header { background-color: #f0f4ff; padding: 15px; font-weight: bold; }
-        .requisito-body { padding: 15px; background-color: var(--branco); }
-        .requisito-ajuda { font-size: 0.9em; color: #555; background-color: #fafafa; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
-        .requisito-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-        .btn-toggle { padding: 8px 16px; border: 1px solid var(--cinza-borda); background-color: var(--branco); border-radius: 20px; cursor: pointer; font-weight: 600; }
-        .btn-toggle.active { background-color: var(--verde-sucesso); color: var(--branco); border-color: var(--verde-sucesso); }
-        .btn-toggle[data-action*="nao"].active { background-color: var(--vermelho-destaque); border-color: var(--vermelho-destaque); color: var(--branco); }
-        .link-comprovante-wrapper { display: none; width: 100%; }
-        .link-comprovante-wrapper.show { display: block; }
-        .link-comprovante-wrapper .link-input { width: 100%; box-sizing: border-box; padding: 8px; }
-        .download-guide { background-color: #e9eef5; padding: 15px; border-radius: 6px; margin-bottom: 30px; text-align: center; }
-        .download-guide a { font-weight: bold; color: var(--azul-gov-principal); text-decoration: none; }
-        .download-guide a:hover { text-decoration: underline; }
-        .progress-bar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 50px; position: relative; }
-        .progress-bar::before { content: ''; position: absolute; top: 15px; left: 15%; right: 15%; height: 2px; background-color: var(--cinza-borda); z-index: 0; }
-        .step { text-align: center; position: relative; z-index: 1; width: 120px; }
-        .step-number { width: 30px; height: 30px; border-radius: 50%; background-color: var(--cinza-fundo); color: var(--cinza-texto); display: inline-flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--cinza-borda); transition: all 0.4s; }
-        .step-label { margin-top: 8px; font-size: 0.9em; color: #999; transition: color 0.4s; }
-        .step.active .step-number { background-color: var(--azul-gov-principal); border-color: var(--azul-gov-principal); color: var(--branco); }
-        .step.active .step-label { color: var(--azul-gov-principal); font-weight: bold; }
-        .evidence-container { padding-top: 10px; border-top: 1px solid #f0f0f0; margin-top: 10px; }
-        .evidence-list { list-style: none; padding: 0; margin: 0 0 10px 0; }
-        .evidence-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #f8f9fa;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-        }
-        .evidence-item a {
-            color: var(--azul-gov-principal);
-            word-break: break-all;
-            flex-grow: 1;
-        }
-        .remove-evidence-btn {
-            background: none;
-            border: none;
-            color: var(--vermelho-destaque);
-            cursor: pointer;
-            font-size: 1.5em;
-            padding: 0 5px;
-            margin-left: 10px;
-            line-height: 1;
-        }
-        .add-evidence-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        .btn-add-evidence {
-            padding: 6px 12px;
-            font-size: 0.8em;
-            border-radius: 6px;
-            border: 1px solid var(--azul-gov-principal);
-            background-color: var(--branco);
-            color: var(--azul-gov-principal);
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .btn-add-evidence:hover {
-            background-color: #e9eef5;
-        }
-        
-        .comment-container {
-            margin-top: 15px;
-            border-top: 1px solid #f0f0f0;
-            padding-top: 15px;
-        }
-        .secretaria-comment {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-            border: 1px solid var(--cinza-borda);
-            border-radius: 6px;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 0.9em;
-            min-height: 70px;
-            resize: none;
-        }
-        
-        .sub-requisito-container {
-            margin-top: 15px;
-        }
-        .sub-requisito {
-            margin-bottom: 20px;
-            padding-left: 15px;
-            border-left: 3px solid #e9eef5;
-        }
-        .sub-requisito-label {
-            font-weight: 600;
-            margin-bottom: 8px;
-            display: block;
-        }
-        
-        .sub-requisito.hidden {
-            display: none;
-        }
-
-        .secretaria-display-box {
-            background-color: #e9ecef;
-            padding: 12px;
-            border-radius: 6px;
-            font-weight: 500;
-            color: #495057;
-        }
-
-        #logout-btn {
-            cursor: pointer;
-        }
-
-        .SIMPE-marca-text-group {
-            display: flex;
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            gap: 0;
-        }
-
-        .SIMPE-marca-small {
-            height: 60px; 
-            width: auto;
-            object-fit: contain; 
-            display: block; 
-            margin: 0; 
-            margin-bottom: 5px;
-        }
-
     </style>
 </head>
 <body>
@@ -336,15 +544,16 @@
         <nav class="main-nav">
             <div class="logo">
                 <a href="/">
-                    <img src="/assets/logo-header.png" alt="Logo do Governo de Pernambuco">
-                    <div class="SIMPE-marca-text-group">                     
-                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                     
+                    <img src="/assets/logo-header.png" alt="Logo Governo de Pernambuco">
+                    <div class="SIMPE-marca-text-group">                      
+                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                      
                     </div>
                 </a>
             </div>
             <ul id="nav-links"></ul>
         </nav>
     </header>
+
     <main>
         <div class="container">
             <div class="progress-bar">
@@ -352,9 +561,11 @@
                 <div class="step" id="progress-step-2"><div class="step-number">2</div><div class="step-label">Pré-Validação</div></div>
                 <div class="step" id="progress-step-3"><div class="step-number">3</div><div class="step-label">Preenchimento</div></div>
             </div>          
+            
             <div class="download-guide">
-                <p style="margin:0;">📄 Precisa de ajuda? <a href="/assets/guia-transparencia.pdf" download>Clique aqui para baixar o Guia de Transparência Ativa.</a></p>
+                <p style="margin:0;"><i class="fas fa-file-download"></i> Precisa de ajuda? <a href="/assets/guia-transparencia.pdf" download>Clique aqui para baixar o Guia de Transparência Ativa.</a></p>
             </div>
+
             <div class="form-section">
                 <h2>Passo 1: Identificação</h2>
                 <div class="form-group">
@@ -366,22 +577,33 @@
                 <div class="form-group"><label for="responsavel-nome">Nome do Responsável pelo preenchimento</label><input type="text" id="responsavel-nome" placeholder="Digite seu nome completo"></div>
                 <div class="form-group"><label for="responsavel-email">E-mail do Responsável</label><input type="email" id="responsavel-email" placeholder="Digite seu e-mail para contato"></div>
             </div>
+
             <div class="form-section">
                 <h2>Passo 2: Pré-Validação Automática</h2>
-                <p>Antes de começar, nossa ferramenta pode verificar automaticamente alguns requisitos para você. Clique no botão abaixo para iniciar a verificação no site da secretaria selecionada.</p>
-                <button id="pre-validar-btn" class="btn">Iniciar Pré-Validação</button>
-                <div id="pre-validacao-resultado" style="margin-top: 15px;"></div>
+                <p style="color: var(--cinza-texto); margin-bottom: 15px;">Antes de começar, nossa ferramenta pode verificar automaticamente alguns requisitos para você. Clique no botão abaixo para iniciar a verificação no site da secretaria selecionada.</p>
+                <button id="pre-validar-btn" class="btn"><i class="fas fa-search"></i> Iniciar Pré-Validação</button>
+                <div id="pre-validacao-resultado" style="margin-top: 20px;"></div>
             </div>
+
             <div class="form-section">
                 <h2>Passo 3: Preenchimento dos Requisitos</h2>
-                <div id="requisitos-container"><p>Aguardando a pré-validação para carregar os requisitos...</p></div>
+                <div id="requisitos-container"><div style="text-align: center; padding: 30px; color: var(--cinza-claro);">Aguardando a pré-validação para carregar os requisitos...</div></div>
             </div>
-            <div style="text-align: right;"><button id="enviar-avaliacao-btn" class="btn" disabled>Enviar Avaliação</button></div>
+
+            <div style="text-align: right; border-top: 2px solid #f0f0f0; padding-top: 20px;">
+                <button id="enviar-avaliacao-btn" class="btn btn-success" disabled><i class="fas fa-paper-plane"></i> Enviar Avaliação</button>
+            </div>
         </div>
     </main>
+
     <footer class="main-footer">
         <div class="footer-content">
+            <a href="https://transparencia.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-portal-link">
+                <img src="/assets/image-portal.png" alt="Portal da Transparência">
+            </a>
+
             <p>&copy; 2025 Governo de Pernambuco. Todos os direitos reservados. <a id="admin-footer-link" href="/admin" style="display: none;">Área Administrativa</a></p>
+            
             <a href="https://www.scge.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-logo-link">
                 <img src="/assets/logo-footer.png" alt="Logo da Controladoria-Geral do Estado de Pernambuco">
             </a>
@@ -945,18 +1167,20 @@
                         });
                     }
                     
-                    console.log(`🔢 Total de links para renderizar: ${linksParaRenderizar.length} (incluindo site-exists: ${!req6JaEncontrado ? 'adicionado' : 'já existe'})`);
-                    
                     if (todosOsRequisitos.length === 0) {
-                        const response = await fetch('/requisitos');
+                        const secretariaId = document.getElementById('secretaria-id-hidden').value;
+                        const response = await fetch(`/requisitos?secretariaId=${secretariaId}`);
                         if (!response.ok) throw new Error('Falha ao buscar os requisitos.');
                         todosOsRequisitos = await response.json();
                     }
 
                     requisitosContainer.innerHTML = '';
-                    todosOsRequisitos.forEach(req => {
+                    
+                    todosOsRequisitos.forEach((req, index) => {
                         const resultadoEncontrado = linksParaRenderizar.find(res => res.alvo === req.linkFixo);
                         const isAutoValidated = !!resultadoEncontrado;
+                        const numeroRequisito = index + 1;
+                        const prefixo = req.texto.toUpperCase().startsWith('REQUISITO') ? '' : `REQUISITO ${numeroRequisito} - `;
                         
                         const requisitoCard = document.createElement('div');
                         requisitoCard.className = 'requisito-card';
@@ -966,7 +1190,6 @@
 
                         if (isAutoValidated) {
                             requisitoCard.dataset.foiAutomatico = 'true';
-                            
                             const linkAlvo = resultadoEncontrado.alvo;
                             const linkOrigem = resultadoEncontrado.origem;
                             const linkExibido = linkAlvo === 'KEYWORD:site-exists' ? linkOrigem : linkAlvo;
@@ -1008,9 +1231,13 @@
                         }
 
                         requisitoCard.innerHTML = `
-                            <div class="requisito-header"><span>${req.texto} (Pontuação: ${req.pontuacao})</span></div>
+                            <div class="requisito-header">
+                                <span>${prefixo}${req.texto} (Pontuação: ${req.pontuacao})</span>
+                            </div>
                             <div class="requisito-body">
-                                <div class="requisito-ajuda"><strong>Guia:</strong> ${req.textoAjuda}</div>
+                                <div class="requisito-ajuda">
+                                    <strong>Guia:</strong> ${req.textoAjuda || "Siga as instruções para comprovação deste item."}
+                                </div>
                                 ${actionsHTML}
                             </div>`;
                         requisitosContainer.appendChild(requisitoCard);
@@ -1051,6 +1278,9 @@
                     
                     salvarLinksAutomaticos(linksEncontradosAutomaticamente);
 
+                    preventUnload = true; 
+                    console.log('🛡️  Proteção contra saída ativada - pré-validação concluída');
+
                     const urlPrincipal = document.getElementById('url-manual').value.trim();
                     const req6Considerado = linksEncontradosAutomaticamente.some(l => l.alvo === 'KEYWORD:site-exists') || !!urlPrincipal;
                     const contagemExibida = linksEncontradosAutomaticamente.length + (req6Considerado && !linksEncontradosAutomaticamente.some(l => l.alvo === 'KEYWORD:site-exists') ? 1 : 0);
@@ -1061,6 +1291,7 @@
                     preValidarBtn.textContent = 'Pré-Validação Concluída';
                     preValidarBtn.style.backgroundColor = 'var(--verde-sucesso)';
                     preValidarBtn.style.cursor = 'default';
+                    preValidarBtn.disabled = true;
                     urlManualInput.disabled = true;
                 } catch (error) {
                     preValidacaoResultado.innerHTML = `<p style="color: red;">Ocorreu um erro: ${error.message}</p>`;
@@ -1170,7 +1401,7 @@
                     confirmButtonText: 'Sim, Enviar Avaliação',
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: 'var(--verde-sucesso)',
-                    cancelButtonColor: 'var(--vermelho-destaque)',
+                    cancelButtonColor: 'var(--vermelho-erro)',
                     reverseButtons: true
                 });
 
@@ -1299,7 +1530,7 @@
                             icon: 'error',
                             title: 'Erro no Envio!',
                             text: `Erro ao enviar: ${error.message}`,
-                            confirmButtonColor: 'var(--vermelho-destaque)'
+                            confirmButtonColor: 'var(--vermelho-erro)'
                         });
                     }
                     enviarAvaliacaoBtn.disabled = false;
