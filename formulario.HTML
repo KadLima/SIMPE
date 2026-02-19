@@ -279,6 +279,19 @@
             background: linear-gradient(135deg, var(--verde-sucesso) 0%, #2ecc71 100%);
         }
 
+        /* Garantir que o botão Não fique vermelho quando ativo */
+        .btn-toggle.subitem-nao.active {
+            background-color: var(--vermelho-erro) !important;
+            color: white !important;
+            border-color: var(--vermelho-erro) !important;
+        }
+
+        .btn-toggle.subitem-sim.active {
+            background-color: var(--verde-sucesso) !important;
+            color: white !important;
+            border-color: var(--verde-sucesso) !important;
+        }
+
         /* --- REQUISITOS --- */
         .requisito-card { 
             border: 1px solid #e1e5e9; 
@@ -644,6 +657,8 @@
             let preventUnload = false;
             let usuarioEscolheuCarregarRascunho = null;
             let rascunhoPendente = null; 
+            let preValidacaoEmAndamento = false;
+            let abasAbertas = [];
 
             nomeResponsavelInput.addEventListener('input', debouncedSalvarRascunho);
             emailResponsavelInput.addEventListener('input', debouncedSalvarRascunho);
@@ -1107,6 +1122,36 @@
                     }
                 });
 
+                document.querySelectorAll('.requisito-card[data-tipo="composto"]').forEach(card => {
+                    const requisitoId = card.dataset.requisitoId;
+                    const subitens = [];
+                    
+                    card.querySelectorAll('.subitem-card').forEach((subitemCard, index) => {
+                        const btnSim = subitemCard.querySelector('.subitem-sim');
+                        const atende = btnSim && btnSim.classList.contains('active');
+                        
+                        const evidencias = [];
+                        subitemCard.querySelectorAll('.evidence-list .evidence-item').forEach(item => {
+                        if (item.dataset.link) {
+                            evidencias.push(item.dataset.link);
+                        }
+                        });
+                        
+                        subitens.push({
+                        subRequisitoId: null, 
+                        ordem: index,
+                        atende: atende,
+                        linkComprovante: evidencias[0] || null,
+                        comentario: '' 
+                        });
+                    });
+                    
+                    if (subitens.length > 0) {
+                        if (!rascunho.subitens) rascunho.subitens = {};
+                        rascunho.subitens[requisitoId] = subitens;
+                    }
+                });
+
                 if (hasData) {
                     localStorage.setItem(`rascunho_avaliacao_${secretariaId}`, JSON.stringify(rascunho));
                     console.log(`Rascunho para secretaria ${secretariaId} salvo.`);
@@ -1177,16 +1222,20 @@
                     requisitosContainer.innerHTML = '';
                     
                     todosOsRequisitos.forEach((req, index) => {
-                        const resultadoEncontrado = linksParaRenderizar.find(res => res.alvo === req.linkFixo);
-                        const isAutoValidated = !!resultadoEncontrado;
-                        const numeroRequisito = index + 1;
-                        const prefixo = req.texto.toUpperCase().startsWith('REQUISITO') ? '' : `REQUISITO ${numeroRequisito} - `;
-                        
-                        const requisitoCard = document.createElement('div');
-                        requisitoCard.className = 'requisito-card';
-                        requisitoCard.dataset.requisitoId = req.id;
-                        
-                        let actionsHTML = '';
+                        if (req.texto.includes('REQUISITO 31 - Disponibiliza os links')) {
+                            const cardComposto = renderRequisitoComposto(req, linksParaRenderizar);
+                            requisitosContainer.appendChild(cardComposto);
+                        } else {
+                            const resultadoEncontrado = linksParaRenderizar.find(res => res.alvo === req.linkFixo);
+                            const isAutoValidated = !!resultadoEncontrado;
+                            const numeroRequisito = index + 1;
+                            const prefixo = req.texto.toUpperCase().startsWith('REQUISITO') ? '' : `REQUISITO ${numeroRequisito} - `;
+                            
+                            const requisitoCard = document.createElement('div');
+                            requisitoCard.className = 'requisito-card';
+                            requisitoCard.dataset.requisitoId = req.id;
+                            
+                            let actionsHTML = '';
 
                         if (isAutoValidated) {
                             requisitoCard.dataset.foiAutomatico = 'true';
@@ -1236,12 +1285,109 @@
                             </div>
                             <div class="requisito-body">
                                 <div class="requisito-ajuda">
-                                    <strong>Guia:</strong> ${req.textoAjuda || "Siga as instruções para comprovação deste item."}
+                                <strong>Guia:</strong> ${req.textoAjuda || "Siga as instruções para comprovação deste item."}
                                 </div>
                                 ${actionsHTML}
                             </div>`;
-                        requisitosContainer.appendChild(requisitoCard);
+                            requisitosContainer.appendChild(requisitoCard);
+                        }
                     });
+
+                    document.querySelectorAll('.subitem-card').forEach(subitemCard => {
+                    const requisitoCard = subitemCard.closest('.requisito-card');
+                    const requisitoId = requisitoCard.dataset.requisitoId;
+                    const subitemIndex = subitemCard.dataset.subitemIndex;
+                    
+                    // Botões Sim/Não
+                    const btnSim = subitemCard.querySelector('.subitem-sim');
+                    const btnNao = subitemCard.querySelector('.subitem-nao');
+
+                    if (btnSim.disabled || btnNao.disabled) {
+                        return;
+                    }
+
+                    if (btnSim && btnNao) {
+                        btnSim.addEventListener('click', function() {
+                            btnSim.classList.add('active');
+                            btnNao.classList.remove('active');
+                            
+                            btnNao.style.backgroundColor = '';
+                            btnNao.style.color = '';
+                            
+                            const wrapper = document.getElementById(`subitem-evidence-${requisitoId}-${subitemIndex}`);
+                            if (wrapper) wrapper.classList.add('show');
+                            
+                            salvarRascunho();
+                        });
+                        
+                        btnNao.addEventListener('click', function() {
+                            btnNao.classList.add('active');
+                            btnSim.classList.remove('active');
+                            
+                            btnNao.style.backgroundColor = 'var(--vermelho-erro)';
+                            btnNao.style.color = 'white';
+                            btnNao.style.borderColor = 'var(--vermelho-erro)';
+                            
+                            const wrapper = document.getElementById(`subitem-evidence-${requisitoId}-${subitemIndex}`);
+                            if (wrapper) wrapper.classList.remove('show');
+                            
+                            salvarRascunho();
+                        });
+                        
+                        if (btnNao.classList.contains('active')) {
+                            btnNao.style.backgroundColor = 'var(--vermelho-erro)';
+                            btnNao.style.color = 'white';
+                            btnNao.style.borderColor = 'var(--vermelho-erro)';
+                        }
+                    }
+                    
+                    const addLinkBtn = subitemCard.querySelector('.subitem-add-link');
+                    if (addLinkBtn) {
+                        addLinkBtn.addEventListener('click', function() {
+                        const evidenceList = document.getElementById(`subitem-evidence-list-${requisitoId}-${subitemIndex}`);
+                        
+                        Swal.fire({
+                            title: 'Adicionar Link',
+                            input: 'url',
+                            inputLabel: 'URL do Link',
+                            inputPlaceholder: 'https://...',
+                            showCancelButton: true,
+                            confirmButtonText: 'Adicionar',
+                            cancelButtonText: 'Cancelar',
+                            inputValidator: (value) => {
+                            if (!value) return 'Digite uma URL';
+                            return null;
+                            },
+                            preConfirm: (value) => {
+                            let finalUrl = value.trim();
+                            if (!/^(https?:\/\/)/i.test(finalUrl)) {
+                                finalUrl = 'https://' + finalUrl;
+                            }
+                            return finalUrl;
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed && result.value) {
+                            const url = result.value;
+                            const newItem = document.createElement('li');
+                            newItem.className = 'evidence-item';
+                            newItem.dataset.link = url;
+                            newItem.innerHTML = `<a href="${url}" target="_blank">${url}</a><button class="remove-evidence-btn">&times;</button>`;
+                            evidenceList.appendChild(newItem);
+                            
+                            newItem.querySelector('.remove-evidence-btn').addEventListener('click', function() {
+                                this.closest('.evidence-item').remove();
+                                salvarRascunho();
+                            });
+                            
+                            salvarRascunho();
+                            }
+                        });
+                        });
+                    }
+                    });
+
+                    adicionarListenersRemoverEvidencia();
+
                     enviarAvaliacaoBtn.disabled = false;
 
                     if (rascunhoPendente) {
@@ -1255,32 +1401,151 @@
                 }
             }
 
+            // Função para renderizar o requisito composto R31
+            function renderRequisitoComposto(req, linksEncontrados) {
+                const subItens = [
+                    { texto: "Ouvidoria", linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/ouvidoria/' },
+                    { texto: "Responsabilidade Fiscal", linkFixo: 'https://transparencia.pe.gov.br/responsabilidade-fiscal/' },
+                    { texto: "Fiscalização e Controle", linkFixo: 'https://transparencia.pe.gov.br/gestao-estadual/fiscalizacao-e-controle/' },
+                    { texto: "Transferências", linkFixo: 'https://transparencia.pe.gov.br/despesas/transferencias/' },
+                    { texto: "Receitas", linkFixo: 'https://transparencia.pe.gov.br/receitas/' },
+                    { texto: "Despesas", linkFixo: 'https://transparencia.pe.gov.br/despesas/menu-despesas/' },
+                    { texto: "Licitações e Contratos", linkFixo: 'https://transparencia.pe.gov.br/licitacoes-e-contratos/' },
+                    { texto: "Obras", linkFixo: 'https://transparencia.pe.gov.br/despesas/obras/' },
+                    { texto: "Patrimônio Público", linkFixo: 'https://transparencia.pe.gov.br/gestao-estadual/patrimonio-publico/' },
+                    { texto: "Recursos Humanos", linkFixo: 'https://transparencia.pe.gov.br/recursos-humanos/' },
+                    { texto: "Acesso à Informação", linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/acesso-a-informacao/' },
+                    { texto: "Dados Abertos", linkFixo: null },
+                    { texto: "Participação", linkFixo: null }
+                ];
+                
+                const linksEncontradosCount = subItens.filter(item => 
+                    item.linkFixo && linksEncontrados.some(l => l.alvo === item.linkFixo)
+                ).length;
+                
+                let pontuacaoPercentual = 0;
+                if (linksEncontradosCount >= 12) pontuacaoPercentual = 100;
+                else if (linksEncontradosCount >= 8) pontuacaoPercentual = 70;
+                else if (linksEncontradosCount >= 4) pontuacaoPercentual = 50;
+                else if (linksEncontradosCount >= 1) pontuacaoPercentual = 30;
+                
+                const card = document.createElement('div');
+                card.className = 'requisito-card';
+                card.dataset.requisitoId = req.id;
+                card.dataset.tipo = 'composto';
+                
+                card.innerHTML = `
+                    <div class="requisito-header">
+                    <span>${req.texto}</span>
+                    <span class="pontuacao-badge" style="background: var(--azul-gov-claro); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em;">
+                        Pontuação: ${pontuacaoPercentual}% (${linksEncontradosCount}/13 links)
+                    </span>
+                    </div>
+                    <div class="requisito-body">
+                    <div class="requisito-ajuda">
+                        <strong>Guia:</strong> ${req.textoAjuda}
+                    </div>
+                    
+                    <div class="subitens-container" style="margin-top: 20px;">
+                        ${subItens.map((item, index) => {
+                        const encontrado = item.linkFixo && linksEncontrados.some(l => l.alvo === item.linkFixo);
+                        return `
+                            <div class="subitem-card" data-subitem-index="${index}" style="border: 1px solid #e1e5e9; border-radius: 8px; margin-bottom: 10px; padding: 15px; background: #f8f9fa;">
+                            <div class="subitem-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-weight: 600;">
+                                <span style="background: var(--azul-gov-principal); color: white; width: 24px; height: 24px; display: inline-block; text-align: center; border-radius: 50%; margin-right: 8px; font-size: 0.9em;">${index + 1}</span>
+                                ${item.texto}
+                                </span>
+                                ${encontrado ? '<span style="background: var(--verde-sucesso); color: white; padding: 4px 8px; border-radius: 20px; font-size: 0.8em;">✓ Automático</span>' : ''}
+                            </div>
+                            
+                            <div class="requisito-actions" style="margin-bottom: 10px;">
+                                <span>Atende?</span>
+                                <button class="btn-toggle subitem-sim ${encontrado ? 'active' : ''}" data-subitem-index="${index}" data-subitem-link="${item.linkFixo || ''}" ${encontrado ? 'disabled' : ''}>Sim</button>
+                                <button class="btn-toggle subitem-nao ${!encontrado ? 'active' : ''}" data-action="nao-${req.id}" data-subitem-index="${index}" ${encontrado ? 'disabled' : ''}>Não</button>
+                            </div>
+                            
+                            <div class="link-comprovante-wrapper ${encontrado ? 'show' : ''}" id="subitem-evidence-${req.id}-${index}">
+                                <div class="evidence-container">
+                                <ul class="evidence-list" id="subitem-evidence-list-${req.id}-${index}">
+                                    ${encontrado && item.linkFixo ? `
+                                    <li class="evidence-item" data-link="${item.linkFixo}">
+                                        <a href="${item.linkFixo}" target="_blank">${item.linkFixo}</a>
+                                        <button class="remove-evidence-btn" title="Remover">&times;</button>
+                                    </li>
+                                    ` : ''}
+                                </ul>
+                                <div class="add-evidence-buttons">
+                                    <button class="btn-add-evidence subitem-add-link" data-subitem-index="${index}">+ Adicionar Link</button>
+                                </div>
+                                </div>
+                            </div>
+                            </div>
+                        `;
+                        }).join('')}
+                    </div>
+                    
+                    <div class="comment-container" style="margin-top: 20px;">
+                        <textarea class="secretaria-comment" placeholder="Comentário geral sobre os links do Portal da Transparência..."></textarea>
+                    </div>
+                    </div>
+                `;
+                
+                return card;
+            }
+
             preValidarBtn.addEventListener('click', async () => {
                 const urlParaVerificar = urlManualInput.value.trim();
                 if (!urlParaVerificar) {
                     alert('Por favor, digite a URL do site a ser avaliado.');
                     return;
                 }
+                
+                preValidacaoEmAndamento = true;
+                preventUnload = true;
+                
                 preValidarBtn.disabled = true;
                 preValidarBtn.textContent = 'Verificando...';
+                
+                Swal.fire({
+                    title: 'Pré-Validação em Andamento',
+                    html: `
+                        <div style="text-align: center;">
+                            <i class="fas fa-spinner fa-pulse" style="font-size: 3em; color: var(--azul-gov-principal); margin-bottom: 20px;"></i>
+                            <p><strong>Não feche esta aba!</strong></p>
+                            <p>Uma nova aba será aberta para verificação dos links.</p>
+                            <p>Aguarde, isso pode levar alguns minutos...</p>
+                            <div style="margin-top: 20px; font-size: 0.9em; color: #666;">
+                                <i class="fas fa-hourglass-half"></i> Processando...
+                            </div>
+                        </div>
+                    `,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+
+                });
+                
                 preValidacaoResultado.innerHTML = '<p>Iniciando varredura no site... Isso pode levar alguns minutos.</p>';
                 step1.classList.remove('active');
                 step2.classList.add('active');
+                
                 try {
                     const response = await fetch('/pre-validate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ urlSecretaria: urlParaVerificar }),
                     });
+                    
                     if (!response.ok) throw new Error('O servidor retornou um erro durante a pré-validação.');
+                    
                     const resultado = await response.json();
                     linksEncontradosAutomaticamente = resultado;
                     
                     salvarLinksAutomaticos(linksEncontradosAutomaticamente);
-
-                    preventUnload = true; 
-                    console.log('🛡️  Proteção contra saída ativada - pré-validação concluída');
-
+                    
+                    Swal.close();
+                    
                     const urlPrincipal = document.getElementById('url-manual').value.trim();
                     const req6Considerado = linksEncontradosAutomaticamente.some(l => l.alvo === 'KEYWORD:site-exists') || !!urlPrincipal;
                     const contagemExibida = linksEncontradosAutomaticamente.length + (req6Considerado && !linksEncontradosAutomaticamente.some(l => l.alvo === 'KEYWORD:site-exists') ? 1 : 0);
@@ -1288,16 +1553,30 @@
                     preValidacaoResultado.innerHTML = `<h4>Verificação Automática Concluída!</h4><p>Foram encontrados <strong>${contagemExibida}</strong> links obrigatórios</p>`;
                     
                     await renderRequisitos(linksEncontradosAutomaticamente);
+                    
                     preValidarBtn.textContent = 'Pré-Validação Concluída';
                     preValidarBtn.style.backgroundColor = 'var(--verde-sucesso)';
                     preValidarBtn.style.cursor = 'default';
                     preValidarBtn.disabled = true;
                     urlManualInput.disabled = true;
+                    
+                    preValidacaoEmAndamento = false;
+                    
                 } catch (error) {
+                    Swal.close();
                     preValidacaoResultado.innerHTML = `<p style="color: red;">Ocorreu um erro: ${error.message}</p>`;
                     preValidarBtn.disabled = false;
                     preValidarBtn.textContent = 'Tentar Pré-Validação Novamente';
-                } 
+                    preValidacaoEmAndamento = false;
+                }
+            });
+
+            window.addEventListener('beforeunload', (event) => {
+                if (preventUnload || preValidacaoEmAndamento) {
+                    event.preventDefault();
+                    event.returnValue = 'Uma operação está em andamento. Tem certeza que deseja sair?';
+                    return 'Uma operação está em andamento. Tem certeza que deseja sair?';
+                }
             });
 
             async function enviarEmailConfirmacao(emailDestinatario, nomeResponsavel, nomeSecretaria, urlSecretaria) {
@@ -1456,7 +1735,71 @@
                             evidencias, 
                             linkComprovante
                         });
-                    } 
+                    }
+                    
+                    const mapaSubRequisitos = {
+                        0: 1,  // Ouvidoria
+                        1: 2,  // Responsabilidade Fiscal
+                        2: 3,  // Fiscalização e Controle
+                        3: 4,  // Transferências
+                        4: 5,  // Receitas
+                        5: 6,  // Despesas
+                        6: 7,  // Licitações e Contratos
+                        7: 8,  // Obras
+                        8: 9,  // Patrimônio Público
+                        9: 10, // Recursos Humanos
+                        10: 11, // Acesso à Informação
+                        11: 12, // Dados Abertos
+                        12: 13  // Participação
+                    };
+
+                    const subitensParaEnviar = [];
+
+                    document.querySelectorAll('.requisito-card[data-tipo="composto"]').forEach(card => {
+                        const requisitoId = card.dataset.requisitoId;
+                        
+                        card.querySelectorAll('.subitem-card').forEach((subitemCard, index) => {
+                            const btnSim = subitemCard.querySelector('.subitem-sim');
+                            const atende = btnSim && btnSim.classList.contains('active');
+                            
+                            const evidencias = [];
+                            subitemCard.querySelectorAll('.evidence-list .evidence-item').forEach(item => {
+                                if (item.dataset.link) {
+                                    evidencias.push({ url: item.dataset.link, tipo: 'original' });
+                                }
+                            });
+                            
+                            const subRequisitoId = mapaSubRequisitos[index];
+                            
+                            if (!subRequisitoId) {
+                                console.error(`❌ ERRO: subRequisitoId não encontrado para índice ${index}`);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Erro no Subitem',
+                                    text: `Não foi possível identificar o subitem ${index + 1}.`
+                                });
+                                formValido = false;
+                                return;
+                            }
+                            
+                            subitensParaEnviar.push({
+                                subRequisitoId: subRequisitoId,
+                                requisitoId: requisitoId,
+                                ordem: index,
+                                atende: atende,
+                                linkComprovante: evidencias[0]?.url || null,
+                                evidencias: evidencias
+                            });
+                            
+                            console.log(`Subitem ${index}: ID=${subRequisitoId}, atende=${atende}`);
+                        });
+                    });
+
+                    if (!formValido) {
+                        enviarAvaliacaoBtn.disabled = false;
+                        enviarAvaliacaoBtn.textContent = 'Enviar Avaliação';
+                        return;
+                    }
 
                     if (!formValido) {
                         enviarAvaliacaoBtn.disabled = false;
@@ -1467,7 +1810,7 @@
                     const payload = {
                         urlSecretaria: urlSecretaria, 
                         nomeResponsavel: nomeResponsavel, 
-                        emailResponsavel: emailResponsavel, 
+                        emailResponsavel: emailResponsavel,
                         respostas: respostas.map(r => ({
                             requisitoId: r.requisitoId,
                             atende: r.atende,
@@ -1475,7 +1818,8 @@
                             foiAutomatico: r.foiAutomatico,
                             comentarioSecretaria: r.comentarioSecretaria,
                             evidencias: r.evidencias 
-                        }))
+                        })),
+                        subitens: subitensParaEnviar
                     };
 
                     console.log('📤 Enviando payload para /api/avaliacoes (SIMPLIFICADO):', JSON.stringify(payload));
@@ -1539,6 +1883,20 @@
             });
 
             populateSecretarias();
+
+            document.querySelectorAll('#nav-links a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    if (preValidacaoEmAndamento) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Pré-Validação em Andamento',
+                            text: 'Aguarde a conclusão da verificação antes de navegar.',
+                            confirmButtonColor: 'var(--azul-gov-principal)'
+                        });
+                    }
+                });
+            });
         });
     </script>
     <script src="/global.js"></script>

@@ -530,6 +530,16 @@
             'FINALIZADA': 'Finalizada' 
         };
 
+        function addEventListenersToCards() {
+            document.querySelectorAll('.avaliacao-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const avaliacaoId = card.getAttribute('data-avaliacao-id');
+                    const page = card.getAttribute('data-page'); 
+                    window.location.href = `/${page}/${avaliacaoId}`; 
+                });
+            });
+        }
+
         async function loadAvaliacoes() {
             const list = document.getElementById('avaliacoes-list');
             const filter = document.getElementById('statusFilter');
@@ -1189,16 +1199,6 @@
                 'EM_ANALISE_DE_RECURSO': 'Em Recurso',
                 'FINALIZADA': 'Finalizada'
             };
-            
-            function addEventListenersToCards() {
-                document.querySelectorAll('.avaliacao-card').forEach(card => {
-                    card.addEventListener('click', () => {
-                        const avaliacaoId = card.getAttribute('data-avaliacao-id');
-                        const page = card.getAttribute('data-page'); 
-                        window.location.href = `/${page}/${avaliacaoId}`; 
-                    });
-                });
-            }
 
             statusFilter.addEventListener('change', loadAvaliacoes);
             verificarAdminEConfigurarFormulario();
@@ -1373,7 +1373,7 @@
                     headers: { 'Authorization': `Bearer ${authToken}` } 
                 });
                 if (res.ok) { 
-                    await Swal.fire('Excluída!', 'A avaliação sumiu da lista.', 'success');
+                    await Swal.fire('Excluída!', 'A avaliação foi deletada da lista.', 'success');
                     loadAvaliacoes(); 
                 }
             }

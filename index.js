@@ -1043,7 +1043,7 @@ app.get('/api/admin/nota-final/:id', authenticateToken, authenticateAdmin, async
     }
 });
 
-// ROTA SEGURA PARA UM USUÁRIO VER OS DETALHES DE UMA DE SUAS AVALIAÇÕES
+// ROTA SEGURA PARA UM USUÁRIO VER OS DETALHES DE UMA DE SUAS AVALIAÇÕES (MODIFICADA)
 app.get('/api/my-avaliacoes/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
@@ -1066,7 +1066,18 @@ app.get('/api/my-avaliacoes/:id', authenticateToken, async (req, res) => {
                         requisito: true,
                         evidencias: true,
                         linksAnalista: true,
-                        linksAnaliseFinal: true
+                        linksAnaliseFinal: true,
+                        subRespostas: {
+                            include: {
+                                subRequisito: true,
+                                evidencias: true
+                            },
+                            orderBy: {
+                                subRequisito: {
+                                    ordem: 'asc'
+                                }
+                            }
+                        }
                     },
                     orderBy: {
                         requisitoId: 'asc'
@@ -1105,17 +1116,25 @@ app.post('/pre-validate', async (req, res) => {
   }
 
   try {
-    const requisitosParaVerificar = await prisma.requisito.findMany({
+    const linksPrincipais = await prisma.requisito.findMany({
+      where: { 
+        linkFixo: { not: null },
+        NOT: { linkFixo: { contains: 'KEYWORD:' } }
+      }
+    });
+    
+    const subRequisitos = await prisma.subRequisito.findMany({
       where: { linkFixo: { not: null } }
     });
     
-    if (requisitosParaVerificar.length === 0) {
-      return res.json([]);
-    }
-
-    const linksParaProcurar = requisitosParaVerificar.map(r => r.linkFixo).filter(link => link && !link.startsWith('KEYWORD:'));
+    const todosLinks = [
+      ...linksPrincipais.map(r => r.linkFixo),
+      ...subRequisitos.map(s => s.linkFixo)
+    ].filter(link => link && !link.startsWith('KEYWORD:'));
     
-    if (linksParaProcurar.length === 0) {
+    console.log(`🔍 Pré-validador procurando ${todosLinks.length} links (${linksPrincipais.length} principais + ${subRequisitos.length} subitens)`);
+    
+    if (todosLinks.length === 0) {
       return res.json([]);
     }
 
@@ -1124,7 +1143,7 @@ app.post('/pre-validate', async (req, res) => {
       scriptPath,
       urlSecretaria,
       '--find-links', 
-      linksParaProcurar.join(',')
+      todosLinks.join(',')
     ];
 
     const pythonProcess = spawn('python', scriptArgs, { cwd: __dirname });
@@ -1147,13 +1166,16 @@ app.post('/pre-validate', async (req, res) => {
       }
       try {
         const linksEncontrados = JSON.parse(resultadoJson || '[]');
+        console.log(`✅ Pré-validador encontrou ${linksEncontrados.length} links`);
         res.json(linksEncontrados);
       } catch (parseError) {
+        console.error('Erro ao parsear resultado:', parseError);
         res.status(500).json({ error: 'Falha ao interpretar resultado da verificação.', details: resultadoJson });
       }
     });
 
   } catch (error) {
+    console.error('Erro na pré-validação:', error);
     res.status(500).json({ error: 'Erro interno no servidor ao tentar pré-validar.' });
   }
 });
@@ -1392,6 +1414,169 @@ app.patch('/api/requisitos/:id', authenticateToken, authenticateAdmin, async (re
     }
 });
 
+app.post('/api/respostas/:id/subitens', authenticateToken, async (req, res) => {
+  try {
+    const { id: respostaId } = req.params;
+    const { subitens } = req.body;
+    
+    console.log(`📝 Salvando ${subitens.length} subitens para resposta ${respostaId}`);
+    
+    const resultado = await prisma.$transaction(async (prisma) => {
+      const subRespostas = [];
+      
+      for (const sub of subitens) {
+        // Verificar se já existe
+        const existente = await prisma.subResposta.findFirst({
+          where: {
+            respostaId: parseInt(respostaId),
+            subRequisitoId: sub.subRequisitoId
+          }
+        });
+        
+        if (existente) {
+          // Atualizar existente
+          const atualizada = await prisma.subResposta.update({
+            where: { id: existente.id },
+            data: {
+              atende: sub.atende,
+              linkComprovante: sub.linkComprovante,
+              comentarioSecretaria: sub.comentario,
+              statusValidacao: 'pendente' 
+            }
+          });
+          subRespostas.push(atualizada);
+        } else {
+          const nova = await prisma.subResposta.create({
+            data: {
+              respostaId: parseInt(respostaId),
+              subRequisitoId: sub.subRequisitoId,
+              atende: sub.atende,
+              linkComprovante: sub.linkComprovante,
+              comentarioSecretaria: sub.comentario,
+              statusValidacao: 'pendente'
+            }
+          });
+          subRespostas.push(nova);
+        }
+      }
+      
+      return subRespostas;
+    });
+    
+    res.json({ success: true, subRespostas: resultado });
+    
+  } catch (error) {
+    console.error('❌ Erro ao salvar subitens:', error);
+    res.status(500).json({ error: 'Erro ao salvar subitens' });
+  }
+});
+
+// ROTA PARA VALIDAR SUBITENS (ANALISTA)
+app.patch('/api/subrespostas/:id/validar', authenticateToken, authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { statusValidacao, comentario } = req.body;
+    
+    const subResposta = await prisma.subResposta.update({
+      where: { id: parseInt(id) },
+      data: {
+        statusValidacao,
+        comentarioAdmin: comentario
+      }
+    });
+    
+    await recalcularStatusRespostaPai(subResposta.respostaId);
+    
+    res.json(subResposta);
+    
+  } catch (error) {
+    console.error('❌ Erro ao validar subitem:', error);
+    res.status(500).json({ error: 'Erro ao validar subitem' });
+  }
+});
+
+// ROTA PARA VALIDAR SUBITENS NO RECURSO (ANÁLISE FINAL)
+app.patch('/api/subrespostas/:id/validar-recurso', authenticateToken, authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { statusValidacaoPosRecurso, comentario } = req.body;
+    
+    const subResposta = await prisma.subResposta.update({
+      where: { id: parseInt(id) },
+      data: {
+        statusValidacaoPosRecurso,
+        comentarioAnaliseFinal: comentario
+      }
+    });
+    
+    await recalcularStatusRespostaPai(subResposta.respostaId, true);
+    
+    res.json(subResposta);
+    
+  } catch (error) {
+    console.error('❌ Erro ao validar subitem no recurso:', error);
+    res.status(500).json({ error: 'Erro ao validar subitem no recurso' });
+  }
+});
+
+// ROTA PARA SALVAR RECURSO DE SUBITENS (SECRETARIA)
+app.post('/api/subrespostas/recurso', authenticateToken, async (req, res) => {
+  try {
+    const { subRespostas } = req.body;
+    
+    const resultado = await prisma.$transaction(async (prisma) => {
+      const atualizadas = [];
+      
+      for (const sub of subRespostas) {
+        const atualizada = await prisma.subResposta.update({
+          where: { id: sub.id },
+          data: {
+            atende: sub.atende,
+            linkComprovante: sub.linkComprovante,
+            comentarioRecurso: sub.comentario,
+            statusValidacaoPosRecurso: 'pendente' 
+          }
+        });
+        atualizadas.push(atualizada);
+      }
+      
+      return atualizadas;
+    });
+    
+    res.json({ success: true, subRespostas: resultado });
+    
+  } catch (error) {
+    console.error('❌ Erro ao salvar recurso de subitens:', error);
+    res.status(500).json({ error: 'Erro ao salvar recurso de subitens' });
+  }
+});
+
+// ROTA PARA BUSCAR SUBITENS DE UMA RESPOSTA
+app.get('/api/respostas/:id/subitens', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const subRespostas = await prisma.subResposta.findMany({
+      where: { respostaId: parseInt(id) },
+      include: {
+        subRequisito: true,
+        evidencias: true
+      },
+      orderBy: {
+        subRequisito: {
+          ordem: 'asc'
+        }
+      }
+    });
+    
+    res.json(subRespostas);
+    
+  } catch (error) {
+    console.error('❌ Erro ao buscar subitens:', error);
+    res.status(500).json({ error: 'Erro ao buscar subitens' });
+  }
+});
+
 app.post('/api/avaliacoes/:id/devolver', authenticateToken, authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -1594,58 +1779,61 @@ app.post('/api/avaliacoes/:id/finalizar', authenticateToken, authenticateAdmin, 
             pontuacaoPosRecurso = 0;
         }
 
+        // Dentro da rota de finalizar, substitua o loop de cálculo
         for (const resposta of avaliacao.respostas) { 
-            const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
-            pontuacaoTotal += pontuacaoRequisito;
-            const analiseFinal = resposta.analiseFinal || {}; 
+          const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
+          pontuacaoTotal += pontuacaoRequisito;
+          const analiseFinal = resposta.analiseFinal || {};
 
-            console.log(`\n[FINALIZAR LOG] Requisito ID: ${resposta.requisitoId} (Valor: ${pontuacaoRequisito} pts)`);
-            console.log(`  > Dados Brutos: atendeOriginal=${resposta.atendeOriginal}, statusValidacao=${resposta.statusValidacao}, recursoAtende=${resposta.recursoAtende}, statusFinal=${analiseFinal.statusValidacaoPosRecurso}`);
-
+          if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+            const subAprovados = resposta.subRespostas.filter(s => {
+              const statusFinal = s.statusValidacaoPosRecurso || s.statusValidacao;
+              return statusFinal === 'aprovado';
+            }).length;
+            
+            const pontuacaoProporcional = (subAprovados / resposta.subRespostas.length) * pontuacaoRequisito;
+            
             if (resposta.atendeOriginal === true) {
-                pontuacaoAutoavaliacao += pontuacaoRequisito;
+              pontuacaoAutoavaliacao += pontuacaoRequisito;
+            }
+            
+            pontuacaoFinal += Math.round(pontuacaoProporcional);
+            
+            console.log(`  📊 Requisito composto: ${subAprovados}/${resposta.subRespostas.length} aprovados → ${Math.round(pontuacaoProporcional)}/${pontuacaoRequisito} pts`);
+            
+          } else {
+            if (resposta.atendeOriginal === true) {
+              pontuacaoAutoavaliacao += pontuacaoRequisito;
             }
 
             if (resposta.statusValidacao === 'aprovado') {
-                pontuacaoPrimeiraAnalise += pontuacaoRequisito;
+              pontuacaoPrimeiraAnalise += pontuacaoRequisito;
             }
 
             if (avaliacao.pontuacaoPosRecurso === null || avaliacao.pontuacaoPosRecurso === undefined) {
-                let pontuacaoRequisitoPosRecurso = 0;
-                const teveRecurso = resposta.recursoAtende !== null ||
-                                    resposta.comentarioRecurso ||
-                                    (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
+              let pontuacaoRequisitoPosRecurso = 0;
+              const teveRecurso = resposta.recursoAtende !== null ||
+                                  resposta.comentarioRecurso ||
+                                  (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
 
-                console.log(`  > Teve Recurso? ${teveRecurso}`);
-
-                if (teveRecurso) {
-                    const statusFinalConsiderado = analiseFinal.statusValidacaoPosRecurso || resposta.statusValidacao;
-                    if (statusFinalConsiderado === 'aprovado') {
-                        pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
-                        console.log(`  -> Pós-Recurso: +${pontuacaoRequisito} (Motivo: Teve recurso e foi aprovado na análise final)`);
-                    } else {
-                        console.log(`  -> Pós-Recurso: +0 (Motivo: Teve recurso mas foi rejeitado na análise final)`);
-                    }
-                } else {
-                    if (resposta.statusValidacao === 'aprovado') {
-                        pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
-                        console.log(`  -> Pós-Recurso: +${pontuacaoRequisito} (Motivo: Sem recurso, aprovado na 1ª análise)`);
-                    } else {
-                        console.log(`  -> Pós-Recurso: +0 (Motivo: Sem recurso, rejeitado na 1ª análise)`);
-                    }
+              if (teveRecurso) {
+                const statusFinalConsiderado = analiseFinal.statusValidacaoPosRecurso || resposta.statusValidacao;
+                if (statusFinalConsiderado === 'aprovado') {
+                  pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
                 }
-                pontuacaoPosRecurso += pontuacaoRequisitoPosRecurso;
+              } else {
+                if (resposta.statusValidacao === 'aprovado') {
+                  pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
+                }
+              }
+              pontuacaoPosRecurso += pontuacaoRequisitoPosRecurso;
             }
 
             const statusFinalConsiderado = analiseFinal.statusValidacaoPosRecurso || resposta.statusValidacao;
-            console.log(`  > Status Final Considerado: '${statusFinalConsiderado}' (Priorizou: ${analiseFinal.statusValidacaoPosRecurso ? 'Análise Final' : '1ª Análise'})`);
-
             if (statusFinalConsiderado === 'aprovado') {
-                pontuacaoFinal += pontuacaoRequisito;
-                console.log(`  -> Nota Final: +${pontuacaoRequisito} (Motivo: Status final considerado === 'aprovado')`);
-            } else {
-                console.log(`  -> Nota Final: +0 (Motivo: Status final considerado !== 'aprovado')`);
+              pontuacaoFinal += pontuacaoRequisito;
             }
+          }
         } 
 
         if (avaliacao.pontuacaoPosRecurso === null || avaliacao.pontuacaoPosRecurso === undefined) {
@@ -2814,9 +3002,9 @@ function calcularPontuacaoFinal(respostas) {
   return Math.round(pontuacaoFinal);
 }
 
-// ROTA PARA SALVAR UMA NOVA AVALIAÇÃO COMPLETA
+// ROTA PARA SALVAR UMA NOVA AVALIAÇÃO COMPLETA 
 app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
-    const { urlSecretaria, nomeResponsavel, emailResponsavel, respostas } = req.body;
+    const { urlSecretaria, nomeResponsavel, emailResponsavel, respostas, subitens } = req.body;
     const userId = req.user.userId;
 
     console.log('=== INICIANDO SALVAMENTO DE AVALIAÇÃO ===');
@@ -2824,7 +3012,8 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
         urlSecretaria,
         nomeResponsavel,
         emailResponsavel,
-        totalRespostas: respostas ? respostas.length : 0
+        totalRespostas: respostas ? respostas.length : 0,
+        totalSubitens: subitens ? subitens.length : 0
     });
 
     try {
@@ -2867,16 +3056,16 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
                 console.log('Criando resposta para requisito:', resposta.requisitoId);
 
                 const respostaData = {
-                  avaliacaoId: avaliacaoCriada.id,
-                  requisitoId: resposta.requisitoId,
-                  atende: resposta.atende ? true : false,
-                  linkComprovante: resposta.linkComprovante || null,
-                  linkComprovanteRecurso: null,
-                  foiAutomatico: resposta.foiAutomatico ? true : false,
-                  comentarioSecretaria: resposta.comentarioSecretaria || null,
-                  atendeOriginal: resposta.atende ? true : false,
-                  statusValidacao: "pendente"
-              };
+                    avaliacaoId: avaliacaoCriada.id,
+                    requisitoId: resposta.requisitoId,
+                    atende: resposta.atende ? true : false,
+                    linkComprovante: resposta.linkComprovante || null,
+                    linkComprovanteRecurso: null,
+                    foiAutomatico: resposta.foiAutomatico ? true : false,
+                    comentarioSecretaria: resposta.comentarioSecretaria || null,
+                    atendeOriginal: resposta.atende ? true : false,
+                    statusValidacao: "pendente"
+                };
 
                 const respostaCriada = await prisma.resposta.create({
                     data: respostaData
@@ -2908,6 +3097,72 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
             }
         }
 
+        if (subitens && Array.isArray(subitens) && subitens.length > 0) {
+            console.log(`📝 Salvando ${subitens.length} subitens...`);
+            
+            const subitensPorRequisito = {};
+            subitens.forEach(sub => {
+                if (!subitensPorRequisito[sub.requisitoId]) {
+                    subitensPorRequisito[sub.requisitoId] = [];
+                }
+                subitensPorRequisito[sub.requisitoId].push(sub);
+            });
+            
+            for (const [requisitoId, listaSubitens] of Object.entries(subitensPorRequisito)) {
+                const respostaIndex = respostas.findIndex(r => r.requisitoId === parseInt(requisitoId));
+                
+                if (respostaIndex !== -1) {
+                    const respostaCriadaId = respostasCriadas[respostaIndex];
+                    
+                    console.log(`📌 Processando ${listaSubitens.length} subitens para resposta ${respostaCriadaId}`);
+                    
+                    for (const sub of listaSubitens) {
+                        try {
+                            if (!sub.subRequisitoId) {
+                                console.warn(`⚠️ Subitem sem subRequisitoId ignorado:`, sub);
+                                continue;
+                            }
+                            
+                            const subResposta = await prisma.subResposta.create({
+                                data: {
+                                    respostaId: respostaCriadaId,
+                                    subRequisitoId: sub.subRequisitoId,
+                                    atende: sub.atende || false,
+                                    linkComprovante: sub.linkComprovante || null,
+                                    comentarioSecretaria: sub.comentario || null,
+                                    statusValidacao: 'pendente'
+                                }
+                            });
+                            
+                            console.log(`  ✅ Subresposta ${subResposta.id} criada para subrequisito ${sub.subRequisitoId}`);
+                            
+                            if (sub.evidencias && Array.isArray(sub.evidencias) && sub.evidencias.length > 0) {
+                                for (const ev of sub.evidencias) {
+                                    if (ev.url && ev.url.trim() !== '') {
+                                        await prisma.subEvidencia.create({
+                                            data: {
+                                                subRespostaId: subResposta.id,
+                                                tipo: 'original',
+                                                url: ev.url.trim()
+                                            }
+                                        });
+                                    }
+                                }
+                                console.log(`    ✅ ${sub.evidencias.length} evidências criadas para subitem`);
+                            }
+                            
+                        } catch (error) {
+                            console.error(`❌ Erro ao criar subresposta:`, error);
+                        }
+                    }
+                }
+            }
+            
+            console.log(`✅ Todos os ${subitens.length} subitens processados`);
+        } else {
+            console.log('ℹ️ Nenhum subitem para salvar');
+        }
+
         console.log(`✅ Processo concluído. ${respostasCriadas.length} respostas criadas.`);
 
         const avaliacaoCompleta = await prisma.avaliacao.findUnique({
@@ -2917,7 +3172,13 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
                 respostas: {
                     include: {
                         evidencias: true,
-                        requisito: true
+                        requisito: true,
+                        subRespostas: {
+                            include: {
+                                subRequisito: true,
+                                evidencias: true
+                            }
+                        }
                     },
                     orderBy: {
                         requisitoId: 'asc'
@@ -3059,11 +3320,34 @@ app.get('/api/avaliacoes/:id', authenticateToken, authenticateAdmin, async (req,
   try {
     const avaliacao = await prisma.avaliacao.findUnique({
       where: { id: parseInt(id) },
-      include: { secretaria: true, respostas: { orderBy: { requisitoId: 'asc' }, include: { requisito: true, evidencias: true, linksAnalista: true, linksAnaliseFinal: true  } } },
+      include: { 
+        secretaria: true, 
+        respostas: { 
+          orderBy: { requisitoId: 'asc' }, 
+          include: { 
+            requisito: true, 
+            evidencias: true, 
+            linksAnalista: true, 
+            linksAnaliseFinal: true,
+            subRespostas: {
+              include: {
+                subRequisito: true,
+                evidencias: true
+              },
+              orderBy: {
+                subRequisito: {
+                  ordem: 'asc'
+                }
+              }
+            }
+          } 
+        } 
+      },
     });
     if (!avaliacao) { return res.status(404).json({ error: "Avaliação não encontrada." }); }
     res.json(avaliacao);
   } catch (error) {
+    console.error('Erro ao buscar avaliação:', error);
     res.status(500).json({ error: "Erro ao buscar detalhes da avaliação." });
   }
 });
@@ -3744,6 +4028,44 @@ async function enviarEmailNotaFinal(avaliacao) {
   };
 
   await transporter.sendMail(mailOptions);
+}
+
+// FUNÇÃO AUXILIAR: Recalcular status da resposta pai baseado nos subitens
+async function recalcularStatusRespostaPai(respostaId, isPosRecurso = false) {
+  try {
+    const subRespostas = await prisma.subResposta.findMany({
+      where: { respostaId },
+      include: { subRequisito: true }
+    });
+    
+    if (subRespostas.length === 0) return;
+    
+    const campoStatus = isPosRecurso ? 'statusValidacaoPosRecurso' : 'statusValidacao';
+    
+    const aprovados = subRespostas.filter(s => s[campoStatus] === 'aprovado').length;
+    const total = subRespostas.length;
+    
+    let statusGeral = 'pendente';
+    if (aprovados === total) {
+      statusGeral = 'aprovado';
+    } else if (aprovados === 0) {
+      statusGeral = 'rejeitado';
+    } else {
+      statusGeral = 'parcial'; 
+    }
+    
+    await prisma.resposta.update({
+      where: { id: respostaId },
+      data: {
+        [isPosRecurso ? 'statusValidacaoPosRecurso' : 'statusValidacao']: statusGeral
+      }
+    });
+    
+    console.log(`📊 Resposta ${respostaId} recalculada: ${aprovados}/${total} aprovados → status: ${statusGeral}`);
+    
+  } catch (error) {
+    console.error('❌ Erro ao recalcular status da resposta pai:', error);
+  }
 }
 
 app.post('/api/requisitos-extras', authenticateToken, authenticateAdmin, async (req, res) => {

@@ -5,6 +5,9 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Iniciando a semeadura do banco de dados...');
 
+  await prisma.subEvidencia.deleteMany({});
+  await prisma.subResposta.deleteMany({});
+  await prisma.subRequisito.deleteMany({});
   await prisma.evidencia.deleteMany({});
   await prisma.linkAnalista.deleteMany({});
   await prisma.linkAnaliseFinal.deleteMany({});
@@ -16,7 +19,7 @@ async function main() {
   await prisma.scanSession.deleteMany({});
   await prisma.link.deleteMany({});
   await prisma.codigoVerificacao.deleteMany({});
-  
+
   console.log('Dados antigos apagados.');
 
   await prisma.secretaria.createMany({
@@ -114,31 +117,61 @@ async function main() {
       { texto: "REQUISITO 28 - Disponibiliza o nome e os contatos do encarregado pelo tratamento de dados pessoais, bem como a Política de Privacidade e Proteção de Dados Pessoais?", textoAjuda: "Disponibilizar nome e contatos do encarregado e a Política de Privacidade e Proteção de Dados Pessoais.", pontuacao: 4, linkFixo: null },
       { texto: "REQUISITO 29 - Disponibiliza link de acesso à conta ativa do órgão/entidade em alguma rede social?", textoAjuda: "O link deve direcionar para o perfil do órgão ou entidade na(s) rede(s) social(is) - Como Facebook, Twitter, Instagram, Youtube, Tik Tok, Flickr, entre outras.", pontuacao: 2, linkFixo: 'KEYWORD:social-media' },
       { texto: "REQUISITO 30 - Divulga no mínimo 10 (dez) perguntas e respostas mais frequentes da sociedade sobre as atividades desenvolvidas pelo órgão/entidade?", pontuacao: 4, linkFixo: null },
-      { texto: "REQUISITO 31 - Disponibiliza os links de acesso às seções 'Responsabilidade Fiscal', 'Ouvidoria', 'Fiscalização e Controle', 'Transferências', 'Receitas', 'Despesas', 'Obras', 'Patrimônio Público', 'Recursos Humanos', 'Licitações e Contratos', 'Acesso à Informação', 'Dados Abertos' e 'Participação' no Portal da Transparência de Pernambuco?", pontuacao: 8, linkFixo: null },
       
-      { texto: "REQUISITO 32.1 - Disponibiliza os contratos no (Mapa de Contratos ou no módulo de contratos do PE Integrado) do órgão/entidade referente ao ano vigente?", textoAjuda: "O Mapa de \"Contratos\" deverá ser atualizado mensalmente e publicado até o 10º dia útil do mês subsequente.", pontuacao: 4, linkFixo: null },
-      { texto: "REQUISITO 32.2 - Disponibiliza os Mapas de Contratos do órgão/entidade dos 03 (três) anos antecedentes ao ano atual?", textoAjuda: "Faz referência a série histórica solicitada aos órgãos no guia da transparência", pontuacao: 2, linkFixo: null },
-      { texto: "REQUISITO 33.1 - Disponibiliza o Mapa de Contratos de Terceirizados do órgão/entidade do ano vigente?", textoAjuda: "Faz referência a série histórica solicitada aos órgãos no guia da transparência", pontuacao: 4, linkFixo: null },
-      { texto: "REQUISITO 33.2 - Disponibiliza os Mapas de Contratos de Terceirizados do órgão/entidade dos 03 (três) anos antecedentes ao atual?", textoAjuda: "Faz referência a série histórica solicitada aos órgãos no guia da transparência", pontuacao: 2, linkFixo: null },
-      { texto: "REQUISITO 34.1 - Disponibiliza o Mapa de Diárias e Passagens dentro do Estado, fora do Estado e fora do país, conforme legislação local, do órgão/entidade do ano vigente? Com o nome e o cargo/função do beneficiário, além do número de diárias usufruídas por afastamento, período de afastamento, motivo do afastamento e local de destino?", textoAjuda: "O Mapa de \"Diárias e Passagens\" deverá ser atualizado mensalmente e publicado até o 10º dia útil do mês subsequente.", pontuacao: 4, linkFixo: null },
-      { texto: "REQUISITO 34.2 - Disponibiliza os Mapas de Diárias e Passagens do órgão/entidade dos 03 (três) anos antecedentes ao atual?", textoAjuda: "Faz referência a série histórica solicitada aos órgãos no guia da transparência", pontuacao: 2, linkFixo: null },
+      { texto: "REQUISITO 31 - Disponibiliza os links de acesso às seções 'Responsabilidade Fiscal', 'Ouvidoria', 'Fiscalização e Controle', 'Transferências', 'Receitas', 'Despesas', 'Obras', 'Patrimônio Público', 'Recursos Humanos', 'Licitações e Contratos', 'Acesso à Informação', 'Dados Abertos' e 'Participação' no Portal da Transparência de Pernambuco?", textoAjuda: "Este requisito verifica a disponibilização de 13 links obrigatórios do Portal da Transparência. A pontuação será proporcional à quantidade de links encontrados.", pontuacao: 8, linkFixo: null },
+      
+      { texto: "REQUISITO 32.1 - Disponibiliza os contratos no (Mapa de Contratos ou no módulo de contratos do PE Integrado) do órgão/entidade referente ao ano vigente?", textoAjuda: "O Mapa de \"Contratos\" deverá ser atualizado mensalmente e publicado até o 10º dia útil do mês subsequente.", pontuacao: 4.2, linkFixo: null },
+      { texto: "REQUISITO 32.2 - Disponibiliza os Mapas de Contratos do órgão/entidade dos 03 (três) anos antecedentes ao ano atual?", textoAjuda: "Faz referência a série histórica solicitada aos órgãos no guia da transparência", pontuacao: 1.8, linkFixo: null },
+      { texto: "REQUISITO 33.1 - Disponibiliza o Mapa de Contratos de Terceirizados do órgão/entidade do ano vigente?", textoAjuda: "Faz referência a série histórica solicitada aos órgãos no guia da transparência", pontuacao: 4.2, linkFixo: null },
+      { texto: "REQUISITO 33.2 - Disponibiliza os Mapas de Contratos de Terceirizados do órgão/entidade dos 03 (três) anos antecedentes ao atual?", textoAjuda: "Faz referência a série histórica solicitada aos órgãos no guia da transparência", pontuacao: 1.8, linkFixo: null },
+      { texto: "REQUISITO 34.1 - Disponibiliza o Mapa de Diárias e Passagens dentro do Estado, fora do Estado e fora do país, conforme legislação local, do órgão/entidade do ano vigente? Com o nome e o cargo/função do beneficiário, além do número de diárias usufruídas por afastamento, período de afastamento, motivo do afastamento e local de destino?", textoAjuda: "O Mapa de \"Diárias e Passagens\" deverá ser atualizado mensalmente e publicado até o 10º dia útil do mês subsequente.", pontuacao: 4.2, linkFixo: null },
+      { texto: "REQUISITO 34.2 - Disponibiliza os Mapas de Diárias e Passagens do órgão/entidade dos 03 (três) anos antecedentes ao atual?", textoAjuda: "Faz referência a série histórica solicitada aos órgãos no guia da transparência", pontuacao: 1.8, linkFixo: null },
       { texto: "REQUISITO 35 - Publica anualmente informações sobre doações e/ou comodatos recebidos (como na pandemia, em catástrofes ou por empresas), sejam em dinheiro ou bens materiais, na seção Transparência do sítio institucional do órgão/entidade?", textoAjuda: "", pontuacao: 2, linkFixo: null },
- 
-      
-      { texto: "REQUISITO 28 - Disponibiliza link de acesso à seção \"Ouvidoria\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Ouvidoria\" do Portal da Transparência.", pontuacao: 4, linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/ouvidoria/' }, 
-      { texto: "REQUISITO 31 - Disponibiliza link de acesso à seção \"Responsabilidade Fiscal\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Responsabilidade Fiscal\" do Portal da Transparência.", pontuacao: 8, linkFixo: 'https://transparencia.pe.gov.br/responsabilidade-fiscal/' },
-      { texto: "REQUISITO 32 - Disponibiliza link de acesso à seção \"Fiscalização e Controle\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Fiscalização e Controle\" do Portal da Transparência.", pontuacao: 4, linkFixo: 'https://transparencia.pe.gov.br/gestao-estadual/fiscalizacao-e-controle/' },
-      { texto: "REQUISITO 33 - Disponibiliza link de acesso à seção \"Transferências\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Transferências\" do Portal da Transparência.", pontuacao: 2, linkFixo: 'https://transparencia.pe.gov.br/despesas/transferencias/' },
-      { texto: "REQUISITO 34 - Disponibiliza link de acesso à seção \"Receitas\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Receitas\" do Portal da Transparência.", pontuacao: 8, linkFixo: 'https://transparencia.pe.gov.br/receitas/' },
-      { texto: "REQUISITO 35 - Disponibiliza link de acesso à seção \"Despesas\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Despesas\" do Portal da Transparência.", pontuacao: 8, linkFixo: 'https://transparencia.pe.gov.br/despesas/menu-despesas/' },
-      { texto: "REQUISITO 36 - Disponibiliza link de acesso à seção \"Licitações e Contratos\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Licitações, Contratos e Fornecedores\" do Portal da Transparência.", pontuacao: 6, linkFixo: 'https://transparencia.pe.gov.br/licitacoes-e-contratos/' },    
-      { texto: "REQUISITO 39 - Disponibiliza link de acesso à seção \"Obras\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Obras\" do Portal da Transparência.", pontuacao: 2, linkFixo: 'https://transparencia.pe.gov.br/despesas/obras/' },
-      { texto: "REQUISITO 40 - Disponibiliza link de acesso à seção \"Patrimônio Público\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Patrimônio Público\" do Portal da Transparência.", pontuacao: 1, linkFixo: 'https://transparencia.pe.gov.br/gestao-estadual/patrimonio-publico/' },
-      { texto: "REQUISITO 41 - Disponibiliza link de acesso à seção \"Recursos Humanos\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Recursos Humanos\" do Portal da Transparência.", pontuacao: 6, linkFixo: 'https://transparencia.pe.gov.br/recursos-humanos/' },   
-      { texto: "REQUISITO 43 - Disponibiliza link de acesso à seção \"Acesso à Informação\" do Portal da Transparência de Pernambuco?", textoAjuda: "Disponibilizar link de acesso à seção \"Acesso à Informação\" do Portal da Transparência.", pontuacao: 4, linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/acesso-a-informacao/' },
     ],
   });
   console.log('Novos requisitos criados com sucesso.');
+
+  console.log('Criando subrequisitos para o requisito composto R31...');
+
+  const requisitoComposto = await prisma.requisito.findFirst({
+    where: { 
+      texto: { startsWith: "REQUISITO 31 - Disponibiliza os links" }
+    }
+  });
+
+  if (requisitoComposto) {
+    const subRequisitos = [
+      { texto: "Disponibiliza link de acesso à seção 'Ouvidoria' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/ouvidoria/', ordem: 1 },
+      { texto: "Disponibiliza link de acesso à seção 'Responsabilidade Fiscal' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/responsabilidade-fiscal/', ordem: 2 },
+      { texto: "Disponibiliza link de acesso à seção 'Fiscalização e Controle' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/gestao-estadual/fiscalizacao-e-controle/', ordem: 3 },
+      { texto: "Disponibiliza link de acesso à seção 'Transferências' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/despesas/transferencias/', ordem: 4 },
+      { texto: "Disponibiliza link de acesso à seção 'Receitas' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/receitas/', ordem: 5 },
+      { texto: "Disponibiliza link de acesso à seção 'Despesas' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/despesas/menu-despesas/', ordem: 6 },
+      { texto: "Disponibiliza link de acesso à seção 'Licitações e Contratos' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/licitacoes-e-contratos/', ordem: 7 },
+      { texto: "Disponibiliza link de acesso à seção 'Obras' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/despesas/obras/', ordem: 8 },
+      { texto: "Disponibiliza link de acesso à seção 'Patrimônio Público' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/gestao-estadual/patrimonio-publico/', ordem: 9 },
+      { texto: "Disponibiliza link de acesso à seção 'Recursos Humanos' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/recursos-humanos/', ordem: 10 },
+      { texto: "Disponibiliza link de acesso à seção 'Acesso à Informação' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/acesso-a-informacao/', ordem: 11 },
+      { texto: "Disponibiliza link de acesso à seção 'Dados Abertos' do Portal da Transparência", linkFixo: null, ordem: 12 },
+      { texto: "Disponibiliza link de acesso à seção 'Participação' do Portal da Transparência", linkFixo: null, ordem: 13 }
+    ];
+
+    for (const sub of subRequisitos) {
+      await prisma.subRequisito.create({
+        data: {
+          texto: sub.texto,
+          linkFixo: sub.linkFixo,
+          ordem: sub.ordem,
+          requisitoPaiId: requisitoComposto.id
+        }
+      });
+    }
+    
+    console.log(`${subRequisitos.length} subrequisitos criados com sucesso.`);
+  } else {
+    console.log('❌ Requisito composto R31 não encontrado!');
+  }
+
   console.log('Criando usuários de exemplo...');
 
   const usersData = [

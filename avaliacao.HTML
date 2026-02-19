@@ -442,18 +442,107 @@
                     const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
                     pontuacaoTotal += pontuacaoRequisito;
 
-                    if (resposta.atende === true) { 
-                        pontuacaoSecretaria += pontuacaoRequisito;
-                    }
-
-                    if (resposta.statusValidacao === 'aprovado') {
-                        pontuacaoAdmin += pontuacaoRequisito;
+                    if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                        const aprovados = resposta.subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
+                        
+                        let pontuacaoAdminRequisito = 0;
+                        
+                        if (aprovados >= 12) pontuacaoAdminRequisito = pontuacaoRequisito; // 100%
+                        else if (aprovados >= 8) pontuacaoAdminRequisito = pontuacaoRequisito * 0.7; // 70%
+                        else if (aprovados >= 4) pontuacaoAdminRequisito = pontuacaoRequisito * 0.5; // 50%
+                        else if (aprovados >= 1) pontuacaoAdminRequisito = pontuacaoRequisito * 0.3; // 30%
+                        else pontuacaoAdminRequisito = 0;
+                        
+                        pontuacaoAdmin += pontuacaoAdminRequisito;
+                        
+                        // Pontuação da secretaria (baseada no que ela marcou)
+                        const secretariaAprovados = resposta.subRespostas.filter(s => s.atende === true).length;
+                        let pontuacaoSecretariaRequisito = 0;
+                        
+                        if (secretariaAprovados >= 12) pontuacaoSecretariaRequisito = pontuacaoRequisito;
+                        else if (secretariaAprovados >= 8) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.7;
+                        else if (secretariaAprovados >= 4) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.5;
+                        else if (secretariaAprovados >= 1) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.3;
+                        
+                        pontuacaoSecretaria += pontuacaoSecretariaRequisito;
+                        
+                    } else {
+                        // Requisitos normais
+                        if (resposta.atende === true) { 
+                            pontuacaoSecretaria += pontuacaoRequisito;
+                        }
+                        if (resposta.statusValidacao === 'aprovado') {
+                            pontuacaoAdmin += pontuacaoRequisito;
+                        }
                     }
                 });
 
-                console.log(`Pontuações recalculadas: Secretaria=${pontuacaoSecretaria}, Admin=${pontuacaoAdmin}, Total=${pontuacaoTotal}`);
-                scoreSecretariaEl.textContent = `${Math.round(pontuacaoSecretaria)} / ${pontuacaoTotal}`;
-                scoreAdminEl.textContent = `${Math.round(pontuacaoAdmin)} / ${pontuacaoTotal}`;
+                // Mostrar com 1 casa decimal
+                scoreSecretariaEl.textContent = `${pontuacaoSecretaria.toFixed(1)} / ${pontuacaoTotal}`;
+                scoreAdminEl.textContent = `${pontuacaoAdmin.toFixed(1)} / ${pontuacaoTotal}`;
+                
+                console.log(`Pontuações: Secretaria=${pontuacaoSecretaria.toFixed(1)}/${pontuacaoTotal}, Admin=${pontuacaoAdmin.toFixed(1)}/${pontuacaoTotal}`);
+            }
+
+            function atualizarCardComposto(respostaId) {
+                // Encontrar o card do requisito composto
+                const card = document.querySelector(`.resposta-card[data-resposta-id="${respostaId}"]`);
+                if (!card) return;
+                
+                // Encontrar a resposta nos dados
+                const resposta = avaliacaoCompleta.respostas.find(r => r.id === parseInt(respostaId));
+                if (!resposta || !resposta.subRespostas) return;
+                
+                const subRespostas = resposta.subRespostas;
+                const aprovados = subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
+                const total = subRespostas.length;
+                const pontuacaoBase = resposta.requisito?.pontuacao || 8;
+                
+                // 🔥 NOVO CÁLCULO
+                let pontuacaoProporcional = 0;
+                let percentual = 0;
+                
+                if (aprovados >= 12) {
+                    pontuacaoProporcional = 8.0;
+                    percentual = 100;
+                } else if (aprovados >= 8) {
+                    pontuacaoProporcional = 5.6;
+                    percentual = 70;
+                } else if (aprovados >= 4) {
+                    pontuacaoProporcional = 4.0;
+                    percentual = 50;
+                } else if (aprovados >= 1) {
+                    pontuacaoProporcional = 2.4;
+                    percentual = 30;
+                } else {
+                    pontuacaoProporcional = 0;
+                    percentual = 0;
+                }
+                
+                // Atualizar o badge de status no header
+                const statusBadge = card.querySelector('.atende-badge');
+                if (statusBadge) {
+                    if (aprovados === total) {
+                        statusBadge.className = 'atende-badge atende-sim';
+                        statusBadge.textContent = `COMPLETO (${pontuacaoProporcional.toFixed(1)}/${pontuacaoBase} pts)`;
+                    } else if (aprovados === 0) {
+                        statusBadge.className = 'atende-badge atende-nao';
+                        statusBadge.textContent = `NENHUM (0/${pontuacaoBase} pts)`;
+                    } else {
+                        statusBadge.className = 'atende-badge';
+                        statusBadge.style.background = '#ffc107';
+                        statusBadge.style.color = '#333';
+                        statusBadge.textContent = `${aprovados}/${total} itens (${pontuacaoProporcional.toFixed(1)}/${pontuacaoBase} pts - ${percentual}%)`;
+                    }
+                }
+                
+                // Atualizar a barra de progresso
+                const barraProgresso = card.querySelector('.resposta-body > div:first-child div');
+                if (barraProgresso) {
+                    barraProgresso.style.width = `${percentual}%`;
+                    barraProgresso.style.background = percentual === 100 ? '#28a745' : (percentual >= 70 ? '#17a2b8' : '#ffc107');
+                    barraProgresso.textContent = `${percentual}%`;
+                }
             }
 
             async function salvarAnaliseAutomatica(respostaId) {
@@ -508,6 +597,392 @@
                 }
             }
 
+            // Função para renderizar requisito composto na visão do analista (COM VALIDAÇÃO INDIVIDUAL)
+                function renderRequisitoCompostoAnalise(resposta) {
+                    console.log('Renderizando requisito composto', resposta.subRespostas.length);
+                    console.log('=== RENDERIZANDO REQUISITO COMPOSTO ===');
+                    console.log('Resposta ID:', resposta.id);
+                    console.log('Subrespostas:', resposta.subRespostas);
+                    console.log('Quantidade:', resposta.subRespostas?.length);
+                    const subRespostas = resposta.subRespostas || [];
+    
+                    // Calcular quantidade de aprovados
+                    const aprovados = subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
+                    const total = subRespostas.length;
+                    const pontuacaoBase = resposta.requisito?.pontuacao || 8;
+                    
+                    // 🔥 NOVO CÁLCULO BASEADO NA QUANTIDADE DE APROVADOS
+                    let pontuacaoProporcional = 0;
+                    let percentual = 0;
+                    
+                    if (aprovados >= 12) {
+                        pontuacaoProporcional = 8.0; // 100%
+                        percentual = 100;
+                    } else if (aprovados >= 8) {
+                        pontuacaoProporcional = 5.6; // 70%
+                        percentual = 70;
+                    } else if (aprovados >= 4) {
+                        pontuacaoProporcional = 4.0; // 50%
+                        percentual = 50;
+                    } else if (aprovados >= 1) {
+                        pontuacaoProporcional = 2.4; // 30%
+                        percentual = 30;
+                    } else {
+                        pontuacaoProporcional = 0;
+                        percentual = 0;
+                    }
+                    
+                    let statusGeral = 'pendente';
+                    let statusTexto = 'Pendente';
+                    let cardClass = '';
+                    
+                    if (aprovados === total) {
+                        statusGeral = 'aprovado';
+                        statusTexto = `COMPLETO (${pontuacaoProporcional.toFixed(1)}/${pontuacaoBase} pts)`;
+                        cardClass = 'aprovado';
+                    } else if (aprovados === 0) {
+                        statusGeral = 'rejeitado';
+                        statusTexto = `NENHUM (0/${pontuacaoBase} pts)`;
+                        cardClass = 'rejeitado';
+                        percentual = 0;
+                    } else {
+                        statusGeral = 'parcial';
+                        statusTexto = `${aprovados}/${total} itens (${pontuacaoProporcional.toFixed(1)}/${pontuacaoBase} pts - ${percentual}%)`;
+                        cardClass = 'pendente';
+                    }
+                    
+                    return `
+                        <div class="resposta-card ${cardClass}" data-resposta-id="${resposta.id}" data-tipo="composto">
+                        <div class="resposta-header">
+                            <strong>${resposta.requisito.texto}</strong>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="atende-badge ${aprovados === total ? 'atende-sim' : (aprovados === 0 ? 'atende-nao' : '')}" 
+                                    style="${aprovados > 0 && aprovados < total ? 'background: #ffc107; color: #333;' : ''}">
+                                ${statusTexto}
+                            </span>
+                            </div>
+                        </div>
+                        
+                        <div class="resposta-body">
+                            <!-- Barra de progresso -->
+                            <div style="margin-bottom: 20px; background: #e9ecef; border-radius: 10px; height: 20px; overflow: hidden;">
+                            <div style="width: ${percentual}%; background: ${percentual === 100 ? '#28a745' : (percentual >= 70 ? '#17a2b8' : '#ffc107')}; height: 100%; text-align: center; color: white; font-size: 0.8em; line-height: 20px;">
+                                ${percentual}%
+                            </div>
+                            </div>
+                            
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">ID</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Subitem</th>
+                                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">Resposta</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Link</th>
+                                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">Validação</th>
+                                <!-- <th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">Comentário</th>-->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${subRespostas.map((sub, index) => {
+                                let badgeClass = '';
+                                let statusDisplay = '';
+                                
+                                if (sub.statusValidacao === 'aprovado') {
+                                    badgeClass = 'status-aprovado';
+                                    statusDisplay = '✅ Atende';
+                                } else if (sub.statusValidacao === 'rejeitado') {
+                                    badgeClass = 'status-rejeitado';
+                                    statusDisplay = '❌ Não atende';
+                                } else {
+                                    badgeClass = 'status-pendente';
+                                    statusDisplay = '⏳ Pendente';
+                                }
+                                
+                                return `
+                                <tr>
+                                    <td style="padding: 10px; border-bottom: 1px solid #dee2e6; font-weight: 600;">${index + 1}</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #dee2e6;">${sub.subRequisito.texto}</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #dee2e6; text-align: center;">
+                                    <span class="atende-badge ${sub.atende ? 'atende-sim' : 'atende-nao'}" style="font-size: 0.75em; padding: 3px 8px;">
+                                        ${sub.atende ? 'Atende' : 'Não atende'}
+                                    </span>
+                                    </td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #dee2e6;">
+                                    ${sub.linkComprovante ? 
+                                        `<a href="${sub.linkComprovante}" target="_blank" style="word-break: break-all; color: var(--azul-gov-claro);">${sub.linkComprovante.substring(0, 30)}...</a>` : 
+                                        '<span style="color: #999;">—</span>'}
+                                    </td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #dee2e6; text-align: center;">
+                                    <select class="subitem-validacao" data-subresposta-id="${sub.id}" 
+                                            style="padding: 6px; border-radius: 4px; border: 1px solid #ced4da; width: 100%;">
+                                        <option value="pendente" ${sub.statusValidacao === 'pendente' ? 'selected' : ''} style="background-color: #fff3cd; color: #856404;">⏳ Pendente</option>
+                                        <option value="aprovado" ${sub.statusValidacao === 'aprovado' ? 'selected' : ''}>✅ Atende</option>
+                                        <option value="rejeitado" ${sub.statusValidacao === 'rejeitado' ? 'selected' : ''}>❌ Não atende</option>
+                                    </select>
+                                    </td>
+                                    <!-- 
+                                    <td style="padding: 10px; border-bottom: 1px solid #dee2e6;">
+                                    <input type="text" class="subitem-comentario" data-subresposta-id="${sub.id}" 
+                                            value="${sub.comentarioAdmin || ''}" 
+                                            placeholder="Comentário..." 
+                                            style="width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px;">
+                                    </td>
+                                    -->
+                                </tr>
+                                `}).join('')}
+                            </tbody>
+                            </table>
+                            
+                            <div class="admin-comment-container" style="margin-top: 20px;">
+                            <textarea class="admin-comment" placeholder="Comentário geral sobre o requisito...">${resposta.comentarioAdmin || ''}</textarea>
+                            </div>
+                        </div>
+                        </div>
+                    `;
+                }
+
+                function configurarListenersSubitens() {
+                    document.querySelectorAll('.subitem-validacao').forEach(select => {
+                        const novoSelect = select.cloneNode(true);
+                        select.parentNode.replaceChild(novoSelect, select);
+                        
+                        novoSelect.addEventListener('change', async function() {
+                            const subRespostaId = this.dataset.subrespostaId;
+                            const status = this.value;
+                            const linha = this.closest('tr');
+                            const card = this.closest('.resposta-card');
+                            const respostaId = card.dataset.respostaId;
+                            
+                            this.disabled = true;
+                            
+                            try {
+                                const response = await fetch(`/api/subrespostas/${subRespostaId}/validar`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${authToken}`
+                                    },
+                                    body: JSON.stringify({ statusValidacao: status })
+                                });
+                                
+                                if (response.ok) {
+                                    
+                                    const respostaIndex = avaliacaoCompleta.respostas.findIndex(r => 
+                                        r.subRespostas?.some(s => s.id === parseInt(subRespostaId))
+                                    );
+                                    
+                                    if (respostaIndex !== -1) {
+                                        const subIndex = avaliacaoCompleta.respostas[respostaIndex].subRespostas.findIndex(s => s.id === parseInt(subRespostaId));
+                                        if (subIndex !== -1) {
+                                            avaliacaoCompleta.respostas[respostaIndex].subRespostas[subIndex].statusValidacao = status;
+                                        }
+                                    }
+                                    
+                                    atualizarCardComposto(respostaId);
+                                    recalcularEExibirPontuacoes();
+                                    
+                                    Swal.fire({ 
+                                        toast: true, 
+                                        position: 'top-end', 
+                                        icon: 'success', 
+                                        title: status === 'aprovado' ? 'Aprovado!' : (status === 'rejeitado' ? 'Rejeitado!' : 'Pendente'), 
+                                        showConfirmButton: false, 
+                                        timer: 1500 
+                                    });
+                                }
+                            } catch (error) {
+                                console.error('Erro:', error);
+                                Swal.fire('Erro!', 'Não foi possível salvar.', 'error');
+                            } finally {
+                                this.disabled = false;
+                            }
+                        });
+                    });
+
+                    
+                    document.querySelectorAll('.subitem-comentario').forEach(input => {
+                        const novoInput = input.cloneNode(true);
+                        input.parentNode.replaceChild(novoInput, input);
+                        
+                        let timeout;
+                        novoInput.addEventListener('input', function() {
+                            clearTimeout(timeout);
+                            const subRespostaId = this.dataset.subrespostaId;
+                            const comentario = this.value;
+                            
+                            timeout = setTimeout(async () => {
+                                try {
+                                    await fetch(`/api/subrespostas/${subRespostaId}/validar`, {
+                                        method: 'PATCH',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${authToken}`
+                                        },
+                                        body: JSON.stringify({ comentarioAdmin: comentario })
+                                    });
+                                } catch (error) {
+                                    console.error('Erro ao salvar comentário:', error);
+                                }
+                            }, 500);
+                        });
+                    });
+                }
+
+                async function carregarAvaliacao() {
+                    try {
+                        const response = await fetch(`/api/avaliacoes/${avaliacaoId}`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                        });
+                        
+                        if (response.ok) {
+                        avaliacaoCompleta = await response.json();
+                        
+                        recalcularEExibirPontuacoes();
+                        
+                        respostasContainer.innerHTML = avaliacaoCompleta.respostas.map(resposta => {
+                            if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                            return renderRequisitoCompostoAnalise(resposta);
+                            } else {
+                            const atendeClasse = resposta.atende ? 'atende-sim' : 'atende-nao';
+                            const atendeTexto = resposta.atende ? 'Atende' : 'Não atende';
+                            const answerHTML = `<div class="resposta-status"><span class="atende-badge ${atendeClasse}">${atendeTexto}</span></div>`;
+
+                            let evidencesHTML = '';
+                            const evidencias = Array.isArray(resposta.evidencias) ? resposta.evidencias : [];
+                            if (evidencias.length > 0 || resposta.linkComprovante) {
+                                evidencesHTML += `<div class="evidence-section"><h4>Evidências Fornecidas:</h4><ul class="evidence-list">`;
+                                if (resposta.linkComprovante) {
+                                evidencesHTML += `<li class="evidence-item"><a href="${resposta.linkComprovante}" target="_blank">${resposta.linkComprovante}</a> (Automático)</li>`;
+                                }
+                                evidencias.forEach(ev => {
+                                const url = typeof ev === 'object' ? ev.url : ev;
+                                evidencesHTML += `<li class="evidence-item"><a href="${url}" target="_blank">${url}</a></li>`;
+                                });
+                                evidencesHTML += `</ul></div>`;
+                            }
+
+                            let commentHTML = '';
+                            if (resposta.comentarioSecretaria) {
+                                commentHTML = `<div class="comment-section"><h4>Comentário da Secretaria:</h4><p>"${resposta.comentarioSecretaria}"</p></div>`;
+                            }
+
+                            let adminInterfaceHTML = '';
+                            const isEmAnalise = avaliacaoCompleta.status === 'EM_ANALISE_SCGE' || avaliacaoCompleta.status === 'EM_ANALISE_DE_RECURSO';
+                            let cardClass = ''; 
+
+                            if (isEmAnalise) {
+                                cardClass = resposta.statusValidacao || 'pendente'; 
+                                
+                                const houveDivergencia = (resposta.atende !== (resposta.statusValidacao === 'aprovado'));
+                                const statusTexto = !resposta.statusValidacao || resposta.statusValidacao === 'pendente' ? 'Pendente' : (houveDivergencia ? 'Alterado' : 'Mantido');
+                                
+                                let tooltipTexto = "";
+                                if (!resposta.statusValidacao || resposta.statusValidacao === 'pendente') {
+                                tooltipTexto = "Requisito pendente de análise";
+                                } else if (houveDivergencia) {
+                                tooltipTexto = "A sua avaliação divergiu com a decisão da secretaria";
+                                } else {
+                                tooltipTexto = "A sua avaliação manteve a decisão da secretaria";
+                                }
+                                
+                                adminInterfaceHTML = `
+                                <div class="validation-section">
+                                    <div class="link-analista-container">
+                                        <h5>Links de Referência do Analista:</h5>
+                                        <div id="link-analista-display-${resposta.id}" class="link-analista-display" style="margin-bottom: 8px;">
+                                            ${resposta.linksAnalista && resposta.linksAnalista.length > 0 ? 
+                                                resposta.linksAnalista.map(link => `
+                                                    <div class="evidence-item" data-link="${link.url}">
+                                                        <a href="${link.url}" target="_blank" title="${link.url}">${link.url}</a>
+                                                        <button class="remove-evidence-btn remove-link-analista-btn" 
+                                                            data-resposta-id="${resposta.id}" 
+                                                            data-link="${link.url}" 
+                                                            title="Remover Link">&times;</button>
+                                                    </div>
+                                                `).join('') 
+                                                : '<span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>'
+                                            }
+                                        </div>
+                                        <button class="btn-add-evidence btn-add-link-analista" data-resposta-id="${resposta.id}">
+                                            + Adicionar Link
+                                        </button>
+                                    </div>
+                                    <textarea class="admin-comment" placeholder="Adicionar comentário da análise...">${resposta.comentarioAdmin || ''}</textarea>
+                                    <div class="validation-actions">
+                                        <span class="tooltip status-validacao status-${resposta.statusValidacao || 'pendente'}">
+                                            ${statusTexto}
+                                            <span class="tooltiptext">${tooltipTexto}</span>
+                                        </span>
+                                        <button class="btn-validation nao-atende ${resposta.statusValidacao === 'rejeitado' ? 'active' : ''}" data-validation-type="normal" title="Ao clicar em não atende você afirma que a secretaria não atende ao requisito">Não atende</button>
+                                        <button class="btn-validation atende ${resposta.statusValidacao === 'aprovado' ? 'active' : ''}" data-validation-type="normal" title="Ao clicar em atende você afirma que a secretaria atende ao requisito">Atende</button>
+                                    </div>
+                                </div>`;
+                            } else { 
+                                cardClass = resposta.statusValidacao || 'pendente';
+                                
+                                const houveDivergencia = (resposta.atende !== (resposta.statusValidacao === 'aprovado'));
+                                const statusTexto = !resposta.statusValidacao || resposta.statusValidacao === 'pendente' ? 'Pendente' : (houveDivergencia ? 'Alterado' : 'Mantido');
+
+                                adminInterfaceHTML = `
+                                    <div class="admin-feedback-box" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                                        <h4 style="color: var(--azul-gov-principal); margin-bottom: 10px;">Análise da SCGE</h4>
+                                        <p><strong>Resultado:</strong> <span class="status-validacao status-${resposta.statusValidacao || 'pendente'}">${statusTexto}</span></p>
+                                        ${(resposta.comentarioAdmin && resposta.comentarioAdmin.trim() !== "") ?
+                                            `<p style="margin-top: 5px;"><strong>Comentário:</strong> "${resposta.comentarioAdmin}"</p>` :
+                                            ''
+                                        }
+                                    </div>`;
+                            }
+
+                            return `
+                                <div class="resposta-card ${cardClass}" data-resposta-id="${resposta.id}">
+                                    <div class="resposta-header">
+                                        <strong>${resposta.requisito.texto}</strong>
+                                        ${answerHTML}
+                                    </div>
+                                    <div class="resposta-body">
+                                        ${evidencesHTML}
+                                        ${commentHTML}
+                                        ${adminInterfaceHTML}
+                                    </div>
+                                </div>`;
+                            }
+                        }).join('');
+                        
+                        configurarListenersSubitens();
+                        }
+                    } catch (error) {
+                        console.error('Erro ao recarregar avaliação:', error);
+                    }
+                }
+
+                async function handleRemoveLinkAnalista(event) {
+                    const target = event.target;
+                    const respostaId = parseInt(target.dataset.respostaId);
+                    const linkToRemove = target.dataset.link;
+                    const displayArea = document.getElementById(`link-analista-display-${respostaId}`);
+                    
+                    const linkItem = target.closest('.evidence-item');
+                    if (linkItem) {
+                        linkItem.remove();
+                    }
+                    
+                    if (displayArea && displayArea.querySelectorAll('.evidence-item').length === 0) {
+                        displayArea.innerHTML = '<span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>';
+                    }
+                    
+                    await salvarAnaliseAutomatica(respostaId);
+                    
+                    Swal.fire({ 
+                        toast: true, 
+                        position: 'top-end', 
+                        icon: 'success', 
+                        title: 'Link removido!', 
+                        showConfirmButton: false, 
+                        timer: 1500 
+                    });
+                }
+
             try {
                 const response = await fetch(`/api/avaliacoes/${avaliacaoId}`, { 
                     headers: { 'Authorization': `Bearer ${authToken}` } 
@@ -532,112 +1007,127 @@
 
                 recalcularEExibirPontuacoes();
 
+                console.log('=== VERIFICANDO REQUISITO 31 ===');
+                avaliacaoCompleta.respostas.forEach((r, i) => {
+                    if (r.requisito?.texto.includes('REQUISITO 31')) {
+                        console.log('REQUISITO 31 ENCONTRADO!');
+                        console.log('subRespostas:', r.subRespostas);
+                        console.log('Tem subRespostas?', r.subRespostas ? 'SIM' : 'NÃO');
+                        console.log('Quantidade:', r.subRespostas?.length);
+                    }
+                });
+
                 respostasContainer.innerHTML = avaliacaoCompleta.respostas.map(resposta => {
-            
-                    const atendeClasse = resposta.atende ? 'atende-sim' : 'atende-nao';
-                    const atendeTexto = resposta.atende ? 'Atende' : 'Não atende';
-                    const answerHTML = `<div class="resposta-status"><span class="atende-badge ${atendeClasse}">${atendeTexto}</span></div>`;
+                    if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                        return renderRequisitoCompostoAnalise(resposta);
+                    } else {
+                        const atendeClasse = resposta.atende ? 'atende-sim' : 'atende-nao';
+                        const atendeTexto = resposta.atende ? 'Atende' : 'Não atende';
+                        const answerHTML = `<div class="resposta-status"><span class="atende-badge ${atendeClasse}">${atendeTexto}</span></div>`;
 
-                    let evidencesHTML = '';
-                    const evidencias = Array.isArray(resposta.evidencias) ? resposta.evidencias : [];
-                    if (evidencias.length > 0 || resposta.linkComprovante) {
-                        evidencesHTML += `<div class="evidence-section"><h4>Evidências Fornecidas:</h4><ul class="evidence-list">`;
-                        if (resposta.linkComprovante) {
-                            evidencesHTML += `<li class="evidence-item"><a href="${resposta.linkComprovante}" target="_blank">${resposta.linkComprovante}</a> (Automático)</li>`;
+                        let evidencesHTML = '';
+                        const evidencias = Array.isArray(resposta.evidencias) ? resposta.evidencias : [];
+                        if (evidencias.length > 0 || resposta.linkComprovante) {
+                            evidencesHTML += `<div class="evidence-section"><h4>Evidências Fornecidas:</h4><ul class="evidence-list">`;
+                            if (resposta.linkComprovante) {
+                                evidencesHTML += `<li class="evidence-item"><a href="${resposta.linkComprovante}" target="_blank">${resposta.linkComprovante}</a> (Automático)</li>`;
+                            }
+                            evidencias.forEach(ev => {
+                                const url = typeof ev === 'object' ? ev.url : ev;
+                                evidencesHTML += `<li class="evidence-item"><a href="${url}" target="_blank">${url}</a></li>`;
+                            });
+                            evidencesHTML += `</ul></div>`;
                         }
-                        evidencias.forEach(ev => {
-                            const url = typeof ev === 'object' ? ev.url : ev;
-                            evidencesHTML += `<li class="evidence-item"><a href="${url}" target="_blank">${url}</a></li>`;
-                        });
-                        evidencesHTML += `</ul></div>`;
-                    }
 
-                    let commentHTML = '';
-                    if (resposta.comentarioSecretaria) {
-                        commentHTML = `<div class="comment-section"><h4>Comentário da Secretaria:</h4><p>"${resposta.comentarioSecretaria}"</p></div>`;
-                    }
-
-                    let adminInterfaceHTML = '';
-                    const isEmAnalise = avaliacaoCompleta.status === 'EM_ANALISE_SCGE' || avaliacaoCompleta.status === 'EM_ANALISE_DE_RECURSO';
-                    let cardClass = ''; 
-
-                    if (isEmAnalise) {
-                        cardClass = resposta.statusValidacao || 'pendente'; 
-                        
-                        const houveDivergencia = (resposta.atende !== (resposta.statusValidacao === 'aprovado'));
-                        const statusTexto = !resposta.statusValidacao || resposta.statusValidacao === 'pendente' ? 'Pendente' : (houveDivergencia ? 'Alterado' : 'Mantido');
-                        
-                        let tooltipTexto = "";
-                        if (!resposta.statusValidacao || resposta.statusValidacao === 'pendente') {
-                            tooltipTexto = "Requisito pendente de análise";
-                        } else if (houveDivergencia) {
-                            tooltipTexto = "A sua avaliação divergiu com a decisão da secretaria";
-                        } else {
-                            tooltipTexto = "A sua avaliação manteve a decisão da secretaria";
+                        let commentHTML = '';
+                        if (resposta.comentarioSecretaria) {
+                            commentHTML = `<div class="comment-section"><h4>Comentário da Secretaria:</h4><p>"${resposta.comentarioSecretaria}"</p></div>`;
                         }
-                        
-                        adminInterfaceHTML = `
-                        <div class="validation-section">
-                            <div class="link-analista-container">
-                                <h5>Links de Referência do Analista:</h5>
-                                <div id="link-analista-display-${resposta.id}" class="link-analista-display" style="margin-bottom: 8px;">
-                                    ${resposta.linksAnalista && resposta.linksAnalista.length > 0 ? 
-                                        resposta.linksAnalista.map(link => `
-                                            <div class="evidence-item" data-link="${link.url}">
-                                                <a href="${link.url}" target="_blank" title="${link.url}">${link.url}</a>
-                                                <button class="remove-evidence-btn remove-link-analista-btn" 
-                                                    data-resposta-id="${resposta.id}" 
-                                                    data-link="${link.url}" 
-                                                    title="Remover Link">&times;</button>
-                                            </div>
-                                        `).join('') 
-                                        : '<span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>'
-                                    }
+
+                        let adminInterfaceHTML = '';
+                        const isEmAnalise = avaliacaoCompleta.status === 'EM_ANALISE_SCGE' || avaliacaoCompleta.status === 'EM_ANALISE_DE_RECURSO';
+                        let cardClass = ''; 
+
+                        if (isEmAnalise) {
+                            cardClass = resposta.statusValidacao || 'pendente'; 
+                            
+                            const houveDivergencia = (resposta.atende !== (resposta.statusValidacao === 'aprovado'));
+                            const statusTexto = !resposta.statusValidacao || resposta.statusValidacao === 'pendente' ? 'Pendente' : (houveDivergencia ? 'Alterado' : 'Mantido');
+                            
+                            let tooltipTexto = "";
+                            if (!resposta.statusValidacao || resposta.statusValidacao === 'pendente') {
+                                tooltipTexto = "Requisito pendente de análise";
+                            } else if (houveDivergencia) {
+                                tooltipTexto = "A sua avaliação divergiu com a decisão da secretaria";
+                            } else {
+                                tooltipTexto = "A sua avaliação manteve a decisão da secretaria";
+                            }
+                            
+                            adminInterfaceHTML = `
+                            <div class="validation-section">
+                                <div class="link-analista-container">
+                                    <h5>Links de Referência do Analista:</h5>
+                                    <div id="link-analista-display-${resposta.id}" class="link-analista-display" style="margin-bottom: 8px;">
+                                        ${resposta.linksAnalista && resposta.linksAnalista.length > 0 ? 
+                                            resposta.linksAnalista.map(link => `
+                                                <div class="evidence-item" data-link="${link.url}">
+                                                    <a href="${link.url}" target="_blank" title="${link.url}">${link.url}</a>
+                                                    <button class="remove-evidence-btn remove-link-analista-btn" 
+                                                        data-resposta-id="${resposta.id}" 
+                                                        data-link="${link.url}" 
+                                                        title="Remover Link">&times;</button>
+                                                </div>
+                                            `).join('') 
+                                            : '<span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>'
+                                        }
+                                    </div>
+                                    <button class="btn-add-evidence btn-add-link-analista" data-resposta-id="${resposta.id}">
+                                        + Adicionar Link
+                                    </button>
                                 </div>
-                                <button class="btn-add-evidence btn-add-link-analista" data-resposta-id="${resposta.id}">
-                                    + Adicionar Link
-                                </button>
-                            </div>
-                            <textarea class="admin-comment" placeholder="Adicionar comentário da análise...">${resposta.comentarioAdmin || ''}</textarea>
-                            <div class="validation-actions">
-                                <span class="tooltip status-validacao status-${resposta.statusValidacao || 'pendente'}">
-                                    ${statusTexto}
-                                    <span class="tooltiptext">${tooltipTexto}</span>
-                                </span>
-                                <button class="btn-validation nao-atende ${resposta.statusValidacao === 'rejeitado' ? 'active' : ''}" data-validation-type="normal" title="Ao clicar em não atende você afirma que a secretaria não atende ao requisito">Não atende</button>
-                                <button class="btn-validation atende ${resposta.statusValidacao === 'aprovado' ? 'active' : ''}" data-validation-type="normal" title="Ao clicar em atende você afirma que a secretaria atende ao requisito">Atende</button>
-                            </div>
-                        </div>`;
-                    } else { 
-                        cardClass = resposta.statusValidacao || 'pendente';
-                        
-                        const houveDivergencia = (resposta.atende !== (resposta.statusValidacao === 'aprovado'));
-                        const statusTexto = !resposta.statusValidacao || resposta.statusValidacao === 'pendente' ? 'Pendente' : (houveDivergencia ? 'Alterado' : 'Mantido');
+                                <textarea class="admin-comment" placeholder="Adicionar comentário da análise...">${resposta.comentarioAdmin || ''}</textarea>
+                                <div class="validation-actions">
+                                    <span class="tooltip status-validacao status-${resposta.statusValidacao || 'pendente'}">
+                                        ${statusTexto}
+                                        <span class="tooltiptext">${tooltipTexto}</span>
+                                    </span>
+                                    <button class="btn-validation nao-atende ${resposta.statusValidacao === 'rejeitado' ? 'active' : ''}" data-validation-type="normal" title="Ao clicar em não atende você afirma que a secretaria não atende ao requisito">Não atende</button>
+                                    <button class="btn-validation atende ${resposta.statusValidacao === 'aprovado' ? 'active' : ''}" data-validation-type="normal" title="Ao clicar em atende você afirma que a secretaria atende ao requisito">Atende</button>
+                                </div>
+                            </div>`;
+                        } else { 
+                            cardClass = resposta.statusValidacao || 'pendente';
+                            
+                            const houveDivergencia = (resposta.atende !== (resposta.statusValidacao === 'aprovado'));
+                            const statusTexto = !resposta.statusValidacao || resposta.statusValidacao === 'pendente' ? 'Pendente' : (houveDivergencia ? 'Alterado' : 'Mantido');
 
-                        adminInterfaceHTML = `
-                            <div class="admin-feedback-box" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                                <h4 style="color: var(--azul-gov-principal); margin-bottom: 10px;">Análise da SCGE</h4>
-                                <p><strong>Resultado:</strong> <span class="status-validacao status-${resposta.statusValidacao || 'pendente'}">${statusTexto}</span></p>
-                                ${(resposta.comentarioAdmin && resposta.comentarioAdmin.trim() !== "") ?
-                                    `<p style="margin-top: 5px;"><strong>Comentário:</strong> "${resposta.comentarioAdmin}"</p>` :
-                                    ''
-                                }
+                            adminInterfaceHTML = `
+                                <div class="admin-feedback-box" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                                    <h4 style="color: var(--azul-gov-principal); margin-bottom: 10px;">Análise da SCGE</h4>
+                                    <p><strong>Resultado:</strong> <span class="status-validacao status-${resposta.statusValidacao || 'pendente'}">${statusTexto}</span></p>
+                                    ${(resposta.comentarioAdmin && resposta.comentarioAdmin.trim() !== "") ?
+                                        `<p style="margin-top: 5px;"><strong>Comentário:</strong> "${resposta.comentarioAdmin}"</p>` :
+                                        ''
+                                    }
+                                </div>`;
+                        }
+
+                        return `
+                            <div class="resposta-card ${cardClass}" data-resposta-id="${resposta.id}">
+                                <div class="resposta-header">
+                                    <strong>${resposta.requisito.texto}</strong>
+                                    ${answerHTML}
+                                </div>
+                                <div class="resposta-body">
+                                    ${evidencesHTML}
+                                    ${commentHTML}
+                                    ${adminInterfaceHTML}
+                                </div>
                             </div>`;
                     }
-
-                    return `
-                        <div class="resposta-card ${cardClass}" data-resposta-id="${resposta.id}">
-                            <div class="resposta-header">
-                                <strong>${resposta.requisito.texto}</strong>
-                                ${answerHTML}
-                            </div>
-                            <div class="resposta-body">
-                                ${evidencesHTML}
-                                ${commentHTML}
-                                ${adminInterfaceHTML}
-                            </div>
-                        </div>`;
                 }).join('');
+
+                configurarListenersSubitens();
                 
                 const isInitialAnalysisPhase = avaliacaoCompleta.status === 'EM_ANALISE_SCGE';
                 const isRecursoAnalysisPhase = avaliacaoCompleta.status === 'EM_ANALISE_DE_RECURSO';
@@ -650,17 +1140,45 @@
                     
                     actionBtn.addEventListener('click', () => {
                         const requisitosPendentes = [];
+                        const subitensPendentes = [];
+                        
                         avaliacaoCompleta.respostas.forEach(resposta => {
+                            // Verificar requisitos normais
                             if (!resposta.statusValidacao || resposta.statusValidacao === 'pendente') {
                                 requisitosPendentes.push(resposta.requisito.texto);
                             }
+                            
+                            // Verificar subitens do requisito composto
+                            if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                                const pendentes = resposta.subRespostas.filter(s => 
+                                    !s.statusValidacao || s.statusValidacao === 'pendente'
+                                );
+                                
+                                if (pendentes.length > 0) {
+                                    subitensPendentes.push({
+                                        requisito: resposta.requisito.texto,
+                                        quantidade: pendentes.length
+                                    });
+                                }
+                            }
                         });
 
-                        if (requisitosPendentes.length > 0) {
+                        if (requisitosPendentes.length > 0 || subitensPendentes.length > 0) {
+                            let mensagem = '';
+                            
+                            if (requisitosPendentes.length > 0) {
+                                mensagem += `<p><strong>Requisitos pendentes:</strong></p>`;
+                                mensagem += `<ul style="text-align: left; list-style-position: inside;">${requisitosPendentes.map(r => `<li>${r}</li>`).join('')}</ul>`;
+                            }
+                            
+                            if (subitensPendentes.length > 0) {
+                                mensagem += `<p><strong>Subitens pendentes no requisito 31:</strong> ${subitensPendentes[0].quantidade} subitem(ns) aguardando validação</p>`;
+                            }
+                            
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Análise Incompleta',
-                                html: `Você não pode devolver a avaliação, pois os seguintes requisitos ainda não foram validados:<br><br><ul style="text-align: left; list-style-position: inside;">${requisitosPendentes.map(r => `<li>${r}</li>`).join('')}</ul>`,
+                                html: `Você não pode devolver a avaliação, pois existem itens pendentes:<br><br>${mensagem}`,
                                 confirmButtonColor: 'var(--azul-gov-principal)'
                             });
                             return; 
@@ -798,34 +1316,7 @@
                             }
                         });
                     }
-                }
-
-                async function handleRemoveLinkAnalista(event) {
-                    const target = event.target;
-                    const respostaId = parseInt(target.dataset.respostaId);
-                    const linkToRemove = target.dataset.link;
-                    const displayArea = document.getElementById(`link-analista-display-${respostaId}`);
-                    
-                    const linkItem = target.closest('.evidence-item');
-                    if (linkItem) {
-                        linkItem.remove();
-                    }
-                    
-                    if (displayArea && displayArea.querySelectorAll('.evidence-item').length === 0) {
-                        displayArea.innerHTML = '<span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>';
-                    }
-                    
-                    await salvarAnaliseAutomatica(respostaId);
-                    
-                    Swal.fire({ 
-                        toast: true, 
-                        position: 'top-end', 
-                        icon: 'success', 
-                        title: 'Link removido!', 
-                        showConfirmButton: false, 
-                        timer: 1500 
-                    });
-                }
+                }  
 
                 if (target.matches('.remove-link-analista-btn')) {
                     handleRemoveLinkAnalista(event); 
@@ -924,53 +1415,106 @@
 
             let timeoutId;
             respostasContainer.addEventListener('input', async (event) => {
+                console.log('=== INPUT DETECTADO ===');
+                console.log('Target:', event.target);
+                console.log('Target classList:', event.target.classList);
+                console.log('Matches .admin-comment?', event.target.matches('.admin-comment'));
+                
+                console.log('Todos os .admin-comment na página:', document.querySelectorAll('.admin-comment').length);
+                
                 if (event.target.matches('.admin-comment')) {
+                    console.log('🎯 É um admin-comment!');
                     clearTimeout(timeoutId);
                     timeoutId = setTimeout(async () => {
                         const card = event.target.closest('.resposta-card');
-                        const respostaId = parseInt(card.dataset.respostaId);
-                        const linkAnalistaInput = card.querySelector(`#link-analista-${respostaId}`);
+                        console.log('Card encontrado:', card);
+                        console.log('Card dataset:', card?.dataset);
                         
-                        const displayArea = document.getElementById(`link-analista-display-${respostaId}`);
-                        const linksAnalista = [];
-                        displayArea.querySelectorAll('.evidence-item').forEach(item => {
-                            const link = item.querySelector('a').href;
-                            linksAnalista.push(link);
-                        });
+                        if (!card) {
+                            console.error('❌ Card não encontrado!');
+                            return;
+                        }
+                        
+                        const respostaId = parseInt(card.dataset.respostaId);
+                        console.log('Resposta ID:', respostaId);
+                        
+                        const isComposto = card.dataset.tipo === 'composto';
+                        console.log('É requisito composto?', isComposto);
+                        
+                        const comentario = event.target.value;
+                        console.log('Comentário:', comentario);
+                        
+                        let linksAnalista = [];
+                        if (!isComposto) {
+                            const displayArea = document.getElementById(`link-analista-display-${respostaId}`);
+                            if (displayArea) {
+                                displayArea.querySelectorAll('.evidence-item').forEach(item => {
+                                    const link = item.querySelector('a')?.href;
+                                    if (link) linksAnalista.push(link);
+                                });
+                            }
+                        }
+                        console.log('Links analista:', linksAnalista);
 
                         let payload = {
-                            comentarioAdmin: event.target.value,
-                            linksAnalista: linksAnalista
+                            comentarioAdmin: comentario
                         };
+                        
+                        if (linksAnalista.length > 0) {
+                            payload.linksAnalista = linksAnalista;
+                        }
+
+                        console.log('Payload a ser enviado:', payload);
 
                         try {
                             const response = await fetch(`/api/respostas/${respostaId}`, {
                                 method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                                headers: { 
+                                    'Content-Type': 'application/json', 
+                                    'Authorization': `Bearer ${authToken}` 
+                                },
                                 body: JSON.stringify(payload)
                             });
                             
+                            console.log('Resposta do servidor:', response.status);
+                            
                             if (response.ok) {
                                 const respostaAtualizada = await response.json();
-                                console.log("✅ Comentário salvo automaticamente para resposta:", respostaId);
+                                console.log("✅ Comentário salvo com sucesso!");
                                 
                                 const index = avaliacaoCompleta.respostas.findIndex(r => r.id === respostaId);
                                 if (index !== -1) {
-                                    avaliacaoCompleta.respostas[index].comentarioAdmin = respostaAtualizada.comentarioAdmin;
+                                    avaliacaoCompleta.respostas[index].comentarioAdmin = comentario;
                                 }
 
                                 Swal.fire({ 
-                                    toast: true, position: 'top-end', icon: 'success', 
-                                    title: 'Salvo!', showConfirmButton: false, timer: 1500 
+                                    toast: true, 
+                                    position: 'top-end', 
+                                    icon: 'success', 
+                                    title: 'Comentário salvo!', 
+                                    showConfirmButton: false, 
+                                    timer: 1500 
                                 });
                             } else {
                                 const errorText = await response.text();
-                                console.error("❌ Erro ao salvar comentário automaticamente:", errorText);
+                                console.error("❌ Erro ao salvar comentário:", errorText);
+                                
+                                Swal.fire({ 
+                                    toast: true, 
+                                    position: 'top-end', 
+                                    icon: 'error', 
+                                    title: 'Erro ao salvar', 
+                                    text: errorText,
+                                    showConfirmButton: false, 
+                                    timer: 2000 
+                                });
                             }
                         } catch (error) {
-                            console.error("❌ Erro ao salvar comentário:", error);
+                            console.error("❌ Erro na requisição:", error);
                         }
                     }, 500); 
+                } else {
+                    console.log('❌ Não é um admin-comment');
                 }
             });
         });

@@ -1533,17 +1533,32 @@
 
             function criarRecursoHTML(container, resposta, isRecursoPhase, showRecurso, recursoEnviado) {
                 console.log('=== CRIANDO HTML DO RECURSO SIMPLIFICADO ===');
+                console.log('Resposta ID:', resposta.id);
+                console.log('Tem subRespostas?', resposta.subRespostas ? resposta.subRespostas.length : 0);
                 
-                let recursoHTML = '';
+                if (!showRecurso || !isRecursoPhase || recursoEnviado) {
+                    console.log('Condições não atendidas para mostrar recurso');
+                    return;
+                }
 
-                if (showRecurso && isRecursoPhase && !recursoEnviado) {
+                if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                    console.log('É requisito composto - chamando renderRecursoSubitens');
+                    const html = renderRecursoSubitens(resposta);
+                    if (html) {
+                        container.innerHTML = html;
+                        console.log('HTML do recurso inserido no container');
+                    } else {
+                        console.log('renderRecursoSubitens retornou vazio');
+                        container.innerHTML = ''; 
+                    }
+                } else {
                     const foiRejeitado = resposta.statusValidacao === 'rejeitado';
                     const foiAprovado = resposta.statusValidacao === 'aprovado';
 
                     console.log(`Requisito normal - Status: ${resposta.statusValidacao}`);
 
                     if (foiRejeitado) {
-                        recursoHTML = `
+                        container.innerHTML = `
                             <div class="recurso-box" data-is-editable="true">
                                 <h4>Área de Recurso</h4>
                                 <p>Você pode alterar sua decisão para este requisito abaixo:</p>
@@ -1565,7 +1580,7 @@
                                 </div>
                             </div>`;
                     } else if (foiAprovado) {
-                        recursoHTML = `
+                        container.innerHTML = `
                             <div class="recurso-box" data-is-editable="false">
                                 <h4>Análise da SCGE</h4>
                                 <div class="validacao-scge-completa">
@@ -1576,15 +1591,13 @@
                                 </div>
                             </div>`;
                     }
-                    
-                    container.innerHTML = recursoHTML;
                 }
             }
 
             function calcularPontuacaoRecurso() {
-                console.log('=== CALCULANDO PONTUAÇÃO COM AUTOAVALIAÇÃO ORIGINAL ===');
+                console.log('=== CALCULANDO PONTUAÇÃO ===');
 
-                let pontuacaoSecretariaOriginal = 0; 
+                let pontuacaoSecretaria = 0;
                 let pontuacaoAdmin = 0;
                 let pontuacaoTotal = 0;
 
@@ -1596,17 +1609,50 @@
                     const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
                     pontuacaoTotal += pontuacaoRequisito;
 
-                    if (resposta.atendeOriginal === true) { 
-                        pontuacaoSecretariaOriginal += pontuacaoRequisito;
-                    }
-
-                    if (resposta.statusValidacao === 'aprovado') {
-                        pontuacaoAdmin += pontuacaoRequisito;
+                    // Verificar se é requisito composto
+                    if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                        const aprovadosSCGE = resposta.subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
+                        
+                        let pontuacaoAdminRequisito = 0;
+                        
+                        if (aprovadosSCGE >= 12) pontuacaoAdminRequisito = pontuacaoRequisito; // 100%
+                        else if (aprovadosSCGE >= 8) pontuacaoAdminRequisito = pontuacaoRequisito * 0.7; // 70%
+                        else if (aprovadosSCGE >= 4) pontuacaoAdminRequisito = pontuacaoRequisito * 0.5; // 50%
+                        else if (aprovadosSCGE >= 1) pontuacaoAdminRequisito = pontuacaoRequisito * 0.3; // 30%
+                        else pontuacaoAdminRequisito = 0;
+                        
+                        pontuacaoAdmin += pontuacaoAdminRequisito;
+                        
+                        const aprovadosSecretaria = resposta.subRespostas.filter(s => s.atende === true).length;
+                        let pontuacaoSecretariaRequisito = 0;
+                        
+                        if (aprovadosSecretaria >= 12) pontuacaoSecretariaRequisito = pontuacaoRequisito;
+                        else if (aprovadosSecretaria >= 8) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.7;
+                        else if (aprovadosSecretaria >= 4) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.5;
+                        else if (aprovadosSecretaria >= 1) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.3;
+                        
+                        pontuacaoSecretaria += pontuacaoSecretariaRequisito;
+                        
+                    } else {
+                        if (resposta.atendeOriginal === true) { 
+                            pontuacaoSecretaria += pontuacaoRequisito;
+                        }
+                        if (resposta.statusValidacao === 'aprovado') {
+                            pontuacaoAdmin += pontuacaoRequisito;
+                        }
                     }
                 });
 
-                console.log('Pontuação recurso - Autoavaliação Original:', pontuacaoSecretariaOriginal, 'Admin:', pontuacaoAdmin, 'Total:', pontuacaoTotal);
-                return { pontuacaoSecretaria: Math.round(pontuacaoSecretariaOriginal), pontuacaoAdmin: Math.round(pontuacaoAdmin), pontuacaoTotal };
+                console.log('Pontuações calculadas:');
+                console.log('Secretaria:', pontuacaoSecretaria.toFixed(2));
+                console.log('Admin:', pontuacaoAdmin.toFixed(2));
+                console.log('Total:', pontuacaoTotal);
+                
+                return { 
+                    pontuacaoSecretaria: parseFloat(pontuacaoSecretaria.toFixed(2)), 
+                    pontuacaoAdmin: parseFloat(pontuacaoAdmin.toFixed(2)), 
+                    pontuacaoTotal 
+                };
             }
 
             function gerarCSVRecurso() {
@@ -1741,204 +1787,350 @@
                 }
 
                 respostasContainer.innerHTML = avaliacaoCompleta.respostas.map(resposta => {
-                    let cardClass = '';
-                    let statusTexto = '';
-                    let statusClass = '';
-                    let showRecurso = false;
-                    let recursoEnviado = resposta.recursoEnviado;
-
-                    if (resposta.recursoEnviado) {
-                        cardClass = 'card-com-recurso';
-                        statusTexto = 'RECURSO ENVIADO';
-                        statusClass = 'summary-status-recurso';
-                    }
-                    else if (avaliacaoCompleta.status === 'PENDENTE_SECRETARIA' || avaliacaoCompleta.status === 'EM_ANALISE_SCGE') {
-                        statusTexto = 'PENDENTE';
-                        statusClass = 'summary-status-pendente';
+                    if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                        const isEmAnalise = avaliacaoCompleta.status === 'EM_ANALISE_SCGE';
+                        const isAguardandoRecurso = avaliacaoCompleta.status === 'AGUARDANDO_RECURSO';
+                        const isFinalizada = avaliacaoCompleta.status === 'FINALIZADA';
                         
-                        const atende = resposta.atende;
-                        cardClass = atende ? 'card-mantido-sim' : 'card-mantido-nao';
-                    } 
-                    else if (isRecursoPhase) {
-                        if (recursoEnviado) {
-                            const atendeFinal = resposta.atende;
+                        const itensRejeitados = resposta.subRespostas.filter(s => s.statusValidacao === 'rejeitado').length;
+                        
+                        return `
+                        <div class="resposta-card" data-resposta-id="${resposta.id}">
+                            <div class="resposta-header">
+                                <strong>${resposta.requisito.texto}</strong>
+                                <span class="summary-status-badge ${isEmAnalise ? 'summary-status-pendente' : (isAguardandoRecurso ? 'summary-status-recurso' : 'summary-status-mantido')}">
+                                    ${isEmAnalise ? 'EM ANÁLISE PELA SCGE' : (isAguardandoRecurso ? 'AGUARDANDO RECURSO' : 'FINALIZADO')}
+                                </span>
+                            </div>
                             
-                            if (atendeFinal) {
-                                cardClass = 'card-mantido-sim';
-                                statusTexto = 'ATENDE';
-                                statusClass = 'summary-status-atende';
-                            } else {
-                                cardClass = 'card-mantido-nao'; 
-                                statusTexto = 'NÃO ATENDE';
-                                statusClass = 'summary-status-nao-atende';
-                            }
-                            
-                            cardClass += ' tem-recurso-enviado';
-                        } else {
-                            const isDivergent = resposta.atende !== (resposta.statusValidacao === 'aprovado');
+                            <div class="resposta-body">
+                                ${isEmAnalise ? `
+                                    <!-- Durante análise, mostra apenas mensagem genérica -->
+                                    <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                                        <i class="fas fa-hourglass-half" style="font-size: 2em; color: #ffc107; margin-bottom: 10px;"></i>
+                                        <p>Este requisito está sendo analisado pela Controladoria Geral do Estado.</p>
+                                        <p style="font-size: 0.9em; color: #666;">Os resultados serão disponibilizados em breve.</p>
+                                    </div>
+                                ` : (isAguardandoRecurso ? `
+                                    <!-- Durante recurso, mostra os resultados para cada subitem -->
+                                    <div style="margin-bottom: 15px;">
+                                        <table style="width:100%; border-collapse:collapse; margin-bottom:15px;">
+                                            <thead>
+                                                <tr style="background:#f8f9fa;">
+                                                    <th style="padding:8px; text-align:left; border-bottom:2px solid #dee2e6;">#</th>
+                                                    <th style="padding:8px; text-align:left; border-bottom:2px solid #dee2e6;">Subitem</th>
+                                                    <th style="padding:8px; text-align:center; border-bottom:2px solid #dee2e6;">Sua Resposta</th>
+                                                    <th style="padding:8px; text-align:center; border-bottom:2px solid #dee2e6;">Análise SCGE</th>
+                                                    <th style="padding:8px; text-align:left; border-bottom:2px solid #dee2e6;">Link</th>
+                                                    <th style="padding:8px; text-align:center; border-bottom:2px solid #dee2e6;">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${resposta.subRespostas.map((sub, index) => {
+                                                    const usuarioRespostaClass = sub.atende ? 'atende-sim' : 'atende-nao';
+                                                    const usuarioRespostaText = sub.atende ? 'Atende' : 'Não atende';
+                                                    
+                                                    let scgeStatusClass = '';
+                                                    let scgeStatusText = '';
+                                                    
+                                                    if (sub.statusValidacao === 'aprovado') {
+                                                        scgeStatusClass = 'atende-sim';
+                                                        scgeStatusText = 'Aprovado';
+                                                    } else if (sub.statusValidacao === 'rejeitado') {
+                                                        scgeStatusClass = 'atende-nao';
+                                                        scgeStatusText = 'Rejeitado';
+                                                    } else {
+                                                        scgeStatusClass = 'status-pendente';
+                                                        scgeStatusText = 'Pendente';
+                                                    }
+                                                    
+                                                    return `
+                                                    <tr>
+                                                        <td style="padding:8px; border-bottom:1px solid #dee2e6; font-weight:600;">${index + 1}</td>
+                                                        <td style="padding:8px; border-bottom:1px solid #dee2e6;">${sub.subRequisito.texto}</td>
+                                                        <td style="padding:8px; border-bottom:1px solid #dee2e6; text-align:center;">
+                                                            <span class="atende-badge ${usuarioRespostaClass}" style="font-size:0.75em; padding:3px 8px;">
+                                                                ${usuarioRespostaText}
+                                                            </span>
+                                                        </td>
+                                                        <td style="padding:8px; border-bottom:1px solid #dee2e6; text-align:center;">
+                                                            <span class="atende-badge ${scgeStatusClass}" 
+                                                                style="font-size:0.75em; padding:3px 8px; ${sub.statusValidacao === 'pendente' ? 'background:#ffc107; color:#333;' : ''}">
+                                                                ${scgeStatusText}
+                                                            </span>
+                                                        </td>
+                                                        <td style="padding:8px; border-bottom:1px solid #dee2e6;">
+                                                            ${sub.linkComprovante ? 
+                                                                `<a href="${sub.linkComprovante}" target="_blank" style="word-break:break-all; color:var(--azul-gov-claro);">${sub.linkComprovante.substring(0, 30)}...</a>` : 
+                                                                '<span style="color:#999;">—</span>'}
+                                                        </td>
+                                                        <td style="padding:8px; border-bottom:1px solid #dee2e6; text-align:center;">
+                                                            ${sub.statusValidacao === 'rejeitado' ? 
+                                                                '<span style="color: #dc3545; font-weight: bold;">❌ Pode recorrer</span>' : 
+                                                                (sub.statusValidacao === 'aprovado' ? 
+                                                                    '<span style="color: #28a745; font-weight: bold;">✅ OK</span>' : 
+                                                                    '<span style="color: #ffc107; font-weight: bold;">⏳</span>')}
+                                                        </td>
+                                                    </tr>
+                                                `}).join('')}
+                                            </tbody>
+                                        </table>
+                                        
+                                        <!-- 🔥 COMENTÁRIO DO ANALISTA ADICIONADO AQUI -->
+                                        ${resposta.comentarioAdmin ? `
+                                        <div style="margin-top:15px; padding:10px; background:#f8f9fa; border-left:4px solid var(--azul-gov-principal); border-radius:4px;">
+                                            <strong style="color: var(--azul-gov-principal);">Comentário do Analista:</strong>
+                                            <p style="margin:5px 0 0 0; color:#555;">"${resposta.comentarioAdmin}"</p>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        ${itensRejeitados > 0 ? `
+                                            <div style="margin-top:15px; padding:10px; background:#e8f4fd; border-radius:8px;">
+                                                <i class="fas fa-info-circle" style="color: var(--azul-gov-claro);"></i>
+                                                <strong> ${itensRejeitados} subitem(ns) foram rejeitados.</strong> 
+                                                Role a página para baixo para ver a área de recurso.
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                ` : isFinalizada ? `
+                                    <!-- Após finalização, mostra resultado consolidado -->
+                                    <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                                        <i class="fas fa-check-circle" style="font-size: 2em; color: var(--verde-sucesso); margin-bottom: 10px;"></i>
+                                        <p>Avaliação finalizada. Consulte a nota final para mais detalhes.</p>
+                                    </div>
+                                ` : '')}
+                            </div>
+                        </div>`;
+                        
+                    } else {
+                        let cardClass = '';
+                        let statusTexto = '';
+                        let statusClass = '';
+                        let showRecurso = false;
+                        let recursoEnviado = resposta.recursoEnviado;
+                        let classeRecursoIndicador = ''; 
+                        let tooltipTexto = '';
+                        let badgeRecursoHTML = ''; 
 
-                            if (isDivergent) {
-                                if (resposta.atende) {
-                                    cardClass = 'card-alterado-rejeitado';
-                                    statusTexto = 'NÃO ATENDE';
-                                    statusClass = 'summary-status-nao-atende';
-                                    showRecurso = true;
-                                } else {
-                                    cardClass = 'card-alterado-aprovado';
+                        if (resposta.recursoEnviado) {
+                            cardClass = 'card-com-recurso';
+                            statusTexto = 'RECURSO ENVIADO';
+                            statusClass = 'summary-status-recurso';
+                            classeRecursoIndicador = 'card-com-recurso-indicador';
+                            tooltipTexto = 'Recurso enviado para análise da SCGE';
+                        }
+                        else if (avaliacaoCompleta.status === 'PENDENTE_SECRETARIA' || avaliacaoCompleta.status === 'EM_ANALISE_SCGE') {
+                            statusTexto = 'PENDENTE';
+                            statusClass = 'summary-status-pendente';
+                            tooltipTexto = 'Aguardando análise da SCGE';
+                            
+                            const atende = resposta.atende;
+                            cardClass = atende ? 'card-mantido-sim' : 'card-mantido-nao';
+                        } 
+                        else if (isRecursoPhase) {
+                            if (recursoEnviado) {
+                                const atendeFinal = resposta.atende;
+                                
+                                if (atendeFinal) {
+                                    cardClass = 'card-mantido-sim';
                                     statusTexto = 'ATENDE';
                                     statusClass = 'summary-status-atende';
-                                    
-                                    const usuarioMarcouNaoAtende = !resposta.atende;
-                                    const scgeValidouComoAtende = resposta.statusValidacao === 'aprovado';
-
-                                    if (usuarioMarcouNaoAtende && scgeValidouComoAtende && isRecursoPhase && !recursoEnviado) {
-                                        showRecurso = false; 
-                                    } else {
-                                        showRecurso = false;
-                                    }
+                                    tooltipTexto = 'Requisito aprovado';
+                                } else {
+                                    cardClass = 'card-mantido-nao'; 
+                                    statusTexto = 'NÃO ATENDE';
+                                    statusClass = 'summary-status-nao-atende';
+                                    tooltipTexto = 'Requisito não aprovado';
                                 }
+                                
+                                cardClass += ' tem-recurso-enviado';
+                                classeRecursoIndicador = 'card-com-recurso-indicador';
                             } else {
-                                cardClass = resposta.atende ? 'card-mantido-sim' : 'card-mantido-nao';
-                                statusTexto = resposta.atende ? 'MANTIDO' : 'NÃO ATENDE';
-                                statusClass = resposta.atende ? 'summary-status-mantido' : 'summary-status-nao-atende';
+                                const isDivergent = resposta.atende !== (resposta.statusValidacao === 'aprovado');
+
+                                if (isDivergent) {
+                                    if (resposta.atende) {
+                                        cardClass = 'card-alterado-rejeitado';
+                                        statusTexto = 'NÃO ATENDE';
+                                        statusClass = 'summary-status-nao-atende';
+                                        tooltipTexto = 'SCGE rejeitou - Você pode recorrer';
+                                        showRecurso = true;
+                                    } else {
+                                        cardClass = 'card-alterado-aprovado';
+                                        statusTexto = 'ATENDE';
+                                        statusClass = 'summary-status-atende';
+                                        tooltipTexto = 'SCGE aprovou - Concorde ou recorra';
+                                        
+                                        const usuarioMarcouNaoAtende = !resposta.atende;
+                                        const scgeValidouComoAtende = resposta.statusValidacao === 'aprovado';
+
+                                        if (usuarioMarcouNaoAtende && scgeValidouComoAtende && isRecursoPhase && !recursoEnviado) {
+                                            showRecurso = false; 
+                                        } else {
+                                            showRecurso = false;
+                                        }
+                                    }
+                                } else {
+                                    cardClass = resposta.atende ? 'card-mantido-sim' : 'card-mantido-nao';
+                                    statusTexto = resposta.atende ? 'MANTIDO' : 'NÃO ATENDE';
+                                    statusClass = resposta.atende ? 'summary-status-mantido' : 'summary-status-nao-atende';
+                                    tooltipTexto = resposta.atende ? 'Decisão mantida pela SCGE' : 'Decisão mantida pela SCGE';
+                                }
                             }
                         }
-                    }
-                    else if (avaliacaoCompleta.status === 'FINALIZADA') {
-                        const atende = resposta.statusValidacao === 'aprovado';
-                        cardClass = atende ? 'card-mantido-sim' : 'card-mantido-nao';
-                        statusTexto = atende ? 'ATENDE' : 'NÃO ATENDE';
-                        statusClass = atende ? 'summary-status-atende' : 'summary-status-nao-atende';
-                    }
-
-                    if (resposta.linksAnalista && resposta.linksAnalista.length > 0) {
-                        cardClass += ' tem-links-analista';
-                    }
-
-                    let recursoHTML = '';
-
-                    const usuarioMarcouNaoAtende = !resposta.atende;
-                    const scgeValidouComoAtende = resposta.statusValidacao === 'aprovado';
-
-                    const ehCasoCardVerde = usuarioMarcouNaoAtende && scgeValidouComoAtende && isRecursoPhase && !recursoEnviado;
-
-                    if (showRecurso && isRecursoPhase && !recursoEnviado && !ehCasoCardVerde) {
-                        const mensagem = resposta.atende ? 
-                            'Sua resposta "Atende" foi avaliada como "Não atende" após validação. Se desejar, corrija e forneça novas evidências abaixo.' : 
-                            'Sua resposta "Não atende" foi avaliada como "Atende" após validação. Se desejar, corrija e forneça novas evidências abaixo.';
-                        
-                        recursoHTML = `
-                            <div class="recurso-box" data-is-editable="true">
-                                <h4>Área de Recurso</h4>
-                                <p>${mensagem}</p>
-                                <div class="requisito-actions">
-                                    <span>Sua nova resposta:</span>
-                                    <button class="btn-toggle" data-action="sim-recurso" title="Ao clicar em atende você afirma que a secretaria atende ao requisito">Atende</button>
-                                    <button class="btn-toggle active" data-action="nao-recurso" title="Ao clicar em não atende afirma que a secretaria não atende ao requisito">Não atende</button>
-                                </div>
-                                <div class="link-comprovante-wrapper">
-                                    <div class="evidence-container">
-                                        <ul class="evidence-list-recurso evidence-list"></ul>
-                                        <div class="add-evidence-buttons">
-                                            <button class="btn-add-evidence add-link-btn" title="Adicionar nova evidência para comprovar o atendimento ao requisito">+ Adicionar Link</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="comment-container">
-                                    <textarea class="recurso-comment" placeholder="Adicionar justificativa para o recurso (opcional)..."></textarea>
-                                </div>
-                            </div>`;
-                    }
-
-                    let alertaRecursoHTML = ''; 
-
-                    if (usuarioMarcouNaoAtende && scgeValidouComoAtende && isRecursoPhase && !recursoEnviado) {
-                        alertaRecursoHTML = `
-                        <div class="recurso-alerta" style="background-color: #f0fff4; border: 2px solid #28a745; color: #2d5016;">
-                            <i class="fas fa-exclamation-triangle"></i> Esse requisito foi alterado de "Não atende" para "Atende".
-                        </div>`;
-                    } 
-                    else if (showRecurso && isRecursoPhase && !recursoEnviado) {
-                        alertaRecursoHTML = `<div class="recurso-alerta">Este requisito foi alterado na análise. CLIQUE AQUI e veja a análise e comentários feito pela SCGE e, se desejar, envie um recurso.</div>`;
-                    }
-
-                    const cardContent = `
-                        <div class="resposta-body">
-                            ${recursoHTML}
-                        </div>
-                    `;
-
-                    let cardExtraClass = '';
-                    let headerExtraClass = '';
-                    let cursorStyle = '';
-                    
-                    if (isBloqueado) {
-                        cardExtraClass = 'card-bloqueado';
-                        headerExtraClass = 'summary-header-bloqueado';
-                        cursorStyle = 'style="cursor: default;"';
-                    }
-
-                    if ((showRecurso && isRecursoPhase && !recursoEnviado) || recursoEnviado || (usuarioMarcouNaoAtende && scgeValidouComoAtende && isRecursoPhase && !recursoEnviado)) {
-
-                        let detalhesRecursoHTML = '';
-                        
-                        if (recursoEnviado) {
-                            const respostaOriginal = resposta.atendeOriginal ? 'Atende' : 'Não atende';
-                            const respostaRecurso = resposta.atende ? 'Atende' : 'Não atende';
-                            
-                            detalhesRecursoHTML = `
-                                <div class="detalhes-recurso">
-                                    <h5>📋 Detalhes do Recurso Enviado</h5>
-                                    <div class="info-recurso">
-                                        <div class="info-item">
-                                            <strong>Resposta Original</strong>
-                                            ${respostaOriginal}
-                                        </div>
-                                        <div class="info-item">
-                                            <strong>Resposta no Recurso</strong>
-                                            ${respostaRecurso}
-                                        </div>
-                                    </div>
-                                    ${resposta.comentarioRecurso ? `
-                                        <div class="info-item" style="grid-column: 1 / -1;">
-                                            <strong>Seu Comentário</strong>
-                                            "${resposta.comentarioRecurso}"
-                                        </div>
-                                    ` : ''}
-                                </div>
-                            `;
+                        else if (avaliacaoCompleta.status === 'FINALIZADA') {
+                            const atende = resposta.statusValidacao === 'aprovado';
+                            cardClass = atende ? 'card-mantido-sim' : 'card-mantido-nao';
+                            statusTexto = atende ? 'ATENDE' : 'NÃO ATENDE';
+                            statusClass = atende ? 'summary-status-atende' : 'summary-status-nao-atende';
+                            tooltipTexto = atende ? 'Aprovado na análise final' : 'Rejeitado na análise final';
                         }
+
+                        if (resposta.linksAnalista && resposta.linksAnalista.length > 0) {
+                            cardClass += ' tem-links-analista';
+                        }
+
+                        let recursoHTML = '';
+
+                        const usuarioMarcouNaoAtende = !resposta.atende;
+                        const scgeValidouComoAtende = resposta.statusValidacao === 'aprovado';
+
+                        const ehCasoCardVerde = usuarioMarcouNaoAtende && scgeValidouComoAtende && isRecursoPhase && !recursoEnviado;
+
+                        if (showRecurso && isRecursoPhase && !recursoEnviado && !ehCasoCardVerde) {
+                            const mensagem = resposta.atende ? 
+                                'Sua resposta "Atende" foi avaliada como "Não atende" após validação. Se desejar, corrija e forneça novas evidências abaixo.' : 
+                                'Sua resposta "Não atende" foi avaliada como "Atende" após validação. Se desejar, corrija e forneça novas evidências abaixo.';
+                            
+                            recursoHTML = `
+                                <div class="recurso-box" data-is-editable="true">
+                                    <h4>Área de Recurso</h4>
+                                    <p>${mensagem}</p>
+                                    <div class="requisito-actions">
+                                        <span>Sua nova resposta:</span>
+                                        <button class="btn-toggle" data-action="sim-recurso" title="Ao clicar em atende você afirma que a secretaria atende ao requisito">Atende</button>
+                                        <button class="btn-toggle active" data-action="nao-recurso" title="Ao clicar em não atende afirma que a secretaria não atende ao requisito">Não atende</button>
+                                    </div>
+                                    <div class="link-comprovante-wrapper">
+                                        <div class="evidence-container">
+                                            <ul class="evidence-list-recurso evidence-list"></ul>
+                                            <div class="add-evidence-buttons">
+                                                <button class="btn-add-evidence add-link-btn" title="Adicionar nova evidência para comprovar o atendimento ao requisito">+ Adicionar Link</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="comment-container">
+                                        <textarea class="recurso-comment" placeholder="Adicionar justificativa para o recurso (opcional)..."></textarea>
+                                    </div>
+                                </div>`;
+                        }
+
+                        let alertaRecursoHTML = ''; 
+
+                        if (usuarioMarcouNaoAtende && scgeValidouComoAtende && isRecursoPhase && !recursoEnviado) {
+                            alertaRecursoHTML = `
+                            <div class="recurso-alerta" style="background-color: #f0fff4; border: 2px solid #28a745; color: #2d5016;">
+                                <i class="fas fa-exclamation-triangle"></i> Esse requisito foi alterado de "Não atende" para "Atende".
+                            </div>`;
+                        } 
+                        else if (showRecurso && isRecursoPhase && !recursoEnviado) {
+                            alertaRecursoHTML = `<div class="recurso-alerta">Este requisito foi alterado na análise. CLIQUE AQUI e veja a análise e comentários feito pela SCGE e, se desejar, envie um recurso.</div>`;
+                        }
+
+                        const cardContent = `
+                            <div class="resposta-body">
+                                ${recursoHTML}
+                            </div>
+                        `;
+
+                        let cardExtraClass = '';
+                        let headerExtraClass = '';
+                        let cursorStyle = '';
                         
-                        return `
-                            <div class="resposta-card ${cardClass} ${cardExtraClass}" data-resposta-id="${resposta.id}" ${cursorStyle}>
-                                ${alertaRecursoHTML}
-                                <div class="resposta-header ${headerExtraClass}">
-                                    <div class="resposta-header-content">
-                                        <strong>${resposta.requisito.texto}</strong>
-                                        <span class="summary-status-badge ${statusClass}">${statusTexto}</span>
+                        if (isBloqueado) {
+                            cardExtraClass = 'card-bloqueado';
+                            headerExtraClass = 'summary-header-bloqueado';
+                            cursorStyle = 'style="cursor: default;"';
+                        }
+
+                        if ((showRecurso && isRecursoPhase && !recursoEnviado) || recursoEnviado || (usuarioMarcouNaoAtende && scgeValidouComoAtende && isRecursoPhase && !recursoEnviado)) {
+
+                            let detalhesRecursoHTML = '';
+                            
+                            if (recursoEnviado) {
+                                const respostaOriginal = resposta.atendeOriginal ? 'Atende' : 'Não atende';
+                                const respostaRecurso = resposta.atende ? 'Atende' : 'Não atende';
+                                
+                                detalhesRecursoHTML = `
+                                    <div class="detalhes-recurso">
+                                        <h5>📋 Detalhes do Recurso Enviado</h5>
+                                        <div class="info-recurso">
+                                            <div class="info-item">
+                                                <strong>Resposta Original</strong>
+                                                ${respostaOriginal}
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Resposta no Recurso</strong>
+                                                ${respostaRecurso}
+                                            </div>
+                                        </div>
+                                        ${resposta.comentarioRecurso ? `
+                                            <div class="info-item" style="grid-column: 1 / -1;">
+                                                <strong>Seu Comentário</strong>
+                                                "${resposta.comentarioRecurso}"
+                                            </div>
+                                        ` : ''}
                                     </div>
-                                </div>
-                                ${detalhesRecursoHTML}
-                                ${cardContent}
-                            </div>`;
-                    } else {
-                        const respostaData = JSON.stringify(resposta).replace(/"/g, '&quot;');
-                        return `
-                            <div class="resposta-card ${cardClass} ${cardExtraClass}" data-resposta-id="${resposta.id}" data-resposta='${respostaData}' role="article" ${cursorStyle}>
-                                <div class="summary-header ${headerExtraClass}" tabindex="0" role="button" aria-expanded="false">
-                                    <div class="resposta-header-content">
-                                        <strong>${resposta.requisito.texto}</strong>
-                                        <span class="summary-status-badge ${statusClass}">${statusTexto}</span>
+                                `;
+                            }
+                            
+                            return `
+                                <div class="resposta-card ${cardClass} ${cardExtraClass}" data-resposta-id="${resposta.id}" ${cursorStyle}>
+                                    ${alertaRecursoHTML}
+                                    <div class="resposta-header ${headerExtraClass}">
+                                        <div class="resposta-header-content">
+                                            <strong>${resposta.requisito.texto}</strong>
+                                            <span class="summary-status-badge ${statusClass}">${statusTexto}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>`;
+                                    ${detalhesRecursoHTML}
+                                    ${cardContent}
+                                </div>`;
+                        } else {
+                            const respostaData = JSON.stringify(resposta).replace(/"/g, '&quot;');
+                            return `
+                                <div class="resposta-card ${cardClass} ${classeRecursoIndicador}" data-resposta='${respostaData}' role="article">
+                                    <div class="summary-header" tabindex="0" role="button" aria-expanded="false">
+                                        <strong>${resposta.requisito.texto}</strong>
+                                        <div class="summary-status-container"> 
+                                            <span class="tooltip summary-status-badge ${statusClass}" title="${tooltipTexto}">
+                                                ${statusTexto}
+                                            </span>
+                                            ${badgeRecursoHTML} 
+                                        </div>
+                                    </div>
+                                </div>`;
+                        }
                     }
                 }).join('');
 
                 setTimeout(() => {
                     inicializarBotoesRecursoAutomatico();
                     carregarRascunhoRecurso();
-                }, 200);
+                        if (isRecursoPhase) {
+                            console.log('Fase de recurso - verificando subitens rejeitados');
+                            document.querySelectorAll('.resposta-card[data-resposta-id]').forEach(card => {
+                                const respostaId = card.dataset.respostaId;
+                                const resposta = avaliacaoCompleta.respostas.find(r => r.id == respostaId);
+                                if (resposta?.subRespostas) {
+                                    const rejeitados = resposta.subRespostas.filter(s => s.statusValidacao === 'rejeitado');
+                                    if (rejeitados.length > 0) {
+                                        console.log(`Card ${respostaId} tem ${rejeitados.length} subitens rejeitados`);
+                                    }
+                                }
+                            });
+                        }
+                    }, 200);
             }
 
             function adicionarEventListeners() {
@@ -1947,7 +2139,15 @@
                 respostasContainer.addEventListener('click', (event) => {
                     const isBloqueado = avaliacaoCompleta.status === 'EM_ANALISE_SCGE' || avaliacaoCompleta.status === 'EM_ANALISE_DE_RECURSO';
                     
-                    const target = event.target;
+                    const target = event.target;         
+
+                    if (target.matches('.remove-evidence-btn')) {
+                        const item = target.closest('.evidence-item');
+                        if (item) {
+                            item.remove();
+                            salvarRascunhoSubitens();
+                        }
+                    }
                     
                     const summaryHeader = target.closest('.summary-header');
                     if (summaryHeader) {
@@ -1995,6 +2195,73 @@
                             return;
                         }
                     }
+
+                    if (target.matches('.recurso-sim, .recurso-nao')) {
+                        const subRespostaId = target.dataset.subrespostaId;
+                        const container = target.closest('.subitem-recurso');
+                        const grupo = container.querySelectorAll('.recurso-sim, .recurso-nao');
+                        
+                        grupo.forEach(btn => btn.classList.remove('active'));
+                        target.classList.add('active');
+                        
+                        const evidenceWrapper = container.querySelector('.evidence-container');
+                        if (target.classList.contains('recurso-sim')) {
+                        }
+                        
+                        salvarRascunhoSubitens();
+                    }
+
+                    if (target.matches('.add-link-recurso')) {
+                        const subRespostaId = target.dataset.subrespostaId;
+                        const evidenceList = document.getElementById(`recurso-evidence-${subRespostaId}`);
+                        
+                        Swal.fire({
+                            title: 'Adicionar Link',
+                            input: 'url',
+                            inputLabel: 'URL do Link de Comprovação',
+                            inputPlaceholder: 'https://exemplo.com',
+                            showCancelButton: true,
+                            confirmButtonText: 'Adicionar',
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonColor: 'var(--azul-gov-principal)',
+                            inputValidator: (value) => {
+                                if (!value) return 'Digite uma URL';
+                                return null;
+                            },
+                            preConfirm: (value) => {
+                                let finalUrl = value.trim();
+                                if (!/^(https?:\/\/)/i.test(finalUrl)) {
+                                    finalUrl = 'https://' + finalUrl;
+                                }
+                                return finalUrl;
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed && result.value) {
+                                const url = result.value;
+                                const newItem = document.createElement('li');
+                                newItem.className = 'evidence-item';
+                                newItem.dataset.link = url;
+                                newItem.innerHTML = `<a href="${url}" target="_blank">${url}</a><button class="remove-evidence-btn">&times;</button>`;
+                                evidenceList.appendChild(newItem);
+                                
+                                newItem.querySelector('.remove-evidence-btn').addEventListener('click', function() {
+                                    this.closest('.evidence-item').remove();
+                                    salvarRascunhoSubitens();
+                                });
+                                
+                                salvarRascunhoSubitens();
+                                
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'success',
+                                    title: 'Link adicionado!',
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                });
+                            }
+                        });
+                    }
                 });
 
                 modalBody.addEventListener('click', (event) => {
@@ -2016,11 +2283,26 @@
                         event.stopPropagation();
 
                         const respostaId = parseInt(target.dataset.respostaId);
+                        console.log('Botão editar clicado para resposta ID:', respostaId);
+                        
                         fecharModal();
 
                         setTimeout(() => {
-                            const card = document.querySelector(`.resposta-card[data-resposta-id="${respostaId}"]`);
+                            let card = document.querySelector(`.resposta-card[data-resposta-id="${respostaId}"]`);
+                            
+                            if (!card) {
+                                card = document.querySelector(`.resposta-card[data-resposta*='"id":${respostaId}']`);
+                            }
+                            
+                            if (!card) {
+                                console.log('Cards disponíveis:');
+                                document.querySelectorAll('.resposta-card').forEach(c => {
+                                    console.log('Card ID:', c.dataset.respostaId);
+                                });
+                            }
+                            
                             if (card) {
+                                console.log('Card encontrado, rolando até ele...');
                                 card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
                                 card.style.transition = 'all 0.5s ease';
@@ -2078,11 +2360,18 @@
                                     }, 100);
                                 }
                             } else {
-                                console.error(`Card para resposta ${respostaId} não encontrado após fechar modal.`);
+                                console.error(`❌ Card para resposta ${respostaId} não encontrado após fechar modal.`);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Erro',
+                                    text: 'Não foi possível encontrar o card do requisito.',
+                                    confirmButtonColor: 'var(--azul-gov-principal)'
+                                });
                             }
                         }, 300);
-                    }
-                });
+                    }});
+                
+                
 
                 modalCloseBtn.addEventListener('click', fecharModal);
                 modalOverlay.addEventListener('click', (event) => {
@@ -2186,13 +2475,15 @@
                     return;
                 }
                 
-                console.log('=== INICIANDO ENVIO DE RECURSO CORRIGIDO ===');
+                console.log('=== INICIANDO ENVIO DE RECURSO ===');
                 salvarRascunhoRecurso();
+                salvarRascunhoSubitens();
                 
                 const respostasDoRecurso = [];
+                const subRespostasDoRecurso = [];
                 let formValido = true;
 
-                for (const card of document.querySelectorAll('.recurso-box[data-is-editable="true"]')) {
+                for (const card of document.querySelectorAll('.recurso-box[data-is-editable="true"]:not([data-tipo="composto"])')) {
                     const respostaCard = card.closest('.resposta-card');
                     const respostaId = parseInt(respostaCard.dataset.respostaId);
                     const resposta = avaliacaoCompleta.respostas.find(r => r.id === respostaId);
@@ -2235,11 +2526,114 @@
                     respostasDoRecurso.push(respostaPayload);
                 }
 
+                document.querySelectorAll('.recurso-box[data-tipo="composto"] .subitem-recurso').forEach(subitem => {
+                    const subRespostaId = parseInt(subitem.dataset.subrespostaId);
+                    const btnSim = subitem.querySelector('.recurso-sim');
+                    const atende = btnSim && btnSim.classList.contains('active');
+                    
+                    const evidencias = [];
+                    subitem.querySelectorAll('.evidence-list-recurso .evidence-item').forEach(item => {
+                        if (item.dataset.link) {
+                            evidencias.push({ 
+                                tipo: 'recurso', 
+                                url: item.dataset.link 
+                            });
+                        }
+                    });
+                    
+                    const comentario = subitem.querySelector('.recurso-comment')?.value.trim() || '';
+                    
+                    if (atende && evidencias.length === 0) {
+                        Swal.fire({ 
+                            icon: 'warning', 
+                            title: 'Evidência Faltando', 
+                            text: `O subitem foi marcado como 'Atende' no recurso, mas nenhuma evidência foi adicionada.` 
+                        });
+                        formValido = false;
+                        return;
+                    }
+                    
+                    subRespostasDoRecurso.push({
+                        id: subRespostaId,
+                        atende: atende,
+                        linkComprovante: evidencias[0]?.url || null,
+                        comentario: comentario,
+                        evidencias: evidencias
+                    });
+                });
+
                 if (!formValido) return;
 
-                console.log('Dados do recurso preparados (CORRIGIDOS):', respostasDoRecurso);
+                console.log('Dados do recurso - Requisitos:', respostasDoRecurso);
+                console.log('Dados do recurso - Subitens:', subRespostasDoRecurso);
 
-                if (respostasDoRecurso.length === 0) {
+                if (respostasDoRecurso.length === 0 && subRespostasDoRecurso.length > 0) {
+                    Swal.fire({
+                        title: 'Confirmar Envio do Recurso?',
+                        html: `
+                            <div style="text-align: left;">
+                                <p><strong>Você está prestes a enviar recurso para ${subRespostasDoRecurso.length} subitens:</strong></p>
+                                <p style="margin-top: 15px; color: #dc3545; font-weight: bold;">
+                                    ⚠️ Após o envio, não será possível editar o recurso.
+                                </p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sim, Enviar!',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: 'var(--azul-gov-principal)',
+                        cancelButtonColor: 'var(--vermelho-erro)'
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            try {
+                                const response = await fetch('/api/subrespostas/recurso', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${authToken}`
+                                    },
+                                    body: JSON.stringify({ subRespostas: subRespostasDoRecurso })
+                                });
+
+                                if (!response.ok) {
+                                    const errorData = await response.json();
+                                    throw new Error(errorData.error || 'Falha ao enviar recurso dos subitens.');
+                                }
+
+                                await fetch(`/api/avaliacoes/${avaliacaoId}/recurso`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${authToken}`
+                                    },
+                                    body: JSON.stringify({ 
+                                        respostas: [], 
+                                        avaliacaoId: avaliacaoId,
+                                        apenasSubitens: true 
+                                    })
+                                });
+
+                                await Swal.fire({
+                                    title: 'Recurso Enviado!',
+                                    text: 'Seu recurso foi enviado com sucesso.',
+                                    icon: 'success',
+                                    confirmButtonColor: 'var(--azul-gov-principal)'
+                                });
+
+                                localStorage.removeItem(`rascunho_subitens_${avaliacaoId}`);
+                                window.location.href = '/dashboard';
+
+                            } catch (error) {
+                                console.error('Erro:', error);
+                                Swal.fire('Erro!', error.message, 'error');
+                            }
+                        }
+                    });
+                    return;
+                }
+
+                if (respostasDoRecurso.length === 0 && subRespostasDoRecurso.length === 0) {
                     Swal.fire({
                         title: 'Confirmar Envio do Recurso?',
                         html: `
@@ -2259,7 +2653,6 @@
                         confirmButtonColor: 'var(--azul-gov-principal)',
                     }).then(async (result) => {
                         if (result.isConfirmed) {
-                            // Enviar recurso vazio para confirmar aceitação
                             try {
                                 const response = await fetch(`/api/avaliacoes/${avaliacaoId}/recurso`, {
                                     method: 'POST',
@@ -2275,8 +2668,8 @@
                                 });
 
                                 if (!response.ok) {
-                                    const errorData = await response.json().catch(() => ({}));
-                                    throw new Error(errorData.error || "Falha ao enviar confirmação.");
+                                    const errorData = await response.json();
+                                    throw new Error(errorData.error || 'Falha ao enviar confirmação.');
                                 }
 
                                 console.log('🔄 Confirmando nota atual como pós-recurso...');
@@ -2330,43 +2723,53 @@
                     title: 'Confirmar Envio do Recurso?',
                     html: `
                         <div style="text-align: left;">
-                            <p><strong>Você está prestes a enviar recurso para ${respostasDoRecurso.length} requisito(s):</strong></p>
-                            <ul style="text-align: left; margin-left: 20px;">
-                                ${respostasDoRecurso.map(r => {
-                                    const resposta = avaliacaoCompleta.respostas.find(resp => resp.id === r.respostaId);
-                                    return `<li>${resposta?.requisito.texto || 'Requisito'}</li>`;
-                                }).join('')}
-                            </ul>
-                            <p style="margin-top: 15px; color: #dc3545; font-weight:">
+                            <p><strong>Você está prestes a enviar recurso para:</strong></p>
+                            ${respostasDoRecurso.length > 0 ? `<p>📌 ${respostasDoRecurso.length} requisito(s)</p>` : ''}
+                            ${subRespostasDoRecurso.length > 0 ? `<p>🔗 ${subRespostasDoRecurso.length} subitem(ns)</p>` : ''}
+                            <p style="margin-top: 15px; color: #dc3545; font-weight: bold;">
                                 ⚠️ Após o envio, não será possível editar o recurso.
                             </p>
                         </div>
                     `,
                     icon: 'warning',
-                    iconColor: 'var(--amarelo-gov-detalhe)',
                     showCancelButton: true,
                     confirmButtonText: 'Sim, Enviar!',
                     cancelButtonText: 'Cancelar',
-                    cancelButtonColor: 'var(--vermelho-erro)',
                     confirmButtonColor: 'var(--azul-gov-principal)',
+                    cancelButtonColor: 'var(--vermelho-erro)'
                 }).then(async (result) => {
                     if (result.isConfirmed) {
                         try {
-                            const response = await fetch(`/api/avaliacoes/${avaliacaoId}/recurso`, {
-                                method: 'POST',
-                                headers: { 
-                                    'Content-Type': 'application/json', 
-                                    'Authorization': `Bearer ${authToken}` 
-                                },
-                                body: JSON.stringify({ 
-                                    respostas: respostasDoRecurso,
-                                    avaliacaoId: avaliacaoId
-                                })
-                            });
-
-                            if (!response.ok) {
-                                const errorData = await response.json().catch(() => ({}));
-                                throw new Error(errorData.error || "Falha ao enviar recurso.");
+                            if (respostasDoRecurso.length > 0) {
+                                const response1 = await fetch(`/api/avaliacoes/${avaliacaoId}/recurso`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${authToken}`
+                                    },
+                                    body: JSON.stringify({ respostas: respostasDoRecurso })
+                                });
+                                
+                                if (!response1.ok) {
+                                    const errorData = await response1.json();
+                                    throw new Error(errorData.error || 'Falha ao enviar recurso dos requisitos.');
+                                }
+                            }
+                            
+                            if (subRespostasDoRecurso.length > 0) {
+                                const response2 = await fetch('/api/subrespostas/recurso', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${authToken}`
+                                    },
+                                    body: JSON.stringify({ subRespostas: subRespostasDoRecurso })
+                                });
+                                
+                                if (!response2.ok) {
+                                    const errorData = await response2.json();
+                                    throw new Error(errorData.error || 'Falha ao enviar recurso dos subitens.');
+                                }
                             }
 
                             console.log('🔄 Iniciando cálculo da nota pós-recurso...');
@@ -2374,44 +2777,36 @@
                             
                             if (notaResult.success) {
                                 console.log('🎉 Nota pós-recurso salva com sucesso durante envio do recurso');
-                            } else {
-                                console.warn('⚠️ Nota pós-recurso não foi salva, mas recurso foi enviado');
                             }
 
                             try {
-                                const notificacaoResponse = await fetch(`/api/avaliacoes/${avaliacaoId}/notificar-recurso`, {
+                                await fetch(`/api/avaliacoes/${avaliacaoId}/notificar-recurso`, {
                                     method: 'POST',
                                     headers: { 
                                         'Content-Type': 'application/json', 
                                         'Authorization': `Bearer ${authToken}` 
                                     }
                                 });
-
-                                if (!notificacaoResponse.ok) {
-                                    console.warn('Recurso enviado, mas notificação por email falhou');
-                                } else {
-                                    console.log('Controladoria notificada sobre o recurso');
-                                }
+                                console.log('Controladoria notificada sobre o recurso');
                             } catch (emailError) {
-                                console.warn('Erro na notificação por email:', emailError);
+                                console.warn('Recurso enviado, mas notificação por email falhou');
                             }
 
-                            const resultData = await response.json();
-                            console.log('Recurso enviado com sucesso:', resultData);
-                            
                             await Swal.fire({
                                 title: 'Recurso Enviado!',
                                 html: `
                                     <p>A SCGE foi notificada e em breve você terá a análise do recurso.</p>
                                     <p><strong>Requisitos com recurso:</strong> ${respostasDoRecurso.length}</p>
+                                    <p><strong>Subitens com recurso:</strong> ${subRespostasDoRecurso.length}</p>
                                 `,
                                 icon: 'success',
                                 confirmButtonColor: 'var(--azul-gov-principal)'
                             });
                             
                             localStorage.removeItem(`rascunho_recurso_${avaliacaoId}`);
+                            localStorage.removeItem(`rascunho_subitens_${avaliacaoId}`);
                             window.location.href = '/dashboard';
-                            
+
                         } catch (error) {
                             console.error('Erro ao enviar recurso:', error);
                             Swal.fire({
@@ -2497,6 +2892,105 @@
                 }
             }
 
+            function salvarRascunhoSubitens() {
+                const rascunhoSubitens = [];
+            
+                document.querySelectorAll('.subitem-recurso').forEach(subitem => {
+                    const subRespostaId = subitem.dataset.subrespostaId;
+                    const btnSim = subitem.querySelector('.recurso-sim');
+                    const atende = btnSim && btnSim.classList.contains('active');
+                    
+                    const evidencias = [];
+                    subitem.querySelectorAll('.evidence-list-recurso .evidence-item').forEach(item => {
+                    if (item.dataset.link) evidencias.push(item.dataset.link);
+                    });
+                    
+                    const comentario = subitem.querySelector('.recurso-comment')?.value || '';
+                    
+                    rascunhoSubitens.push({
+                    id: subRespostaId,
+                    atende: atende,
+                    linkComprovante: evidencias[0] || null,
+                    comentario: comentario
+                    });
+                });
+                
+                if (rascunhoSubitens.length > 0) {
+                    localStorage.setItem(`rascunho_subitens_${avaliacaoId}`, JSON.stringify(rascunhoSubitens));
+                }
+            }
+
+            // Função para renderizar área de recurso para subitens
+            function renderRecursoSubitens(resposta) {
+                console.log('=== RENDERIZANDO RECURSO SUBITENS ===');
+                console.log('Resposta:', resposta.id);
+                
+                const subRespostas = resposta.subRespostas || [];
+                console.log('Total de subitens:', subRespostas.length);
+                
+                const itensParaRecurso = subRespostas.filter(s => {
+                    console.log(`Subitem ${s.id} - statusValidacao: ${s.statusValidacao}`);
+                    return s.statusValidacao === 'rejeitado';
+                });
+                
+                console.log('Itens para recurso:', itensParaRecurso.length);
+                
+                if (itensParaRecurso.length === 0) {
+                    console.log('Nenhum item para recurso');
+                    return '';
+                }
+                
+                return `
+                    <div class="recurso-box" data-tipo="composto" data-is-editable="true">
+                        <h4>Recurso para Subitens</h4>
+                        <p>Os seguintes subitens foram rejeitados na análise. Você pode recorrer de cada um individualmente:</p>
+                        
+                        ${itensParaRecurso.map((sub, index) => {
+                            const inicialAtende = sub.atende; 
+                            
+                            return `
+                            <div class="subitem-recurso" data-subresposta-id="${sub.id}" style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #fff;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <h5 style="margin: 0; color: var(--azul-gov-principal);">${index + 1}. ${sub.subRequisito.texto}</h5>
+                                    <span class="atende-badge atende-nao" style="font-size:0.75em;">Rejeitado</span>
+                                </div>
+                                
+                                <div class="requisito-actions" style="margin-bottom: 10px;">
+                                    <span>Sua nova resposta:</span>
+                                    <button class="btn-toggle recurso-sim ${inicialAtende ? 'active' : ''}" data-subresposta-id="${sub.id}">Atende</button>
+                                    <button class="btn-toggle recurso-nao ${!inicialAtende ? 'active' : ''}" data-subresposta-id="${sub.id}">Não atende</button>
+                                </div>
+                                
+                                <div class="evidence-container">
+                                    <ul class="evidence-list-recurso" id="recurso-evidence-${sub.id}">
+                                        ${sub.linkComprovante ? `
+                                            <li class="evidence-item" data-link="${sub.linkComprovante}">
+                                                <a href="${sub.linkComprovante}" target="_blank">${sub.linkComprovante}</a>
+                                                <button class="remove-evidence-btn">&times;</button>
+                                            </li>
+                                        ` : ''}
+                                    </ul>
+                                    <button class="btn-add-evidence add-link-recurso" data-subresposta-id="${sub.id}">+ Adicionar Link</button>
+                                </div>
+                                
+                                <textarea class="recurso-comment" data-subresposta-id="${sub.id}" placeholder="Justificativa para este subitem..." style="width: 100%; margin-top: 10px;">${sub.comentarioRecurso || ''}</textarea>
+                            </div>
+                        `}).join('')}
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px; border-left: 4px solid var(--azul-gov-claro);">
+                            <p style="margin: 0; font-size: 0.95em;">
+                                <i class="fas fa-info-circle" style="color: var(--azul-gov-claro);"></i>
+                                <strong>Instruções:</strong> Para cada subitem rejeitado, você pode:
+                            </p>
+                            <ul style="margin-top: 10px; margin-bottom: 0; padding-left: 20px;">
+                                <li>Manter "Não atende" se concordar com a rejeição</li>
+                                <li>Alterar para "Atende" se discordar, e adicionar link(s) comprovando</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+
             try {
                 console.log('=== CARREGANDO DADOS DA AVALIAÇÃO ===');
                 const response = await fetch(`/api/my-avaliacoes/${avaliacaoId}`, {
@@ -2577,6 +3071,8 @@
                 console.error("Erro detalhado:", error);
                 summaryContainer.innerHTML = `<h1>Erro ao Carregar Relatório</h1><p>${error.message}</p>`;
             }
+        
+            
         });
     </script>
     <script src="/global.js"></script>

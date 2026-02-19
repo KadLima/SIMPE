@@ -6,44 +6,170 @@
     <title>Análise Final - Análise PE</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        /* --- VARIÁVEIS (Padrão Unificado) --- */
         :root {
             --azul-gov-principal: #002776;
+            --azul-gov-escuro: #001a4d;
+            --azul-gov-claro: #0052CC;
             --amarelo-gov-detalhe: #FFD700;
-            --cinza-texto: #333333;
-            --cinza-fundo: #f4f4f4;
+            --cinza-texto: #2c3e50;
+            --cinza-claro: #7f8c8d;
+            --cinza-fundo: #f8f9fa;
+            --cinza-card: #ecf0f1;
             --branco: #ffffff;
-            --verde-sucesso: #28a745;
+            --verde-sucesso: #27ae60;
             --vermelho-destaque: #dc3545;
-            --cinza-borda: #ddd;
-            --roxo-recurso: #6f42c1; 
+            --laranja-alerta: #fd7e14;
+            --roxo-recurso: #6f42c1;
+            --sombra-suave: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --sombra-media: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --transicao-padrao: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .recurso-badge {
-            background-color: var(--roxo-recurso);
-            color: var(--branco);
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-size: 0.7em;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-left: 10px;
-            vertical-align: middle;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', 'Segoe UI', -apple-system, Arial, sans-serif; 
+            background-color: var(--cinza-fundo); 
+            color: var(--cinza-texto); 
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
+        /* --- HEADER UNIFICADO --- */
+        .main-header { 
+            background-color: var(--branco); 
+            box-shadow: var(--sombra-suave);
+            padding: 0 5%; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            border-bottom: 3px solid var(--azul-gov-principal);
+        }
+        
+        .main-nav { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            height: 80px; 
+        }
+
+        .logo a { 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            transition: var(--transicao-padrao);
+        }
+
+        .logo a:hover { transform: translateY(-2px); }
+
+        .logo a > img { 
+            height: 55px; 
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transition: var(--transicao-padrao);
+        }
+
+        .SIMPE-marca-text-group { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .SIMPE-marca-small { height: 55px !important; width: auto; object-fit: contain; }
+
+        #nav-links { 
+            list-style: none; 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            gap: 8px; 
+            align-items: center;
+        }
+
+        #nav-links a { 
+            text-decoration: none; 
+            color: var(--cinza-texto); 
+            font-weight: 600; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            transition: var(--transicao-padrao); 
+            position: relative;
+        }
+
+        #nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 8px;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background-color: var(--amarelo-gov-detalhe);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        #nav-links a:hover,
+        #nav-links a.active { 
+            color: var(--azul-gov-principal); 
+            background-color: rgba(0, 39, 118, 0.05); 
+        }
+
+        #nav-links a:hover::after,
+        #nav-links a.active::after {
+            transform: scaleX(1);
+        }
+
+        /* --- MAIN --- */
+        main { padding: 40px 5%; flex-grow: 1; display: flex; justify-content: center; }
+        
+        .report-container { 
+            width: 100%;
+            max-width: 1000px; 
+        }
+
+        /* --- CABEÇALHO DO RELATÓRIO --- */
+        .report-header { 
+            background: var(--branco); 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: var(--sombra-suave); 
+            margin-bottom: 30px; 
+            border-left: 5px solid var(--azul-gov-principal);
+        }
+        
+        .report-header h1 { 
+            margin: 0 0 15px 0; 
+            color: var(--azul-gov-principal); 
+            font-size: 1.8em; 
+            font-weight: 700; 
+        }
+        
+        .report-summary { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            font-size: 0.95em; 
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        /* --- PLACAR DE 4 NOTAS --- */
         .score-container-quatro-notas {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             text-align: center;
             margin-bottom: 30px;
         }
 
         .score-box-quatro {
-            background-color: var(--azul-gov-principal);
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%);
             color: var(--branco);
             padding: 20px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            border-radius: 12px;
+            transition: var(--transicao-padrao);
+            box-shadow: var(--sombra-media);
             position: relative;
             overflow: hidden;
         }
@@ -59,22 +185,22 @@
         }
 
         .score-box-quatro:hover {
-            background-color: #001a4d;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 39, 118, 0.3);
+            box-shadow: var(--sombra-media);
         }
 
         .score-box-quatro h2 {
             margin: 0 0 5px 0;
             text-transform: uppercase;
-            font-size: 0.9em;
+            font-size: 0.85em;
+            font-weight: 600;
             opacity: 0.9;
         }
 
         .score-box-quatro .score-value {
-            font-size: 1.8em;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            font-size: 2em;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .score-box-quatro .score-descricao {
@@ -83,257 +209,57 @@
             margin-top: 5px;
         }
 
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: var(--cinza-fundo);
-            color: var(--cinza-texto);
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+        /* --- CARDS DE RESPOSTA --- */
+        .resposta-card { 
+            background-color: var(--branco); 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            box-shadow: var(--sombra-suave); 
+            overflow: hidden; 
+            transition: var(--transicao-padrao);
+            cursor: pointer;
         }
+        
+        .resposta-card:hover { box-shadow: var(--sombra-media); }
 
-        .main-header {
-            background-color: var(--branco);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 0 5%;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
+        .card-mantido-sim { border-left: 5px solid var(--verde-sucesso); }
+        .card-mantido-nao { border-left: 5px solid var(--vermelho-destaque); }
+        .card-alterado-rejeitado { border-left: 5px solid var(--amarelo-gov-detalhe); }
+        .card-alterado-aprovado { border-left: 5px solid var(--azul-gov-principal); }
+        .card-com-recurso-indicador { border-right: 5px solid var(--roxo-recurso); }
 
-        .main-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 70px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .logo a { 
-            text-decoration: none; 
+        .resposta-header { 
+            padding: 15px 20px; 
+            border-bottom: 1px solid #f0f0f0; 
             display: flex; 
+            justify-content: space-between; 
             align-items: center; 
-            gap: 12px; 
-            padding: 10px;
-            padding-top: 0;
-            padding-bottom: 0;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-            position: relative;
+            background-color: #fcfcfc;
+            flex-wrap: wrap; 
+            gap: 10px; 
         }
-
-        .logo a > img { 
-            height: 45px; 
-            filter: drop-shadow(1px 1px 1.2px rgba(0, 0, 0, 0.5)); 
+        
+        .resposta-header strong { 
+            flex-grow: 1; 
+            color: var(--azul-gov-principal); 
+            font-size: 1.05em; 
         }
+        
+        .resposta-body { padding: 20px; }
 
-        .logo a::after {
-            content: '';
-            position: absolute;
-            bottom: 29px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: transparent;
-            transition: background-color 0.3s ease;
-        }
-
-        .logo a:hover::after {
-            background-color: var(--amarelo-gov-detalhe);
-        }
-
-        .SIMPE-marca-text-group {
-            display: flex;
-            flex-direction: column; 
+        .summary-header { 
+            cursor: pointer; 
+            padding: 15px 20px;
+            display: flex; 
+            justify-content: space-between; 
             align-items: center; 
-            justify-content: center;
-            gap: 0;
-        }
-
-        .SIMPE-marca-small {
-            height: 60px; 
-            width: auto;
-            object-fit: contain; 
-            display: block; 
-            margin: 0; 
-            margin-bottom: 5px;
-        }
-
-        .main-nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            gap: 20px;
-        }
-
-        .main-nav ul a {
-            text-decoration: none;
-            color: var(--cinza-texto);
-            font-weight: 600;
-            padding: 10px;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .main-nav ul a:hover,
-        .main-nav ul a.active {
-            color: var(--azul-gov-principal);
-            border-bottom-color: var(--amarelo-gov-detalhe);
-        }
-
-        .main-footer {
-            text-align: center;
-            padding: 20px;
-            margin-top: auto;
-            background-color: var(--branco);
-            font-size: 0.9em;
-            position: relative;
-            height: 60px;
-            box-sizing: content-box;
-        }
-
-        .main-footer .footer-content {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-        }
-
-        .main-footer img {
-            height: 60px;
-            width: auto;
-            position: absolute;
-            right: 5%;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        .main-footer p a {
-            color: var(--cinza-texto);
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        main {
-            padding: 40px 5%;
-        }
-
-        .report-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .report-header {
-            background: var(--branco);
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-
-        .report-header h1 {
-            margin: 0 0 10px 0;
-            color: var(--azul-gov-principal);
-        }
-
-        .report-summary {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        .card-mantido-sim:hover {
-            box-shadow: 0 4px 20px rgba(40, 167, 69, 0.3);
-        }
-
-        .card-mantido-nao:hover {
-            box-shadow: 0 4px 20px rgba(220, 53, 69, 0.3);
-        }
-
-        .card-alterado-aprovado:hover {
-            box-shadow: 0 4px 20px rgba(0, 39, 118, 0.3);
-        }
-
-        .card-alterado-rejeitado:hover {
-            box-shadow: 0 4px 20px rgba(255, 193, 7, 0.3);
-        }
-
-        .resposta-card.card-com-recurso-indicador:hover {
-             box-shadow: 0 4px 20px rgba(111, 66, 193, 0.3);
-        }
-
-        .resposta-card {
-            background-color: var(--branco);
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            overflow: hidden;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative; 
-        }
-
-        .resposta-card.card-com-recurso-indicador {
-             border-right: 5px solid var(--roxo-recurso); 
-        }
-
-
-        .summary-status-alterado-aprovado {
-            background-color: var(--verde-sucesso);
-        }
-
-        .summary-status-alterado-rejeitado {
-            background-color: var(--vermelho-destaque);
-        }
-
-        .card-mantido-sim {
-            border-left: 5px solid var(--verde-sucesso);
-        }
-
-        .card-mantido-nao {
-            border-left: 5px solid var(--vermelho-destaque);
-        }
-
-        .card-alterado-rejeitado {
-            border-left: 5px solid var(--amarelo-gov-detalhe);
-        }
-
-        .card-alterado-aprovado {
-            border-left: 5px solid var(--azul-gov-principal);
-        }
-
-        .resposta-header {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .resposta-body {
-            padding: 15px;
-        }
-
-        .summary-header {
-            cursor: pointer;
-            font-weight: normal;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .summary-header strong {
-            font-weight: bold;
-            margin-right: auto; 
-            padding-right: 15px; 
+        .summary-header strong { 
+            font-weight: 700; 
+            flex: 1;
         }
 
         .summary-status-container { 
@@ -342,698 +268,341 @@
             gap: 10px;
         }
 
-
-        .summary-status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
-            color: var(--branco);
-
-        }
-
-        .summary-status-mantido {
-            background-color: var(--verde-sucesso);
-        }
-
-        .summary-status-nao-atende {
-            background-color: var(--vermelho-destaque);
-        }
-
-        .summary-status-recurso { 
-            background-color: #6f42c1;
-        }
-
-        .summary-status-alterado-aprovado {
-            background-color: var(--azul-gov-principal);
-        }
-
-        .summary-status-alterado-rejeitado {
-            background-color: var(--amarelo-gov-detalhe);
-            color: #333;
-        }
-
-        .info-block {
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-            margin-top: 15px;
-        }
-
-        .resposta-body > .info-block:first-child,
-        .modal-body > .info-block:first-child {
-            border-top: none;
-            padding-top: 0;
-            margin-top: 0;
-        }
-
-        .info-block h4,
-        .info-block h5,
-        .info-block h6 {
-            margin: 0 0 10px 0;
-            background-color: #e9eef5;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 1em;
-            color: var(--azul-gov-principal);
-            font-weight: 600;
-        }
-
-        .info-block p {
-            font-size: 0.9em;
-            margin: 5px 0;
-        }
-
-        .highlight-answer {
-            font-weight: bold;
-            background-color: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 4px;
+        /* --- BADGES --- */
+        .atende-badge, 
+        .summary-status-badge,
+        .status-validacao,
+        .recurso-badge { 
+            font-weight: 700; 
+            padding: 5px 12px; 
+            border-radius: 20px; 
+            font-size: 0.8em; 
             display: inline-block;
+            white-space: nowrap;
+            box-shadow: var(--sombra-suave);
         }
 
-        .atende-badge {
-            font-weight: bold;
-            padding: 6px 12px;
-            border-radius: 20px;
+        .atende-badge { color: var(--branco); }
+        .atende-badge { 
+            color: white !important; 
+        }
+        .atende-sim, .status-aprovado, .summary-status-mantido, .summary-status-atende { background-color: var(--verde-sucesso); }
+        .atende-nao, .status-rejeitado, .summary-status-nao-atende { background-color: var(--vermelho-destaque); }
+        .status-pendente, .summary-status-pendente { background-color: #ffc107; color: #333; }
+        .summary-status-recurso { background-color: var(--roxo-recurso); }
+        .summary-status-alterado-aprovado { background-color: var(--azul-gov-principal); }
+        .summary-status-alterado-rejeitado { background-color: var(--amarelo-gov-detalhe); color: #333; }
+
+        .recurso-badge {
+            background-color: var(--roxo-recurso);
             color: var(--branco);
-            font-size: 0.85em;
-            display: inline-block;
-        }
-
-        .atende-sim {
-            background-color: var(--verde-sucesso);
-        }
-
-        .atende-nao {
-            background-color: var(--vermelho-destaque);
-        }
-
-        .status-validacao {
-            font-weight: bold;
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 0.8em;
+            font-size: 0.7em;
             text-transform: uppercase;
-            color: var(--branco);
         }
 
-        .status-aprovado {
-            background-color: var(--verde-sucesso);
-        }
-
-        .status-rejeitado {
-            background-color: var(--vermelho-destaque);
-        }
-
-        .status-pendente {
-            background-color: #ffc107;
-            color: #333;
-        }
-        .status-mantido {
-            background-color: var(--verde-sucesso);
-        }
-         .status-alterado {
-            background-color: var(--vermelho-destaque);
-        }
-
-
-        .evidence-section,
-        .comment-section {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .evidence-section h4,
-        .comment-section h4 {
-            font-size: 1em;
-            color: #555;
-            margin: 0 0 10px 0;
-        }
-
-        .evidence-list {
-            list-style: none;
-            padding-left: 0;
-            margin: 0;
-        }
-
-        .evidence-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #f8f9fa;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-        }
-
-        .evidence-item a {
-            word-break: break-all;
-        }
-
-        .comment-section p {
-            margin: 0;
-            font-style: italic;
-            color: #555;
-        }
-
-        .admin-feedback-box {
-            margin-top: 15px;
-            padding: 15px;
-            background-color: #e9eef5;
-            border-left: 4px solid var(--azul-gov-principal);
-            border-radius: 4px;
-        }
-
-        .admin-feedback-box h4 {
-            margin: 0 0 10px 0;
-            color: var(--azul-gov-principal);
-        }
-
-        .swal2-container {
-            z-index: 3000 !important;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            background-color: var(--azul-gov-principal);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9em;
-            font-weight: bold;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            background-color: #001a4d;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 39, 118, 0.3);
-        }
-        .btn:disabled { 
-             opacity: 0.6;
-             cursor: not-allowed;
-             background-color: #6c757d;
-             transform: none;
-             box-shadow: none;
-        }
-
-        .btn-toggle {
-            padding: 8px 16px;
-            border: 1px solid var(--cinza-borda);
-            background-color: var(--branco);
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            color: var(--cinza-texto);
-        }
-
-        .btn-toggle:hover {
-            background-color: #f8f9fa;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-toggle.active {
-            background-color: var(--verde-sucesso);
-            color: var(--branco);
-            border-color: var(--verde-sucesso);
-        }
-
-        .btn-toggle[data-action*="nao"].active {
-            background-color: var(--vermelho-destaque);
-            border-color: var(--vermelho-destaque);
-            color: var(--branco);
-        }
-
-        .btn-toggle:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .validation-section {
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid var(--amarelo-gov-detalhe);
-            background-color: #fffaf0;
-            border-radius: 8px;
-        }
-
-        .validation-section h4 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: var(--azul-gov-principal);
-        }
-
-        .requisito-actions {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-
-        .admin-comment {
+        /* --- TABELA DE SUBITENS (se precisar) --- */
+        .subitens-table {
             width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-            border: 1px solid var(--cinza-borda);
-            border-radius: 6px;
+            border-collapse: collapse;
+            margin-bottom: 20px;
             font-size: 0.9em;
-            min-height: 80px;
-            margin-bottom: 10px;
-            resize: none;
-            font-family: 'Segoe UI', Arial, sans-serif;
         }
 
-        .validation-actions {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 10px;
+        .subitens-table th {
+            background: #f8f9fa;
+            padding: 10px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
         }
 
-        .analise-scge-destaque {
-            background: linear-gradient(135deg, #e9eef5 0%, #f8f9fa 100%);
-            border: 2px solid var(--azul-gov-principal);
-            border-radius: 10px;
-            padding: 20px;
-            margin: 15px 0;
-            box-shadow: 0 4px 12px rgba(0, 39, 118, 0.1);
+        .subitens-table td {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
         }
 
-        .analise-scge-destaque h5 {
-            background-color: var(--azul-gov-principal) !important;
-            color: var(--branco) !important;
-            padding: 8px 16px !important;
-            margin: -20px -20px 15px -20px !important;
-            border-radius: 8px 8px 0 0;
-            font-size: 1em !important;
-            font-weight: 700 !important;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .analise-scge-destaque p {
-            font-size: 0.95em;
-            margin: 12px 0;
-            line-height: 1.5;
-        }
-
-        .analise-scge-destaque .status-validacao {
-            font-size: 0.85em;
-            padding: 6px 12px;
-            border-radius: 6px;
-        }
-
-        .analise-final-destaque .links-analista-section {
-            margin: 15px 0 0 0;
-            padding: 0;
-        }
-
-        .analise-final-destaque .links-analista-section h5 {
-            background: linear-gradient(135deg, var(--verde-sucesso) 0%, #0fdd43 100%) !important;
-            color: white !important;
-            padding: 8px 12px !important;
-            margin: 0 0 10px 0 !important;
-            border-radius: 6px;
-            font-size: 0.9em !important;
-            font-weight: 600 !important;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .analise-final-destaque.rejeitado .links-analista-section h5 {
-            background: linear-gradient(135deg, var(--vermelho-destaque) 0%, #c82333 100%) !important;
-        }
-
-        .analise-final-destaque .links-analista-compact {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 0;
-        }
-
-        .analise-final-destaque .links-analista-compact .evidence-list {
-            margin: 0;
-            max-height: 120px;
-            overflow-y: auto;
-        }
-
-        .analise-final-destaque .links-analista-compact .evidence-item {
-            background: white;
-            border: 1px solid #dee2e6;
-            margin-bottom: 6px;
-            padding: 6px 10px;
+        .subitem-validacao {
+            padding: 6px;
             border-radius: 4px;
-            font-size: 0.85em;
+            border: 1px solid #ced4da;
+            width: 100%;
         }
 
-        .analise-final-destaque .links-analista-compact .evidence-item:last-child {
-            margin-bottom: 0;
+        /* --- EVIDÊNCIAS E COMENTÁRIOS --- */
+        .evidence-section, .comment-section { 
+            margin-top: 15px; 
+            padding-top: 15px; 
+            border-top: 1px solid #f0f0f0; 
         }
-
-        .analise-final-destaque .links-analista-compact .evidence-item a {
-            color: #0056b3;
-            text-decoration: none;
+        
+        .evidence-list { list-style: none; padding-left: 0; }
+        
+        .evidence-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background-color: #f8f9fa; 
+            padding: 10px 14px; 
+            border-radius: 6px; 
+            margin-bottom: 6px; 
+            border: 1px solid #e1e5e9;
         }
+        
+        .evidence-item a { color: var(--azul-gov-claro); text-decoration: none; word-break: break-all; }
+        .evidence-item a:hover { text-decoration: underline; }
 
-        .analise-final-destaque .links-analista-compact .evidence-item a:hover {
-            text-decoration: underline;
-            color: #003d7a;
-        }
-
-        .link-analista-container {
+        .admin-comment, .analise-final-comment { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #e1e5e9; 
+            border-radius: 8px; 
+            font-size: 0.95em; 
+            min-height: 80px; 
+            resize: none; 
             margin-bottom: 15px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        .admin-comment:focus { border-color: var(--azul-gov-principal); outline: none; }
+
+        /* --- BOTÕES --- */
+        .btn { 
+            padding: 12px 24px; 
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%);
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 700; 
+            transition: var(--transicao-padrao); 
+            box-shadow: var(--sombra-suave);
+        }
+        
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: var(--sombra-media); 
+        }
+
+        .btn-toggle { 
+            padding: 8px 16px; 
+            border: 2px solid #e1e5e9; 
+            background-color: var(--branco); 
+            border-radius: 50px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: var(--transicao-padrao);
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        .btn-toggle:hover { background-color: #f8f9fa; }
+
+        .btn-toggle.active { 
+            background-color: var(--verde-sucesso); 
+            color: var(--branco); 
+            border-color: var(--verde-sucesso); 
+        }
+        
+        .btn-toggle[data-action*="nao"].active { 
+            background-color: var(--vermelho-destaque); 
+            border-color: var(--vermelho-destaque); 
+        }
+
+        .btn-add-evidence { 
+            padding: 8px 16px; 
+            border: 1px dashed var(--azul-gov-principal); 
+            background-color: rgba(0, 39, 118, 0.05); 
+            color: var(--azul-gov-principal); 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-add-evidence:hover { 
+            background-color: rgba(0, 39, 118, 0.1); 
+            border-style: solid;
+        }
+
+        .remove-evidence-btn {
+            background: var(--vermelho-destaque); 
+            color: white; 
+            border: none; 
+            border-radius: 50%; 
+            width: 24px; 
+            height: 24px; 
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .remove-evidence-btn:hover { background: #c0392b; }
+
+        /* --- SEÇÕES DE VALIDAÇÃO --- */
+        .validation-section { 
+            margin-top: 20px; 
+            padding: 20px; 
+            border-top: 2px dashed #e1e5e9; 
+        }
+
+        .validation-actions { 
+            display: flex; 
+            justify-content: flex-end; 
+            align-items: center; 
+            gap: 10px; 
+            margin-top: 15px;
+        }
+
+        .analise-scge-destaque,
+        .analise-final-destaque,
+        .admin-feedback-box { 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 15px 0; 
+        }
+
+        .analise-scge-destaque { 
+            background: #e9eef5; 
+            border: 2px solid var(--azul-gov-principal); 
+        }
+
+        .analise-final-destaque { 
+            background: #e8f5e8; 
+            border: 2px solid var(--verde-sucesso); 
+        }
+
+        .analise-final-destaque.rejeitado { 
+            background: #fde8e8; 
+            border-color: var(--vermelho-destaque); 
+        }
+
+        .admin-feedback-box { 
+            background: #e9eef5; 
             border-left: 4px solid var(--azul-gov-principal); 
         }
 
-        .link-analista-container h5 {
-            margin: 0 0 10px 0 !important;
-            font-size: 0.95em !important;
-            color: var(--azul-gov-principal) !important; 
-            font-weight: 600 !important;
-            background: none !important;
-            padding: 0 !important;
-            text-align: left !important;
-            width: 100% !important;
-            display: block !important;
-        }
-
-        .link-analista-display {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 8px;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            background-color: #f8f9fa;
-        }
-
-        .link-analista-display .evidence-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-            transition: all 0.2s ease;
-        }
-
-        .link-analista-display .evidence-item:hover {
-            background-color: #f8f9fa;
-            border-color: #007bff;
-        }
-
-        .link-analista-display .evidence-item a {
-            flex: 1;
-            word-break: break-all;
-            margin-right: 10px;
-            color: #0056b3;
-            text-decoration: none;
-        }
-
-        .link-analista-display .evidence-item a:hover {
-            text-decoration: underline;
-        }
-
-        .link-analista-container {
-            margin-bottom: 15px;
-            padding: 15px;
-            background-color: #ffffff;
-            border-radius: 6px;
-            border-left: 4px solid var(--azul); 
-        }
-
-        .link-analista-container h5 {
-            margin: 0 0 10px 0;
-            font-size: 0.95em;
-            color: var(--verde-sucesso); 
-            font-weight: 600;
-        }
-
-        .link-analista-display {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 8px;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            background-color: #ffffff;
-        }
-
-        .link-analista-display .evidence-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-            transition: all 0.2s ease;
-        }
-
-        .link-analista-display .evidence-item:hover {
-            background-color: #f8f9fa;
-            border-color: var(--verde-sucesso);
-        }
-
-        .link-analista-display .evidence-item a {
-            flex: 1;
-            word-break: break-all;
-            margin-right: 10px;
-            color: #0056b3;
-            text-decoration: none;
-        }
-
-        .link-analista-display .evidence-item a:hover {
-            text-decoration: underline;
-        }
-
-        .link-analista-display .remove-link-analista-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            transition: background-color 0.2s ease;
-        }
-
-        .link-analista-display .remove-link-analista-btn:hover {
-            background: #c82333;
-        }
-
-        .btn-add-evidence, .btn-add-link-analista-final {
-            background-color: var(--verde-sucesso); 
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn-add-evidence:hover, .btn-add-link-analista-final:hover {
-            background-color: #218838; 
-        }
-
-        .validation-section {
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid var(--verde-sucesso); 
-            background-color: #f8fff8; 
-            border-radius: 8px;
-        }
-
-        .validation-section h4 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: var(--verde-sucesso);
-        }
-
-        .comentario-analista-destaque p {
-            margin: 0;
-            color: #333333 !important;
-            font-weight: 500;
-            line-height: 1.4;
-            word-wrap: break-word; 
-            white-space: pre-wrap; 
-            overflow-wrap: break-word; 
-        }
-
-        .admin-comment,
-        .analise-final-comment {
+        /* --- MODAL --- */
+        .modal-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
             width: 100%; 
-            box-sizing: border-box; 
-            padding: 10px; 
-            border: 1px solid var(--cinza-borda); 
-            border-radius: 6px; 
-            font-size: 0.9em; 
-            min-height: 80px; 
-            margin-bottom: 10px; 
-            resize: none; 
-            font-family: 'Segoe UI', Arial, sans-serif;
-            word-wrap: break-word; 
-            white-space: pre-wrap; 
-            overflow-wrap: break-word; 
+            height: 100%; 
+            background-color: rgba(0, 0, 0, 0.6); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 2000; 
         }
 
-        .detalhes-recurso .info-item {
-            background: #f8f9fa;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9em;
-            word-wrap: break-word; 
-            white-space: pre-wrap; 
-            overflow-wrap: break-word; 
+        .modal-content { 
+            background: var(--branco); 
+            padding: 30px; 
+            border-radius: 16px; 
+            width: 90%; 
+            max-width: 800px; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            position: relative; 
+            border-top: 5px solid var(--azul-gov-principal);
         }
 
-        .comentario-analista-destaque {
-            background: linear-gradient(135deg, #fffffe 0%, #ffffff 100%);
-            border-left: 4px solid var(--amarelo-gov-detalhe);
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0 0 0;
-            font-style: normal !important;
-            border: 1px solid #6f6d6d;
+        .modal-close-btn { 
+            position: absolute; 
+            top: 15px; 
+            right: 20px; 
+            background: none; 
+            border: none; 
+            font-size: 2.5em; 
+            color: #aaa; 
+            cursor: pointer; 
+            transition: color 0.3s;
         }
 
-        .comentario-analista-destaque strong {
-            color: var(--azul-gov-principal);
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.95em;
+        .modal-close-btn:hover { color: var(--vermelho-destaque); }
+
+        .info-block { 
+            border-top: 1px solid #eee; 
+            padding-top: 20px; 
+            margin-top: 20px; 
         }
 
-        .analise-final-destaque {
-            background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);
-            border: 2px solid var(--verde-sucesso);
-            border-radius: 10px;
-            padding: 20px;
-            margin: 15px 0;
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.1);
+        .info-block:first-child { 
+            border-top: none; 
+            padding-top: 0; 
+            margin-top: 0; 
         }
 
-        .analise-final-destaque.rejeitado {
-            background: linear-gradient(135deg, #fde8e8 0%, #fff0f0 100%);
-            border-color: var(--vermelho-destaque);
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.1);
+        .info-block h4, .info-block h5 { 
+            margin: 0 0 10px 0; 
+            color: var(--azul-gov-principal); 
         }
 
-        .analise-final-destaque h5 {
-            background-color: var(--verde-sucesso) !important;
-            color: var(--branco) !important;
-            padding: 8px 16px !important;
-            margin: -20px -20px 15px -20px !important;
-            border-radius: 8px 8px 0 0;
-            font-size: 1em !important;
-            font-weight: 700 !important;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        /* --- FOOTER --- */
+        .main-footer { 
+            text-align: center; 
+            padding: 30px 5%; 
+            margin-top: auto;
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-escuro) 100%);
+            color: var(--branco);
+            position: relative; 
+            min-height: 80px;
         }
 
-        .analise-final-destaque.rejeitado h5 {
-            background-color: var(--vermelho-destaque) !important;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-
-        .modal-content {
-            background: var(--branco);
-            padding: 30px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
+        .main-footer .footer-content { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            max-width: 1400px;
+            margin: 0 auto;
+            height: 100%; 
             position: relative;
         }
 
-        .modal-close-btn {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 2.5em;
-            line-height: 1;
-            color: #aaa;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .main-footer .footer-portal-link,
+        .main-footer .footer-logo-link { 
+            position: absolute; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            height: 70px; 
+            transition: transform 0.3s;
         }
 
-        .modal-close-btn:hover {
-            color: #333;
-            transform: scale(1.1);
+        .main-footer .footer-portal-link { left: 0.5%; }
+        .main-footer .footer-logo-link { right: 0.5%; }
+
+        .main-footer img { 
+            height: 100%; 
+            filter: brightness(0) invert(1); 
         }
 
-        #logout-btn {
-            cursor: pointer;
+        .main-footer p a { 
+            color: var(--amarelo-gov-detalhe); 
+            text-decoration: none; 
+            padding: 4px 8px; 
         }
 
-        .tooltip {
-            position: relative;
-            display: inline-block;
+        .main-footer p a:hover { 
+            background-color: rgba(255, 215, 0, 0.2); 
+            text-decoration: underline; 
         }
 
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.8em;
-            font-weight: normal;
-            text-transform: none;
+        /* --- RESPONSIVIDADE --- */
+        @media (max-width: 768px) {
+            .main-nav { flex-direction: column; height: auto; padding: 20px 0; }
+            .main-nav ul { flex-direction: column; width: 100%; margin-top: 15px; }
+            .score-container-quatro-notas { grid-template-columns: 1fr; gap: 10px; }
+            .report-header { padding: 20px; }
+            .report-summary { grid-template-columns: 1fr; }
+            
+            .main-footer { padding: 20px; }
+            .main-footer .footer-content { flex-direction: column; gap: 15px; }
+            .main-footer .footer-portal-link,
+            .main-footer .footer-logo-link { 
+                position: static; 
+                transform: none; 
+                height: 50px; 
+                margin: 10px 0; 
+            }
         }
-
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-
     </style>
 </head>
 <body>
@@ -1041,14 +610,13 @@
         <nav class="main-nav">
             <div class="logo">
                 <a href="/">
-                    <img src="/assets/logo-header.png" alt="Logo do Governo de Pernambuco">
-                    <div class="SIMPE-marca-text-group">                     
-                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                     
+                    <img src="/assets/logo-header.png" alt="Logo Governo de Pernambuco">
+                    <div class="SIMPE-marca-text-group">                      
+                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                      
                     </div>
                 </a>
             </div>
-            <ul id="nav-links">
-                 </ul>
+            <ul id="nav-links"></ul>
         </nav>
     </header>
 
@@ -1086,7 +654,12 @@
 
     <footer class="main-footer">
         <div class="footer-content">
+            <a href="https://transparencia.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-portal-link">
+                <img src="/assets/image-portal.png" alt="Portal da Transparência">
+            </a>
+
             <p>&copy; 2025 Governo de Pernambuco. Todos os direitos reservados. <a id="admin-footer-link" href="/admin" style="display: none;">Área Administrativa</a></p>
+            
             <a href="https://www.scge.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-logo-link">
                 <img src="/assets/logo-footer.png" alt="Logo da Controladoria-Geral do Estado de Pernambuco">
             </a>
@@ -1130,9 +703,16 @@
                 return resposta;
             }
 
+            function calcularPontuacaoPorFaixa(qtdAprovados, pontuacaoBase) {
+                if (qtdAprovados >= 12) return pontuacaoBase;
+                if (qtdAprovados >= 8) return pontuacaoBase * 0.7;
+                if (qtdAprovados >= 4) return pontuacaoBase * 0.5;
+                if (qtdAprovados >= 1) return pontuacaoBase * 0.3;
+                return 0;
+            }
+
             function calcularQuatroNotas() {
                 if (!avaliacaoCompleta || !Array.isArray(avaliacaoCompleta.respostas)) {
-                    console.warn("[Calcular Notas] Tentativa de calcular notas sem dados de avaliação válidos.");
                     return { autoavaliacao: 0, primeiraAnalise: 0, posRecurso: 0, final: 0, total: 0 };
                 }
 
@@ -1144,46 +724,62 @@
 
                 avaliacaoCompleta.respostas.forEach(resposta => {
                     const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
-                    if (!resposta.requisito) {
-                         console.warn(`[Calcular Notas] Requisito não encontrado para resposta ID ${resposta.id}`);
-                    }
                     pontuacaoTotal += pontuacaoRequisito;
 
-                    if (resposta.atendeOriginal === true) {
-                        pontuacaoAutoavaliacao += pontuacaoRequisito;
-                    }
+                    // Verificar se é requisito composto
+                    if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                        // Autoavaliação (baseado no que a secretaria marcou)
+                        const aprovadosSecretaria = resposta.subRespostas.filter(s => s.atende === true).length;
+                        pontuacaoAutoavaliacao += calcularPontuacaoPorFaixa(aprovadosSecretaria, pontuacaoRequisito);
 
-                    if (resposta.statusValidacao === 'aprovado') {
-                        pontuacaoPrimeiraAnalise += pontuacaoRequisito;
-                    }
+                        // Primeira análise (statusValidacao)
+                        const aprovadosPrimeira = resposta.subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
+                        pontuacaoPrimeiraAnalise += calcularPontuacaoPorFaixa(aprovadosPrimeira, pontuacaoRequisito);
 
-                    let pontuacaoRequisitoPosRecurso = 0;
-                    const teveRecurso = resposta.recursoAtende !== null || 
-                                        resposta.comentarioRecurso ||
-                                        (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
+                        // Pós-recurso (statusValidacaoPosRecurso)
+                        const aprovadosRecurso = resposta.subRespostas.filter(s => s.statusValidacaoPosRecurso === 'aprovado').length;
+                        pontuacaoPosRecurso += calcularPontuacaoPorFaixa(aprovadosRecurso, pontuacaoRequisito);
 
-                    if (teveRecurso) {
-                        if (resposta.recursoAtende === true) { 
-                            pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
-                        }
+                        // Final (prioriza pós-recurso, senão primeira análise)
+                        const aprovadosFinal = resposta.subRespostas.filter(s => 
+                            (s.statusValidacaoPosRecurso || s.statusValidacao) === 'aprovado'
+                        ).length;
+                        pontuacaoFinal += calcularPontuacaoPorFaixa(aprovadosFinal, pontuacaoRequisito);
                     } else {
-                        if (resposta.statusValidacao === 'aprovado') {
-                            pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
+                        // Requisitos normais (código existente)
+                        if (resposta.atendeOriginal === true) {
+                            pontuacaoAutoavaliacao += pontuacaoRequisito;
                         }
-                    }
-                    pontuacaoPosRecurso += pontuacaoRequisitoPosRecurso;
-     
-                    const statusFinalConsiderado = resposta.analiseFinal?.statusValidacaoPosRecurso || resposta.statusValidacao;
-                    if (statusFinalConsiderado === 'aprovado') {
-                        pontuacaoFinal += pontuacaoRequisito;
+                        if (resposta.statusValidacao === 'aprovado') {
+                            pontuacaoPrimeiraAnalise += pontuacaoRequisito;
+                        }
+                        
+                        const teveRecurso = resposta.recursoAtende !== null ||
+                                        resposta.comentarioRecurso ||
+                                        (resposta.evidencias?.some(e => e.tipo === 'recurso'));
+                        
+                        if (teveRecurso) {
+                            if (resposta.recursoAtende === true) {
+                                pontuacaoPosRecurso += pontuacaoRequisito;
+                            }
+                        } else {
+                            if (resposta.statusValidacao === 'aprovado') {
+                                pontuacaoPosRecurso += pontuacaoRequisito;
+                            }
+                        }
+
+                        const statusFinal = resposta.analiseFinal?.statusValidacaoPosRecurso || resposta.statusValidacao;
+                        if (statusFinal === 'aprovado') {
+                            pontuacaoFinal += pontuacaoRequisito;
+                        }
                     }
                 });
 
                 return {
-                    autoavaliacao: Math.round(pontuacaoAutoavaliacao),
-                    primeiraAnalise: Math.round(pontuacaoPrimeiraAnalise),
-                    posRecurso: Math.round(pontuacaoPosRecurso), 
-                    final: Math.round(pontuacaoFinal),
+                    autoavaliacao: parseFloat(pontuacaoAutoavaliacao.toFixed(1)),
+                    primeiraAnalise: parseFloat(pontuacaoPrimeiraAnalise.toFixed(1)),
+                    posRecurso: parseFloat(pontuacaoPosRecurso.toFixed(1)),
+                    final: parseFloat(pontuacaoFinal.toFixed(1)),
                     total: pontuacaoTotal
                 };
             }
@@ -1982,6 +1578,355 @@
                 `;
             }
 
+            function renderizarRequisitoComposto(resposta) {
+                const subRespostas = resposta.subRespostas || [];
+                
+                const aprovadosFinal = subRespostas.filter(s => 
+                    (s.statusValidacaoPosRecurso || s.statusValidacao) === 'aprovado'
+                ).length;
+                const total = subRespostas.length;
+                const pontuacaoBase = resposta.requisito?.pontuacao || 8;
+                
+                let pontuacaoFinal = 0;
+                if (aprovadosFinal >= 12) pontuacaoFinal = pontuacaoBase;
+                else if (aprovadosFinal >= 8) pontuacaoFinal = pontuacaoBase * 0.7;
+                else if (aprovadosFinal >= 4) pontuacaoFinal = pontuacaoBase * 0.5;
+                else if (aprovadosFinal >= 1) pontuacaoFinal = pontuacaoBase * 0.3;
+                
+                let statusClass = 'summary-status-pendente';
+                let statusTexto = 'PENDENTE';
+                
+                if (aprovadosFinal === total) {
+                    statusClass = 'summary-status-mantido';
+                    statusTexto = `COMPLETO (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
+                } else if (aprovadosFinal === 0) {
+                    statusClass = 'summary-status-nao-atende';
+                    statusTexto = `NENHUM (0/${pontuacaoBase})`;
+                } else {
+                    statusClass = 'summary-status-alterado-rejeitado';
+                    statusTexto = `${aprovadosFinal}/${total} (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
+                }
+
+                return `
+                <div class="resposta-card" data-resposta-id="${resposta.id}" data-tipo="composto">
+                    <div class="resposta-header">
+                        <strong>${resposta.requisito.texto}</strong>
+                        <span class="summary-status-badge ${statusClass}">
+                            ${statusTexto}
+                        </span>
+                    </div>
+                    
+                    <div class="resposta-body">
+                        <!-- Comentário da Secretaria -->
+                        ${resposta.comentarioSecretaria ? `
+                        <div style="margin-bottom:15px; padding:10px; background:#f8f9fa; border-left:4px solid var(--azul-gov-principal);">
+                            <strong>Comentário da Secretaria:</strong>
+                            <p style="margin:5px 0 0 0;">"${resposta.comentarioSecretaria}"</p>
+                        </div>
+                        ` : ''}
+
+                        <!-- Comentário da 1ª Análise -->
+                        ${resposta.comentarioAdmin ? `
+                        <div style="margin-bottom:15px; padding:10px; background:#f8f9fa; border-left:4px solid var(--amarelo-gov-detalhe);">
+                            <strong>Comentário da 1ª Análise:</strong>
+                            <p style="margin:5px 0 0 0;">"${resposta.comentarioAdmin}"</p>
+                        </div>
+                        ` : ''}
+
+                        <!-- Tabela de Subitens -->
+                        <table class="subitens-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Subitem</th>
+                                    <th>Resposta</th>
+                                    <th>Link</th>
+                                    <th>1ª Análise</th>
+                                    <th>Recurso</th>
+                                    <th>Análise Final</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${subRespostas.map((sub, index) => {
+                                    const primeiraAnaliseClass = sub.statusValidacao === 'aprovado' ? 'atende-sim' : 
+                                                                (sub.statusValidacao === 'rejeitado' ? 'atende-nao' : 'status-pendente');
+                                    const primeiraAnaliseText = sub.statusValidacao === 'aprovado' ? 'Aprovado' :
+                                                            (sub.statusValidacao === 'rejeitado' ? 'Rejeitado' : 'Pendente');
+
+                                    const recursoClass = sub.recursoAtende === true ? 'atende-sim' :
+                                                    (sub.recursoAtende === false ? 'atende-nao' : 'status-pendente');
+                                    const recursoText = sub.recursoAtende === true ? 'Atende' :
+                                                    (sub.recursoAtende === false ? 'Não' : '—');
+
+                                    const statusFinalAtual = sub.statusValidacaoPosRecurso || sub.statusValidacao || 'pendente';
+                                    
+                                    return `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${sub.subRequisito.texto}</td>
+                                        <td>
+                                            <span class="atende-badge ${sub.atende ? 'atende-sim' : 'atende-nao'}" style="font-size:0.75em;">
+                                                ${sub.atende ? 'Atende' : 'Não'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            ${sub.linkComprovante ? 
+                                                `<a href="${sub.linkComprovante}" target="_blank" style="word-break:break-all;">${sub.linkComprovante.substring(0,30)}...</a>` : 
+                                                '<span style="color:#999;">—</span>'}
+                                        </td>
+                                        <td>
+                                            <span class="atende-badge ${primeiraAnaliseClass}" style="font-size:0.75em;">
+                                                ${primeiraAnaliseText}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="atende-badge ${recursoClass}" style="font-size:0.75em;">
+                                                ${recursoText}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <select class="subitem-validacao" data-subresposta-id="${sub.id}" 
+                                                    style="width:100%; padding:4px;">
+                                                <option value="pendente" ${statusFinalAtual === 'pendente' ? 'selected' : ''}>Pendente</option>
+                                                <option value="aprovado" ${statusFinalAtual === 'aprovado' ? 'selected' : ''}>Aprovar</option>
+                                                <option value="rejeitado" ${statusFinalAtual === 'rejeitado' ? 'selected' : ''}>Rejeitar</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                `}).join('')}
+                            </tbody>
+                        </table>
+
+                        <!-- Campo para comentário final -->
+                        <textarea class="admin-comment analise-final-comment" 
+                                placeholder="Comentário final sobre o requisito..." 
+                                style="width:100%; margin-top:15px;">${resposta.comentarioAnaliseFinal || ''}</textarea>
+                    </div>
+                </div>`;
+            }
+
+            function configurarListenersSubitens() {
+                // Selects de validação dos subitens
+                document.querySelectorAll('.subitem-validacao').forEach(select => {
+                    const novoSelect = select.cloneNode(true);
+                    select.parentNode.replaceChild(novoSelect, select);
+
+                    novoSelect.addEventListener('change', async function() {
+                        const subRespostaId = this.dataset.subrespostaId;
+                        const status = this.value;
+                        
+                        this.disabled = true;
+
+                        try {
+                            const response = await fetch(`/api/subrespostas/${subRespostaId}/validar-recurso`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${authToken}`
+                                },
+                                body: JSON.stringify({ statusValidacaoPosRecurso: status })
+                            });
+
+                            if (response.ok) {
+                                // Atualizar dados locais
+                                const respostaIndex = avaliacaoCompleta.respostas.findIndex(r => 
+                                    r.subRespostas?.some(s => s.id === parseInt(subRespostaId))
+                                );
+                                
+                                if (respostaIndex !== -1) {
+                                    const subIndex = avaliacaoCompleta.respostas[respostaIndex].subRespostas.findIndex(s => s.id === parseInt(subRespostaId));
+                                    if (subIndex !== -1) {
+                                        avaliacaoCompleta.respostas[respostaIndex].subRespostas[subIndex].statusValidacaoPosRecurso = status;
+                                    }
+                                }
+
+                                // 🔥 Recalcular e exibir as notas
+                                exibirQuatroNotas();
+                                
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'success',
+                                    title: 'Análise final salva!',
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Erro:', error);
+                            Swal.fire('Erro!', 'Não foi possível salvar.', 'error');
+                        } finally {
+                            this.disabled = false;
+                        }
+                    });
+                });
+
+                // Comentários finais
+                document.querySelectorAll('.analise-final-comment').forEach(textarea => {
+                    const novoTextarea = textarea.cloneNode(true);
+                    textarea.parentNode.replaceChild(novoTextarea, textarea);
+
+                    let timeout;
+                    novoTextarea.addEventListener('input', function() {
+                        clearTimeout(timeout);
+                        const card = this.closest('.resposta-card');
+                        const respostaId = card.dataset.respostaId;
+                        const comentario = this.value;
+
+                        timeout = setTimeout(async () => {
+                            try {
+                                await fetch(`/api/respostas/${respostaId}`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${authToken}`
+                                    },
+                                    body: JSON.stringify({ comentarioAnaliseFinal: comentario })
+                                });
+                            } catch (error) {
+                                console.error('Erro ao salvar comentário:', error);
+                            }
+                        }, 500);
+                    });
+                });
+            }
+
+            function renderizarRequisitoCompostoAnaliseFinal(resposta) {
+                const subRespostas = resposta.subRespostas || [];
+                
+                const aprovadosFinal = subRespostas.filter(s => 
+                    (s.statusValidacaoPosRecurso || s.statusValidacao) === 'aprovado'
+                ).length;
+                const total = subRespostas.length;
+                const pontuacaoBase = resposta.requisito?.pontuacao || 8;
+                
+                let pontuacaoFinal = 0;
+                if (aprovadosFinal >= 12) pontuacaoFinal = pontuacaoBase;
+                else if (aprovadosFinal >= 8) pontuacaoFinal = pontuacaoBase * 0.7;
+                else if (aprovadosFinal >= 4) pontuacaoFinal = pontuacaoBase * 0.5;
+                else if (aprovadosFinal >= 1) pontuacaoFinal = pontuacaoBase * 0.3;
+                
+                let statusClass = 'summary-status-pendente';
+                let statusTexto = 'PENDENTE';
+                
+                if (aprovadosFinal === total) {
+                    statusClass = 'summary-status-mantido';
+                    statusTexto = `COMPLETO (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
+                } else if (aprovadosFinal === 0) {
+                    statusClass = 'summary-status-nao-atende';
+                    statusTexto = `NENHUM (0/${pontuacaoBase})`;
+                } else {
+                    statusClass = 'summary-status-alterado-rejeitado';
+                    statusTexto = `${aprovadosFinal}/${total} (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
+                }
+
+                const teveRecurso = resposta.atende !== resposta.atendeOriginal ||
+                                    resposta.comentarioRecurso ||
+                                    (resposta.evidencias?.some(e => e.tipo === 'recurso'));
+                
+                const badgeRecursoHTML = teveRecurso ? '<span class="recurso-badge">Recurso</span>' : '';
+
+                return `
+                <div class="resposta-card" data-resposta-id="${resposta.id}" data-tipo="composto">
+                    <div class="resposta-header">
+                        <strong>${resposta.requisito.texto}</strong>
+                        <div class="summary-status-container">
+                            <span class="summary-status-badge ${statusClass}">
+                                ${statusTexto}
+                            </span>
+                            ${badgeRecursoHTML}
+                        </div>
+                    </div>
+                    
+                    <div class="resposta-body">
+                        <!-- Comentário da Secretaria -->
+                        ${resposta.comentarioSecretaria ? `
+                        <div style="margin-bottom:15px; padding:10px; background:#f8f9fa; border-left:4px solid var(--azul-gov-principal);">
+                            <strong>Comentário da Secretaria:</strong>
+                            <p style="margin:5px 0 0 0;">"${resposta.comentarioSecretaria}"</p>
+                        </div>
+                        ` : ''}
+
+                        <!-- Comentário da 1ª Análise -->
+                        ${resposta.comentarioAdmin ? `
+                        <div style="margin-bottom:15px; padding:10px; background:#f8f9fa; border-left:4px solid var(--amarelo-gov-detalhe);">
+                            <strong>Comentário da 1ª Análise:</strong>
+                            <p style="margin:5px 0 0 0;">"${resposta.comentarioAdmin}"</p>
+                        </div>
+                        ` : ''}
+
+                        <!-- Tabela de Subitens -->
+                        <table class="subitens-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Subitem</th>
+                                    <th>Resposta</th>
+                                    <th>Link</th>
+                                    <th>1ª Análise</th>
+                                    <th>Recurso</th>
+                                    <th>Análise Final</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${subRespostas.map((sub, index) => {
+                                    const primeiraAnaliseClass = sub.statusValidacao === 'aprovado' ? 'atende-sim' : 
+                                                                (sub.statusValidacao === 'rejeitado' ? 'atende-nao' : 'status-pendente');
+                                    const primeiraAnaliseText = sub.statusValidacao === 'aprovado' ? 'Aprovado' :
+                                                            (sub.statusValidacao === 'rejeitado' ? 'Rejeitado' : 'Pendente');
+
+                                    const recursoClass = sub.recursoAtende === true ? 'atende-sim' :
+                                                    (sub.recursoAtende === false ? 'atende-nao' : 'status-pendente');
+                                    const recursoText = sub.recursoAtende === true ? 'Atende' :
+                                                    (sub.recursoAtende === false ? 'Não' : '—');
+
+                                    const statusFinalAtual = sub.statusValidacaoPosRecurso || sub.statusValidacao || 'pendente';
+                                    
+                                    return `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${sub.subRequisito.texto}</td>
+                                        <td>
+                                            <span class="atende-badge ${sub.atende ? 'atende-sim' : 'atende-nao'}" style="font-size:0.75em;">
+                                                ${sub.atende ? 'Atende' : 'Não'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            ${sub.linkComprovante ? 
+                                                `<a href="${sub.linkComprovante}" target="_blank" style="word-break:break-all;">${sub.linkComprovante.substring(0,30)}...</a>` : 
+                                                '<span style="color:#999;">—</span>'}
+                                        </td>
+                                        <td>
+                                            <span class="atende-badge ${primeiraAnaliseClass}" style="font-size:0.75em;">
+                                                ${primeiraAnaliseText}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="atende-badge ${recursoClass}" style="font-size:0.75em;">
+                                                ${recursoText}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <select class="subitem-validacao" data-subresposta-id="${sub.id}" 
+                                                    style="width:100%; padding:4px;">
+                                                <option value="pendente" ${statusFinalAtual === 'pendente' ? 'selected' : ''}>Pendente</option>
+                                                <option value="aprovado" ${statusFinalAtual === 'aprovado' ? 'selected' : ''}>Aprovar</option>
+                                                <option value="rejeitado" ${statusFinalAtual === 'rejeitado' ? 'selected' : ''}>Rejeitar</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                `}).join('')}
+                            </tbody>
+                        </table>
+
+                        <!-- Campo para comentário final -->
+                        <textarea class="admin-comment analise-final-comment" 
+                                placeholder="Comentário final sobre o requisito..." 
+                                style="width:100%; margin-top:15px;">${resposta.comentarioAnaliseFinal || ''}</textarea>
+                    </div>
+                </div>`;
+            }
+
             function renderizarCardsDeResposta() {
                 if (!avaliacaoCompleta || !Array.isArray(avaliacaoCompleta.respostas)) {
                     respostasContainer.innerHTML = '<p>Nenhuma resposta encontrada.</p>';
@@ -1989,6 +1934,10 @@
                 }
 
                 respostasContainer.innerHTML = avaliacaoCompleta.respostas.map(resposta => {
+                    if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                        return renderizarRequisitoCompostoAnaliseFinal(resposta);
+                    }
+
                     const analiseFinal = resposta.analiseFinal || {};
                     let cardClass = '';
                     let statusTexto = '';

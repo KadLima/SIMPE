@@ -8,96 +8,98 @@ datasource db {
 }
 
 model ScanSession {
-  id           String    @id @default(uuid())
+  id           String   @id @default(uuid())
   url_base     String
-  status       String    @default("iniciado")
-  total_links  Int       @default(0)
+  status       String   @default("iniciado")
+  total_links  Int      @default(0)
   depthReached Int?
   errorMessage String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  links        Link[]    @relation("SessionLinks")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  links        Link[]   @relation("SessionLinks")
 }
 
 model Link {
-  id              Int       @id @default(autoincrement())
-  url             String
-  finalUrl        String?
-  tipo            String
-  origem          String
-  status          String
-  httpCode        Int?
-  responseTime    Int?
-  profundidade    Int?
-  session_id      String
-  createdAt       DateTime  @default(now())
-  session         ScanSession @relation("SessionLinks", fields: [session_id], references: [id], onDelete: Cascade)
+  id           Int         @id @default(autoincrement())
+  url          String
+  finalUrl     String?
+  tipo         String
+  origem       String
+  status       String
+  httpCode     Int?
+  responseTime Int?
+  profundidade Int?
+  session_id   String
+  createdAt    DateTime    @default(now())
+  session      ScanSession @relation("SessionLinks", fields: [session_id], references: [id], onDelete: Cascade)
 
   @@unique([url, session_id])
   @@index([session_id])
 }
 
 model Requisito {
-  id          Int      @id @default(autoincrement())
-  texto       String
-  textoAjuda  String?
-  linkFixo    String?
-  pontuacao   Int
-  secretariaId Int?        
-  secretaria   Secretaria? @relation(fields: [secretariaId], references: [id])
-  respostas   Resposta[]
+  id            Int            @id @default(autoincrement())
+  texto         String
+  textoAjuda    String?
+  linkFixo      String?
+  pontuacao     Int
+  secretariaId  Int?
+  secretaria    Secretaria?    @relation(fields: [secretariaId], references: [id])
+  respostas     Resposta[]
+  subRequisitos SubRequisito[]
 }
 
 model Avaliacao {
-  id               Int               @id @default(autoincrement())
+  id               Int             @id @default(autoincrement())
   urlSecretaria    String
   nomeResponsavel  String
   emailResponsavel String
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @default(now()) @updatedAt
-  prazoRecurso         DateTime?  
-  recursoExpirado      Boolean   @default(false)
-  status           AvaliacaoStatus   @default(PENDENTE_SECRETARIA) 
-  ciclo            Int               @default(2025)
-  secretaria       Secretaria        @relation(fields: [secretariaId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now()) @updatedAt
+  prazoRecurso     DateTime?
+  recursoExpirado  Boolean         @default(false)
+  status           AvaliacaoStatus @default(PENDENTE_SECRETARIA)
+  ciclo            Int             @default(2025)
+  secretaria       Secretaria      @relation(fields: [secretariaId], references: [id])
   secretariaId     Int
   respostas        Resposta[]
 
-  pontuacaoFinal   Float?  
-  pontuacaoAutoavaliacao  Float? 
-  pontuacaoPrimeiraAnalise Float? 
-  pontuacaoPosRecurso      Float? 
-  pontuacaoTotal           Float? 
+  pontuacaoFinal           Float?
+  pontuacaoAutoavaliacao   Float?
+  pontuacaoPrimeiraAnalise Float?
+  pontuacaoPosRecurso      Float?
+  pontuacaoTotal           Float?
   dataFinalizacao          DateTime?
 }
 
 model Resposta {
-  id                        Int      @id @default(autoincrement())
-  atende                    Boolean
-  foiAutomatico             Boolean  @default(false)
-  linkComprovante String?
-  linkComprovanteRecurso String?  
-  
-  comentarioAdmin           String?
-  comentarioSecretaria      String?
-  comentarioRecurso         String?
+  id                     Int     @id @default(autoincrement())
+  atende                 Boolean
+  foiAutomatico          Boolean @default(false)
+  linkComprovante        String?
+  linkComprovanteRecurso String?
+
+  comentarioAdmin        String?
+  comentarioSecretaria   String?
+  comentarioRecurso      String?
   comentarioAnaliseFinal String?
- 
+
   statusRecurso             String?
-  statusValidacao           String   @default("pendente")
-  statusValidacaoPosRecurso           String?
+  statusValidacao           String  @default("pendente")
+  statusValidacaoPosRecurso String?
 
-  recursoAtende             Boolean?
-  analiseFinal              Json?
-  atendeOriginal            Boolean? 
+  recursoAtende  Boolean?
+  analiseFinal   Json?
+  atendeOriginal Boolean?
 
-  requisito                 Requisito @relation(fields: [requisitoId], references: [id])
-  requisitoId               Int
-  avaliacao                 Avaliacao @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
-  avaliacaoId               Int
-  evidencias                Evidencia[]
-  linksAnalista             LinkAnalista[]
-  linksAnaliseFinal         LinkAnaliseFinal[]  
+  requisito         Requisito          @relation(fields: [requisitoId], references: [id])
+  requisitoId       Int
+  avaliacao         Avaliacao          @relation(fields: [avaliacaoId], references: [id], onDelete: Cascade)
+  avaliacaoId       Int
+  evidencias        Evidencia[]
+  linksAnalista     LinkAnalista[]
+  linksAnaliseFinal LinkAnaliseFinal[]
+  subRespostas      SubResposta[]
 }
 
 model Secretaria {
@@ -107,30 +109,30 @@ model Secretaria {
   url        String
   avaliacoes Avaliacao[]
   users      User[]
-  requisitos  Requisito[]
+  requisitos Requisito[]
 }
 
 model User {
-  id           Int        @id @default(autoincrement())
-  email        String     @unique
-  password     String     
-  nome         String
-  role         String     @default("SECRETARIA")
-  createdAt    DateTime   @default(now())
-  secretaria   Secretaria @relation(fields: [secretariaId], references: [id])
-  secretariaId Int
-  primeiroAcesso Boolean @default(true)
+  id             Int        @id @default(autoincrement())
+  email          String     @unique
+  password       String
+  nome           String
+  role           String     @default("SECRETARIA")
+  createdAt      DateTime   @default(now())
+  secretaria     Secretaria @relation(fields: [secretariaId], references: [id])
+  secretariaId   Int
+  primeiroAcesso Boolean    @default(true)
 }
 
 model CodigoVerificacao {
   id        Int      @id @default(autoincrement())
   email     String
   codigo    String
-  tipo      String   
+  tipo      String
   expiraEm  DateTime
   usado     Boolean  @default(false)
   createdAt DateTime @default(now())
-  
+
   @@index([email, tipo])
 }
 
@@ -142,22 +144,67 @@ enum AvaliacaoStatus {
   FINALIZADA
 }
 
+model SubRequisito {
+  id             Int       @id @default(autoincrement())
+  texto          String
+  linkFixo       String?
+  ordem          Int
+  requisitoPai   Requisito @relation(fields: [requisitoPaiId], references: [id])
+  requisitoPaiId Int
+
+  respostas SubResposta[]
+
+  @@unique([requisitoPaiId, ordem])
+}
+
+model SubResposta {
+  id              Int     @id @default(autoincrement())
+  atende          Boolean @default(false)
+  linkComprovante String?
+
+  comentarioSecretaria   String?
+  comentarioAdmin        String?
+  comentarioRecurso      String?
+  comentarioAnaliseFinal String?
+
+  statusValidacao           String? @default("pendente")
+  statusValidacaoPosRecurso String? @default("pendente")
+
+  subRequisito   SubRequisito @relation(fields: [subRequisitoId], references: [id])
+  subRequisitoId Int
+  resposta       Resposta     @relation(fields: [respostaId], references: [id], onDelete: Cascade)
+  respostaId     Int
+
+  evidencias SubEvidencia[]
+
+  @@unique([respostaId, subRequisitoId])
+}
+
+model SubEvidencia {
+  id            Int         @id @default(autoincrement())
+  tipo          String      @default("original") // original/recurso
+  url           String
+  subResposta   SubResposta @relation(fields: [subRespostaId], references: [id], onDelete: Cascade)
+  subRespostaId Int
+  createdAt     DateTime    @default(now())
+}
+
 model Evidencia {
-  id          Int      @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   tipo       String   @default("original")
-  url         String   
-  createdAt   DateTime @default(now())
-  resposta    Resposta @relation(fields: [respostaId], references: [id], onDelete: Cascade)
-  respostaId  Int
+  url        String
+  createdAt  DateTime @default(now())
+  resposta   Resposta @relation(fields: [respostaId], references: [id], onDelete: Cascade)
+  respostaId Int
 }
 
 model LinkAnalista {
   id         Int      @id @default(autoincrement())
-  url        String  
+  url        String
   resposta   Resposta @relation(fields: [respostaId], references: [id], onDelete: Cascade)
-  respostaId Int   
+  respostaId Int
   createdAt  DateTime @default(now())
-  
+
   @@index([respostaId])
 }
 
