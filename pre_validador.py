@@ -21,7 +21,7 @@ class PreValidador:
         self.logger = logging.getLogger(__name__)
         try:
             chrome_options = Options()
-            # chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--headless")
             chrome_options.add_argument("--start-maximized")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--no-sandbox")
