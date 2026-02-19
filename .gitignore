@@ -4,6 +4,7 @@ node_modules/
 pre_validador.log
 scanner_completo.log
 
+.env
 
 prisma/dev.db
 prisma/dev.db-journal
