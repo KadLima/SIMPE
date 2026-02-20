@@ -31,5 +31,15 @@
   },
   "prisma": {
     "seed": "node prisma/seed.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f app",
+    "docker:migrate": "docker exec -it simpe_app npx prisma migrate deploy",
+    "docker:seed": "docker exec -it simpe_app node seed.js",
+    "docker:bash": "docker exec -it simpe_app sh"
   }
 }

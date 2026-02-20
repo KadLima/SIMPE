@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: simpe_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: simpe_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - simpe_network
+
+  app:
+    build: .
+    container_name: simpe_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/simpe_db
+      JWT_SECRET: N51TWXaGkYFcq7rgH9suQlt8m64pPIVJ
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: kadsonlima91@gmail.com
+      SMTP_PASS: xxey zngb dgxn uozn
+      BASE_URL: http://localhost:3000
+    depends_on:
+      - postgres
+    networks:
+      - simpe_network
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+
+networks:
+  simpe_network:
+    driver: bridge
