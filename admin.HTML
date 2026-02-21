@@ -512,7 +512,7 @@
             <a href="https://transparencia.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-portal-link">
                 <img src="/assets/image-portal.png" alt="Portal da Transparência">
             </a>
-            <p>&copy; 2025 Governo de Pernambuco. Todos os direitos reservados. <a id="admin-footer-link" href="/admin" style="display: none;">Área Administrativa</a></p>
+            <p>&copy; 2025 Governo de Pernambuco. Todos os direitos reservados. <a id="admin-footer-link" href="/admin" style="display: none;"></p>
             <a href="https://www.scge.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-logo-link">
                 <img src="/assets/logo-footer.png" alt="Logo da Controladoria-Geral do Estado de Pernambuco">
             </a>
@@ -687,6 +687,8 @@
                 const texto = document.getElementById('new-req-text').value;
                 const textoAjuda = document.getElementById('new-req-help').value;
                 const pontuacao = parseInt(document.getElementById('new-req-points').value);
+
+                console.log('Texto ANTES de enviar:', texto);
 
                 if (!secretariaId) return;
 
