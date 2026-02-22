@@ -1534,7 +1534,8 @@ app.post('/api/subrespostas/recurso', authenticateToken, async (req, res) => {
             atende: sub.atende,
             linkComprovante: sub.linkComprovante,
             comentarioRecurso: sub.comentario,
-            statusValidacaoPosRecurso: 'pendente' 
+            statusValidacaoPosRecurso: 'pendente',
+            teveRecurso: true 
           }
         });
         atualizadas.push(atualizada);

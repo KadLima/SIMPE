@@ -498,7 +498,6 @@
                 const total = subRespostas.length;
                 const pontuacaoBase = resposta.requisito?.pontuacao || 8;
                 
-                // 🔥 NOVO CÁLCULO
                 let pontuacaoProporcional = 0;
                 let percentual = 0;
                 
@@ -1138,30 +1137,61 @@
                     actionsContainer.innerHTML = `<button id="${buttonId}" class="btn">${buttonText}</button>`;
                     const actionBtn = document.getElementById(buttonId);
                     
+                    // No listener do botão de devolver/finalizar
                     actionBtn.addEventListener('click', () => {
                         const requisitosPendentes = [];
                         const subitensPendentes = [];
+                        let todosSubitensPreenchidos = true;
                         
                         avaliacaoCompleta.respostas.forEach(resposta => {
-                            // Verificar requisitos normais
-                            if (!resposta.statusValidacao || resposta.statusValidacao === 'pendente') {
-                                requisitosPendentes.push(resposta.requisito.texto);
+                            if (!resposta.subRespostas || resposta.subRespostas.length === 0) {
+                                if (!resposta.statusValidacao || resposta.statusValidacao === 'pendente') {
+                                    requisitosPendentes.push(resposta.requisito.texto);
+                                }
                             }
                             
-                            // Verificar subitens do requisito composto
                             if (resposta.subRespostas && resposta.subRespostas.length > 0) {
-                                const pendentes = resposta.subRespostas.filter(s => 
+                                const subitensSemValidacao = resposta.subRespostas.filter(s => 
                                     !s.statusValidacao || s.statusValidacao === 'pendente'
                                 );
                                 
-                                if (pendentes.length > 0) {
+                                if (subitensSemValidacao.length > 0) {
+                                    todosSubitensPreenchidos = false;
                                     subitensPendentes.push({
                                         requisito: resposta.requisito.texto,
-                                        quantidade: pendentes.length
+                                        quantidade: subitensSemValidacao.length,
+                                        itens: subitensSemValidacao.map(s => s.subRequisito.texto).join(', ')
                                     });
                                 }
                             }
                         });
+
+                        if (requisitosPendentes.length > 0 || !todosSubitensPreenchidos) {
+                            let mensagem = '';
+                            
+                            if (requisitosPendentes.length > 0) {
+                                mensagem += `<p><strong>Requisitos pendentes:</strong></p>`;
+                                mensagem += `<ul style="text-align: left; list-style-position: inside;">${requisitosPendentes.map(r => `<li>${r}</li>`).join('')}</ul>`;
+                            }
+                            
+                            if (!todosSubitensPreenchidos) {
+                                mensagem += `<p><strong>Requisito 31 - Subitens pendentes:</strong></p>`;
+                                mensagem += `<ul style="text-align: left; list-style-position: inside;">`;
+                                subitensPendentes.forEach(item => {
+                                    mensagem += `<li>${item.quantidade} subitem(ns) aguardando validação</li>`;
+                                });
+                                mensagem += `</ul>`;
+                                mensagem += `<p style="font-size:0.9em; color:#666;">Todos os 13 subitens precisam ser validados (Aprovado/Rejeitado) antes de prosseguir.</p>`;
+                            }
+                            
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Análise Incompleta',
+                                html: `Você não pode devolver a avaliação, pois existem itens pendentes:<br><br>${mensagem}`,
+                                confirmButtonColor: 'var(--azul-gov-principal)'
+                            });
+                            return; 
+                        }
 
                         if (requisitosPendentes.length > 0 || subitensPendentes.length > 0) {
                             let mensagem = '';

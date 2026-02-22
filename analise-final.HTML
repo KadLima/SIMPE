@@ -161,6 +161,23 @@
             gap: 15px;
             text-align: center;
             margin-bottom: 30px;
+            position: sticky;
+            top: 90px; 
+            z-index: 950;
+            background-color: transparent;
+            padding: 10px 0;
+            box-shadow: none;
+        }
+
+        .score-container-quatro-notas::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1), transparent);
+            pointer-events: none;
         }
 
         .score-box-quatro {
@@ -602,6 +619,13 @@
                 height: 50px; 
                 margin: 10px 0; 
             }
+
+            .score-container-quatro-notas {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                top: 70px;
+                padding: 5px 0;
+            }
         }
     </style>
 </head>
@@ -726,27 +750,47 @@
                     const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
                     pontuacaoTotal += pontuacaoRequisito;
 
-                    // Verificar se é requisito composto
                     if (resposta.subRespostas && resposta.subRespostas.length > 0) {
-                        // Autoavaliação (baseado no que a secretaria marcou)
-                        const aprovadosSecretaria = resposta.subRespostas.filter(s => s.atende === true).length;
+                        const subRespostas = resposta.subRespostas || [];
+                        
+                        const aprovadosSecretaria = subRespostas.filter(s => s.atende === true).length;
                         pontuacaoAutoavaliacao += calcularPontuacaoPorFaixa(aprovadosSecretaria, pontuacaoRequisito);
 
-                        // Primeira análise (statusValidacao)
-                        const aprovadosPrimeira = resposta.subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
+                        const aprovadosPrimeira = subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
                         pontuacaoPrimeiraAnalise += calcularPontuacaoPorFaixa(aprovadosPrimeira, pontuacaoRequisito);
 
-                        // Pós-recurso (statusValidacaoPosRecurso)
-                        const aprovadosRecurso = resposta.subRespostas.filter(s => s.statusValidacaoPosRecurso === 'aprovado').length;
-                        pontuacaoPosRecurso += calcularPontuacaoPorFaixa(aprovadosRecurso, pontuacaoRequisito);
-
-                        // Final (prioriza pós-recurso, senão primeira análise)
-                        const aprovadosFinal = resposta.subRespostas.filter(s => 
+                        const aprovadosBase = subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
+                        
+                        let quantidadeComRecurso = 0;
+                        subRespostas.forEach(s => {
+                            const teveRecursoPorComentario = s.comentarioRecurso && s.comentarioRecurso.trim() !== '';
+                            const teveRecursoPorLink = s.linkComprovanteRecurso && s.linkComprovanteRecurso.trim() !== '';
+                            const teveRecursoPorStatus = s.statusValidacaoPosRecurso && s.statusValidacaoPosRecurso !== 'pendente';
+                            const teveRecursoPorFlag = s.teveRecurso === true;
+                            
+                            if (teveRecursoPorComentario || teveRecursoPorLink || teveRecursoPorStatus || teveRecursoPorFlag) {
+                                quantidadeComRecurso++;
+                            }
+                        });
+                        
+                        const totalParaRecurso = Math.min(aprovadosBase + quantidadeComRecurso, subRespostas.length);
+                        pontuacaoPosRecurso += calcularPontuacaoPorFaixa(totalParaRecurso, pontuacaoRequisito);
+                        
+                        const aprovadosFinal = subRespostas.filter(s => 
                             (s.statusValidacaoPosRecurso || s.statusValidacao) === 'aprovado'
                         ).length;
                         pontuacaoFinal += calcularPontuacaoPorFaixa(aprovadosFinal, pontuacaoRequisito);
+                        
+                        console.log(`Requisito 31:`, {
+                            aprovadosPrimeira,
+                            comRecurso: quantidadeComRecurso,
+                            totalParaRecurso,
+                            notaRecurso: calcularPontuacaoPorFaixa(totalParaRecurso, pontuacaoRequisito),
+                            aprovadosFinal,
+                            notaFinal: calcularPontuacaoPorFaixa(aprovadosFinal, pontuacaoRequisito)
+                        });
+                        
                     } else {
-                        // Requisitos normais (código existente)
                         if (resposta.atendeOriginal === true) {
                             pontuacaoAutoavaliacao += pontuacaoRequisito;
                         }
@@ -1637,7 +1681,7 @@
                         <table class="subitens-table">
                             <thead>
                                 <tr>
-                                    <th>#</th>
+                                    <th>ID</th>
                                     <th>Subitem</th>
                                     <th>Resposta</th>
                                     <th>Link</th>
@@ -1706,7 +1750,6 @@
             }
 
             function configurarListenersSubitens() {
-                // Selects de validação dos subitens
                 document.querySelectorAll('.subitem-validacao').forEach(select => {
                     const novoSelect = select.cloneNode(true);
                     select.parentNode.replaceChild(novoSelect, select);
@@ -1728,7 +1771,6 @@
                             });
 
                             if (response.ok) {
-                                // Atualizar dados locais
                                 const respostaIndex = avaliacaoCompleta.respostas.findIndex(r => 
                                     r.subRespostas?.some(s => s.id === parseInt(subRespostaId))
                                 );
@@ -1740,7 +1782,6 @@
                                     }
                                 }
 
-                                // 🔥 Recalcular e exibir as notas
                                 exibirQuatroNotas();
                                 
                                 Swal.fire({
@@ -1761,7 +1802,6 @@
                     });
                 });
 
-                // Comentários finais
                 document.querySelectorAll('.analise-final-comment').forEach(textarea => {
                     const novoTextarea = textarea.cloneNode(true);
                     textarea.parentNode.replaceChild(novoTextarea, textarea);
@@ -1902,17 +1942,33 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="atende-badge ${recursoClass}" style="font-size:0.75em;">
-                                                ${recursoText}
-                                            </span>
+                                            ${(() => {
+                                                const teveRecurso = sub.comentarioRecurso || 
+                                                                sub.linkComprovanteRecurso ||
+                                                                (sub.statusValidacaoPosRecurso && sub.statusValidacaoPosRecurso !== 'pendente') ||
+                                                                sub.teveRecurso === true;
+                                                
+                                                return teveRecurso ? 
+                                                    `<span class="recurso-badge" style="background-color: var(--roxo-recurso); color: white; padding: 3px 8px; border-radius: 12px; font-size:0.7em;">Sim</span>` : 
+                                                    `<span style="color:#999;">—</span>`;
+                                            })()}
                                         </td>
                                         <td>
-                                            <select class="subitem-validacao" data-subresposta-id="${sub.id}" 
-                                                    style="width:100%; padding:4px;">
-                                                <option value="pendente" ${statusFinalAtual === 'pendente' ? 'selected' : ''}>Pendente</option>
-                                                <option value="aprovado" ${statusFinalAtual === 'aprovado' ? 'selected' : ''}>Aprovar</option>
-                                                <option value="rejeitado" ${statusFinalAtual === 'rejeitado' ? 'selected' : ''}>Rejeitar</option>
-                                            </select>
+                                            ${(() => {
+                                                const teveRecurso = sub.comentarioRecurso || 
+                                                                sub.linkComprovanteRecurso ||
+                                                                (sub.statusValidacaoPosRecurso && sub.statusValidacaoPosRecurso !== 'pendente') ||
+                                                                sub.teveRecurso === true;
+                                                
+                                                return `
+                                                    <select class="subitem-validacao" data-subresposta-id="${sub.id}" 
+                                                            style="width:100%; padding:4px; ${teveRecurso ? 'border-left: 3px solid var(--roxo-recurso);' : ''}">
+                                                        <option value="pendente" ${(sub.statusValidacaoPosRecurso || 'pendente') === 'pendente' ? 'selected' : ''}>Pendente</option>
+                                                        <option value="aprovado" ${sub.statusValidacaoPosRecurso === 'aprovado' ? 'selected' : ''}>Aprovar</option>
+                                                        <option value="rejeitado" ${sub.statusValidacaoPosRecurso === 'rejeitado' ? 'selected' : ''}>Rejeitar</option>
+                                                    </select>
+                                                `;
+                                            })()}
                                         </td>
                                     </tr>
                                 `}).join('')}
@@ -2410,6 +2466,8 @@
                     }
 
                     avaliacaoCompleta = await response.json();
+
+                    console.log('Dados carregados:', JSON.parse(JSON.stringify(avaliacaoCompleta)));
 
                     if (!Array.isArray(avaliacaoCompleta.respostas)) {
                         avaliacaoCompleta.respostas = [];

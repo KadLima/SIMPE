@@ -42,7 +42,7 @@ model Requisito {
   texto         String
   textoAjuda    String?
   linkFixo      String?
-  pontuacao     Int
+  pontuacao     Float
   secretariaId  Int?
   secretaria    Secretaria?    @relation(fields: [secretariaId], references: [id])
   respostas     Resposta[]
@@ -169,6 +169,7 @@ model SubResposta {
 
   statusValidacao           String? @default("pendente")
   statusValidacaoPosRecurso String? @default("pendente")
+  teveRecurso Boolean? @default(false)
 
   subRequisito   SubRequisito @relation(fields: [subRequisitoId], references: [id])
   subRequisitoId Int
