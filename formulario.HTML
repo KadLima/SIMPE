@@ -537,6 +537,65 @@
         .main-footer p a { color: var(--amarelo-gov-detalhe); font-weight: 600; text-decoration: none; padding: 4px 8px; border-radius: 4px; }
         .main-footer p a:hover { background-color: rgba(255, 215, 0, 0.2); text-decoration: underline; }
 
+        /* Personalização do SweetAlert para o formulario.html */
+        .swal-custom-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border-top: 5px solid #002776 !important;
+            padding: 1.5em !important;
+        }
+
+        .swal-custom-title {
+            color: #002776 !important;
+            font-weight: 700 !important;
+            font-size: 1.5em !important;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .swal-custom-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: #FFD700;
+        }
+
+        .swal-custom-html {
+            margin: 0 !important;
+            padding: 10px 0 !important;
+        }
+
+        .swal-custom-confirm {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-cancel {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-confirm:hover,
+        .swal-custom-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+        }
+
+        .swal-custom-container {
+            padding: 2rem !important;
+        }
+
         /* --- RESPONSIVIDADE --- */
         @media (max-width: 768px) {
             .main-nav { flex-direction: column; height: auto; padding: 20px 0; }
@@ -711,61 +770,7 @@
                 if (target.matches('.add-link-btn')) {
                     if(target.dataset.requisitoId === requisitoId) {
                         console.log(`ADICIONAR LINK Clicado para Req ${requisitoId}`); 
-                        Swal.fire({
-                            title: 'Adicionar Evidência Manual',
-                            input: 'url',
-                            inputLabel: 'URL do Link de Comprovação',
-                            inputPlaceholder: 'www.exemplo.com.br', 
-                            inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
-                            showCancelButton: true,
-                            confirmButtonText: 'Adicionar Link',
-                            cancelButtonText: 'Cancelar',
-                            confirmButtonColor: 'var(--azul-gov-principal)',
-                            cancelButtonColor: '#6c757d',
-                            showLoaderOnConfirm: true,
-
-                            inputValidator: (value) => {
-                                if (!value) {
-                                    return 'Você precisa digitar um endereço web!';
-                                }
-                                if (/\s/.test(value)) { 
-                                    return 'O endereço não pode conter espaços.';
-                                }
-                                if (value.length > 0 && !value.includes('.')) { 
-                                    return 'Insira um endereço válido (ex: www.exemplo.com)';
-                                }
-                                return null; 
-                            },
-
-                            preConfirm: (value) => {
-                                let finalUrl = value.trim();
-                                if (!/^(https?:\/\/|\/\/)/i.test(finalUrl)) {
-                                    finalUrl = 'https://' + finalUrl;
-                                }
-                                return finalUrl; 
-                            },
-                            
-                            allowOutsideClick: () => !Swal.isLoading()
-                        }).then((result) => {
-                            if (result.isConfirmed && result.value) {
-                                const url = result.value; 
-                                const evidenceList = target.closest('.evidence-container')?.querySelector('.evidence-list');
-                                if (evidenceList) {
-                                    const newItem = document.createElement('li');
-                                    newItem.className = 'evidence-item';
-                                    newItem.dataset.link = url;
-                                    newItem.innerHTML = `<a href="${url}" target="_blank" title="${url}">${url}</a><button class="remove-evidence-btn" title="Remover Evidência">&times;</button>`;
-                                    evidenceList.appendChild(newItem);
-
-                                    const removeBtn = newItem.querySelector('.remove-evidence-btn');
-                                    removeBtn.addEventListener('click', function() {
-                                        this.closest('.evidence-item').remove();
-                                        salvarRascunho();
-                                    });
-                                    salvarRascunho();
-                                }
-                            }
-                        });
+                        adicionarEvidenciaManual(requisitoId);
                         return; 
                     }
                 }
@@ -841,7 +846,6 @@
                     setTimeout(verificarRascunhoAoCarregar, 300);
                     return;
                 }
-                console.log(`Verificando rascunho para secretaria ID: ${secretariaId}`);
 
                 const rascunhoSalvo = localStorage.getItem(`rascunho_avaliacao_${secretariaId}`);
                 if (rascunhoSalvo) {
@@ -849,37 +853,60 @@
                     const temDadosSignificativos = rascunho.nomeResponsavel || rascunho.emailResponsavel || (rascunho.respostas && Object.keys(rascunho.respostas).length > 0);
 
                     if (temDadosSignificativos) {
-                        console.log("Rascunho significativo encontrado. Exibindo prompt...");
                         Swal.fire({
                             title: 'Progresso Salvo Encontrado',
-                            text: "Encontramos um progresso não finalizado para este órgão. Deseja continuar de onde parou?",
+                            width: '550px',
+                            html: `
+                                <div style="text-align: left; padding: 5px 0;">
+                                    <div style="background: #e8f4fd; border-radius: 10px; padding: 20px; margin-bottom: 15px;">
+                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                            <i class="fas fa-save" style="color: #002776; font-size: 2em;"></i>
+                                            <div>
+                                                <h4 style="color: #002776; margin: 0;">Rascunho Encontrado!</h4>
+                                                <p style="color: #2c3e50; margin: 5px 0 0 0;">Você tem um progresso não finalizado para este órgão.</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="background: white; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                            <p style="margin: 0 0 8px 0; color: #7f8c8d;">
+                                                <i class="fas fa-user" style="margin-right: 5px; color: #002776;"></i>
+                                                <strong>Responsável:</strong> ${rascunho.nomeResponsavel || 'Não informado'}
+                                            </p>
+                                            <p style="margin: 0;">
+                                                <i class="fas fa-check-circle" style="margin-right: 5px; color: #27ae60;"></i>
+                                                <strong>${Object.keys(rascunho.respostas || {}).length} requisitos</strong> já respondidos
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <p style="color: #2c3e50; margin: 0 0 5px 0; font-weight: 500;">O que deseja fazer?</p>
+                                </div>
+                            `,
                             icon: 'info',
-                            iconColor: 'var(--azul-gov-principal)',
+                            iconColor: '#002776',
                             showCancelButton: true,
                             confirmButtonText: 'Sim, continuar',
                             cancelButtonText: 'Não, começar do zero',
-                            confirmButtonColor: 'var(--azul-gov-principal)',
-                            cancelButtonColor: '#6c757d',
-                            allowOutsideClick: false
+                            confirmButtonColor: '#27ae60',
+                            cancelButtonColor: '#dc3545',
+                            allowOutsideClick: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm',
+                                cancelButton: 'swal-custom-cancel'
+                            }
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                console.log("Usuário escolheu CARREGAR rascunho.");
                                 usuarioEscolheuCarregarRascunho = true;
                                 carregarRascunhoCompleto(rascunho);
-                                restaurarEstadoPreValidacao(); 
+                                restaurarEstadoPreValidacao();
                             } else {
-                                console.log("Usuário escolheu COMEÇAR DO ZERO.");
                                 usuarioEscolheuCarregarRascunho = false;
                                 limparFormularioCompleto();
                             }
                         });
-                    } else {
-                        console.log("Rascunho encontrado, mas sem dados significativos. Ignorando prompt.");
-                        usuarioEscolheuCarregarRascunho = false;
                     }
-                } else {
-                    console.log("Nenhum rascunho encontrado.");
-                    usuarioEscolheuCarregarRascunho = false;
                 }
             }
 
@@ -1045,6 +1072,199 @@
                 }
             }
 
+            function adicionarEvidenciaManual(requisitoId) {
+                Swal.fire({
+                    title: 'Adicionar Evidência',
+                    width: '550px',
+                    html: `
+                        <div style="text-align: left; padding: 5px 0;">
+                            <p style="color: #7f8c8d; font-size: 0.95em; margin-bottom: 20px; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 8px; border-left: 4px solid #002776;">
+                                <i class="fas fa-info-circle" style="color: #002776; margin-right: 5px;"></i>
+                                Adicione um link que comprove o cumprimento deste requisito.
+                            </p>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                    <i class="fas fa-link" style="margin-right: 8px;"></i>
+                                    URL da Evidência *
+                                </label>
+                                <input type="url" id="swal-input1" class="swal2-input" 
+                                    placeholder="https://www.exemplo.com.br/documento.pdf"
+                                    style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                <small style="display: block; margin-top: 5px; color: #7f8c8d; font-size: 0.85em;">
+                                    <i class="fas fa-external-link-alt"></i> 
+                                    O link deve ser público e acessível
+                                </small>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                    <i class="fas fa-tag" style="margin-right: 8px;"></i>
+                                    Descrição (opcional)
+                                </label>
+                                <input type="text" id="swal-input2" class="swal2-input" 
+                                    placeholder="Ex: Relatório de gestão 2024"
+                                    style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                            </div>
+                        </div>
+                    `,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonText: 'Adicionar Link',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#27ae60',
+                    cancelButtonColor: '#7f8c8d',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm',
+                        cancelButton: 'swal-custom-cancel'
+                    },
+                    preConfirm: () => {
+                        const url = document.getElementById('swal-input1').value.trim();
+                        const descricao = document.getElementById('swal-input2').value.trim();
+                        
+                        if (!url) {
+                            Swal.showValidationMessage('A URL é obrigatória');
+                            return false;
+                        }
+                        
+                        // Validação básica de URL
+                        try {
+                            new URL(url);
+                        } catch {
+                            Swal.showValidationMessage('Digite uma URL válida (incluindo http:// ou https://)');
+                            return false;
+                        }
+                        
+                        return { url, descricao };
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed && result.value) {
+                        const { url, descricao } = result.value;
+                        const evidenceList = document.querySelector(`#evidence-list-${requisitoId}`);
+                        
+                        if (evidenceList) {
+                            const newItem = document.createElement('li');
+                            newItem.className = 'evidence-item';
+                            newItem.dataset.link = url;
+                            newItem.innerHTML = `
+                                <div style="flex: 1; overflow: hidden;">
+                                    <a href="${url}" target="_blank" title="${url}" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        ${descricao ? `<i class="fas fa-tag" style="margin-right: 5px;"></i>${descricao}` : url}
+                                    </a>
+                                </div>
+                                <button class="remove-evidence-btn" title="Remover Evidência">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            `;
+                            evidenceList.appendChild(newItem);
+
+                            const removeBtn = newItem.querySelector('.remove-evidence-btn');
+                            removeBtn.addEventListener('click', function() {
+                                this.closest('.evidence-item').remove();
+                                salvarRascunho();
+                            });
+                            
+                            salvarRascunho();
+                            
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: 'Evidência adicionada!',
+                                showConfirmButton: false,
+                                timer: 2000,
+                                customClass: {
+                                    popup: 'swal-custom-popup'
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            async function confirmarEnvioAvaliacao(secretariaDisplay, urlSecretaria, nomeResponsavel, emailResponsavel) {
+                const result = await Swal.fire({
+                    title: 'Confirmar Envio da Avaliação',
+                    width: '600px',
+                    html: `
+                        <div style="text-align: left; padding: 5px 0;">
+                            <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; margin-bottom: 25px; border-radius: 8px;">
+                                <p style="margin: 0; color: #002776; font-weight: 600;">
+                                    <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                                    Revise os dados antes de enviar
+                                </p>
+                            </div>
+
+                            <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                                <h4 style="color: #002776; margin: 0 0 15px 0; font-size: 1.1em; border-bottom: 2px solid #FFD700; padding-bottom: 8px;">
+                                    <i class="fas fa-building" style="margin-right: 8px;"></i>
+                                    Dados da Secretaria
+                                </h4>
+                                
+                                <div style="margin-bottom: 12px;">
+                                    <div style="font-weight: 600; color: #7f8c8d; font-size: 0.9em; margin-bottom: 2px;">Órgão/Entidade</div>
+                                    <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e1e5e9;">${secretariaDisplay}</div>
+                                </div>
+                                
+                                <div style="margin-bottom: 12px;">
+                                    <div style="font-weight: 600; color: #7f8c8d; font-size: 0.9em; margin-bottom: 2px;">URL Avaliada</div>
+                                    <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e1e5e9; word-break: break-all;">
+                                        <a href="${urlSecretaria}" target="_blank">${urlSecretaria}</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                                <h4 style="color: #002776; margin: 0 0 15px 0; font-size: 1.1em; border-bottom: 2px solid #FFD700; padding-bottom: 8px;">
+                                    <i class="fas fa-user" style="margin-right: 8px;"></i>
+                                    Responsável pelo Preenchimento
+                                </h4>
+                                
+                                <div style="margin-bottom: 12px;">
+                                    <div style="font-weight: 600; color: #7f8c8d; font-size: 0.9em; margin-bottom: 2px;">Nome Completo</div>
+                                    <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e1e5e9;">${nomeResponsavel}</div>
+                                </div>
+                                
+                                <div style="margin-bottom: 12px;">
+                                    <div style="font-weight: 600; color: #7f8c8d; font-size: 0.9em; margin-bottom: 2px;">E-mail para Contato</div>
+                                    <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e1e5e9;">${emailResponsavel}</div>
+                                </div>
+                            </div>
+
+                            <div style="background: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; padding: 15px; margin-top: 10px;">
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <i class="fas fa-exclamation-triangle" style="color: #856404; font-size: 1.2em;"></i>
+                                    <div>
+                                        <p style="color: #856404; margin: 0; font-weight: 600;">Atenção!</p>
+                                        <p style="color: #856404; margin: 5px 0 0 0; font-size: 0.95em;">
+                                            Após o envio, não será possível editar a avaliação. Certifique-se de que todas as informações estão corretas.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'question',
+                    iconColor: '#002776',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim, Enviar Avaliação',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#27ae60',
+                    cancelButtonColor: '#dc3545',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm',
+                        cancelButton: 'swal-custom-cancel'
+                    }
+                });
+
+                return result.isConfirmed;
+            }
+
             async function verificarAvaliacaoExistente(secretariaId) {
                 try {
                     const authToken = localStorage.getItem('authToken');
@@ -1061,18 +1281,57 @@
                         );
 
                         if (avaliacaoAtiva) {
+                            const statusText = {
+                                'EM_ANALISE_SCGE': 'Em Análise pela SCGE',
+                                'AGUARDANDO_RECURSO': 'Aguardando Recurso',
+                                'EM_ANALISE_DE_RECURSO': 'Análise de Recurso'
+                            }[avaliacaoAtiva.status] || avaliacaoAtiva.status;
+
                             Swal.fire({
                                 title: 'Avaliação Já Submetida',
-                                html: `Esta secretaria já possui uma avaliação em andamento.<br><br>
-                                       <strong>Status:</strong> ${avaliacaoAtiva.status}<br>
-                                       <strong>URL:</strong> ${avaliacaoAtiva.urlSecretaria}<br><br>
-                                       Você pode acompanhar o andamento na sua área pessoal.`,
+                                width: '550px',
+                                html: `
+                                    <div style="text-align: left; padding: 5px 0;">
+                                        <div style="background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 15px;">
+                                            <p style="margin: 0 0 15px 0; color: #2c3e50;">
+                                                Esta secretaria já possui uma avaliação em andamento:
+                                            </p>
+                                            
+                                            <div style="margin-bottom: 12px;">
+                                                <div style="font-weight: 600; color: #7f8c8d; font-size: 0.9em;">Status</div>
+                                                <div style="background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #e1e5e9;">
+                                                    <span class="status-badge" style="background: #002776; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; display: inline-block;">
+                                                        ${statusText}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <div style="font-weight: 600; color: #7f8c8d; font-size: 0.9em;">URL Avaliada</div>
+                                                <div style="background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid #e1e5e9; word-break: break-all;">
+                                                    <a href="${avaliacaoAtiva.urlSecretaria}" target="_blank">${avaliacaoAtiva.urlSecretaria}</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <p style="color: #7f8c8d; font-size: 0.95em; margin: 0;">
+                                            Você pode acompanhar o andamento na sua área pessoal ou continuar preenchendo este formulário.
+                                        </p>
+                                    </div>
+                                `,
                                 icon: 'info',
-                                iconColor: 'var(--azul-gov-principal)',
+                                iconColor: '#002776',
                                 confirmButtonText: 'Ir para Minha Área',
-                                confirmButtonColor: 'var(--azul-gov-principal)',
+                                confirmButtonColor: '#002776',
                                 showCancelButton: true,
-                                cancelButtonText: 'Continuar no Formulário' 
+                                cancelButtonText: 'Continuar no Formulário',
+                                cancelButtonColor: '#7f8c8d',
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title',
+                                    confirmButton: 'swal-custom-confirm',
+                                    cancelButton: 'swal-custom-cancel'
+                                }
                             }).then((result) => {
                                 if (result.isConfirmed) {
                                     window.location.href = '/dashboard';
@@ -1342,48 +1601,109 @@
                     }
                     
                     const addLinkBtn = subitemCard.querySelector('.subitem-add-link');
-                    if (addLinkBtn) {
-                        addLinkBtn.addEventListener('click', function() {
-                        const evidenceList = document.getElementById(`subitem-evidence-list-${requisitoId}-${subitemIndex}`);
-                        
-                        Swal.fire({
-                            title: 'Adicionar Link',
-                            input: 'url',
-                            inputLabel: 'URL do Link',
-                            inputPlaceholder: 'https://...',
-                            showCancelButton: true,
-                            confirmButtonText: 'Adicionar',
-                            cancelButtonText: 'Cancelar',
-                            inputValidator: (value) => {
-                            if (!value) return 'Digite uma URL';
-                            return null;
-                            },
-                            preConfirm: (value) => {
-                            let finalUrl = value.trim();
-                            if (!/^(https?:\/\/)/i.test(finalUrl)) {
-                                finalUrl = 'https://' + finalUrl;
-                            }
-                            return finalUrl;
-                            }
-                        }).then((result) => {
-                            if (result.isConfirmed && result.value) {
-                            const url = result.value;
-                            const newItem = document.createElement('li');
-                            newItem.className = 'evidence-item';
-                            newItem.dataset.link = url;
-                            newItem.innerHTML = `<a href="${url}" target="_blank">${url}</a><button class="remove-evidence-btn">&times;</button>`;
-                            evidenceList.appendChild(newItem);
-                            
-                            newItem.querySelector('.remove-evidence-btn').addEventListener('click', function() {
-                                this.closest('.evidence-item').remove();
-                                salvarRascunho();
+                        if (addLinkBtn) {
+                            addLinkBtn.addEventListener('click', function() {
+                                const evidenceList = document.getElementById(`subitem-evidence-list-${requisitoId}-${subitemIndex}`);
+                                
+                                Swal.fire({
+                                    title: 'Adicionar Link',
+                                    width: '550px',
+                                    html: `
+                                        <div style="text-align: left; padding: 5px 0;">
+                                            <div style="margin-bottom: 20px;">
+                                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776;">
+                                                    <i class="fas fa-link" style="margin-right: 8px;"></i>
+                                                    URL do Link
+                                                </label>
+                                                <input type="url" id="swal-subitem-url" class="swal2-input" 
+                                                    placeholder="https://www.exemplo.com.br"
+                                                    style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                                <small style="display: block; margin-top: 5px; color: #7f8c8d;">
+                                                    <i class="fas fa-external-link-alt"></i> O link deve ser público e acessível
+                                                </small>
+                                            </div>
+                                            
+                                            <div style="margin-bottom: 15px;">
+                                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776;">
+                                                    <i class="fas fa-tag" style="margin-right: 8px;"></i>
+                                                    Descrição (opcional)
+                                                </label>
+                                                <input type="text" id="swal-subitem-desc" class="swal2-input" 
+                                                    placeholder="Ex: Link da Ouvidoria"
+                                                    style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                            </div>
+                                        </div>
+                                    `,
+                                    focusConfirm: false,
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Adicionar',
+                                    cancelButtonText: 'Cancelar',
+                                    confirmButtonColor: '#27ae60',
+                                    cancelButtonColor: '#7f8c8d',
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm',
+                                        cancelButton: 'swal-custom-cancel'
+                                    },
+                                    preConfirm: () => {
+                                        const url = document.getElementById('swal-subitem-url').value.trim();
+                                        const descricao = document.getElementById('swal-subitem-desc').value.trim();
+                                        
+                                        if (!url) {
+                                            Swal.showValidationMessage('Digite uma URL');
+                                            return false;
+                                        }
+                                        
+                                        try {
+                                            new URL(url);
+                                        } catch {
+                                            Swal.showValidationMessage('Digite uma URL válida (incluindo http:// ou https://)');
+                                            return false;
+                                        }
+                                        
+                                        return { url, descricao };
+                                    }
+                                }).then((result) => {
+                                    if (result.isConfirmed && result.value) {
+                                        const { url, descricao } = result.value;
+                                        const newItem = document.createElement('li');
+                                        newItem.className = 'evidence-item';
+                                        newItem.dataset.link = url;
+                                        newItem.innerHTML = `
+                                            <div style="flex: 1; overflow: hidden;">
+                                                <a href="${url}" target="_blank" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                    ${descricao ? `<i class="fas fa-tag" style="margin-right: 5px;"></i>${descricao}` : url}
+                                                </a>
+                                            </div>
+                                            <button class="remove-evidence-btn" title="Remover">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        `;
+                                        evidenceList.appendChild(newItem);
+                                        
+                                        newItem.querySelector('.remove-evidence-btn').addEventListener('click', function() {
+                                            this.closest('.evidence-item').remove();
+                                            salvarRascunho();
+                                        });
+                                        
+                                        salvarRascunho();
+                                        
+                                        Swal.fire({
+                                            toast: true,
+                                            position: 'top-end',
+                                            icon: 'success',
+                                            title: 'Link adicionado!',
+                                            showConfirmButton: false,
+                                            timer: 2000,
+                                            customClass: {
+                                                popup: 'swal-custom-popup'
+                                            }
+                                        });
+                                    }
+                                });
                             });
-                            
-                            salvarRascunho();
-                            }
-                        });
-                        });
-                    }
+                        }
                     });
 
                     adicionarListenersRemoverEvidencia();
@@ -1497,7 +1817,17 @@
             preValidarBtn.addEventListener('click', async () => {
                 const urlParaVerificar = urlManualInput.value.trim();
                 if (!urlParaVerificar) {
-                    alert('Por favor, digite a URL do site a ser avaliado.');
+                    Swal.fire({
+                        title: 'URL Obrigatória',
+                        text: 'Por favor, digite a URL do site a ser avaliado.',
+                        icon: 'warning',
+                        confirmButtonColor: '#002776',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
                     return;
                 }
                 
@@ -1509,21 +1839,47 @@
                 
                 Swal.fire({
                     title: 'Pré-Validação em Andamento',
+                    width: '550px',
                     html: `
-                        <div style="text-align: center;">
-                            <i class="fas fa-spinner fa-pulse" style="font-size: 3em; color: var(--azul-gov-principal); margin-bottom: 20px;"></i>
-                            <p><strong>Não feche esta aba!</strong></p>
-                            <p>O sistema está fazendo uma verificação automática na URL informada</p>
-                            <p>Aguarde, isso pode levar alguns minutos...</p>
-                            <div style="margin-top: 20px; font-size: 0.9em; color: #666;">
-                                <i class="fas fa-hourglass-half"></i> Processando...
+                        <div style="text-align: center; padding: 20px 0;">
+                            <div style="margin-bottom: 25px;">
+                                <i class="fas fa-spinner fa-pulse" style="font-size: 3.5em; color: #002776;"></i>
+                            </div>
+                            
+                            <div style="background: #e8f4fd; border-radius: 10px; padding: 20px; margin-bottom: 15px; text-align: left;">
+                                <p style="margin: 0 0 10px 0; color: #002776; font-weight: 600;">
+                                    <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+                                    Informações importantes:
+                                </p>
+                                <ul style="margin: 0; padding-left: 20px; color: #2c3e50;">
+                                    <li style="margin-bottom: 5px;">Não feche esta aba durante a verificação</li>
+                                    <li style="margin-bottom: 5px;">O processo pode levar alguns minutos</li>
+                                    <li>Estamos analisando a estrutura do site informado</li>
+                                </ul>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                <p style="margin: 0 0 5px 0; color: #7f8c8d; font-size: 0.95em;">URL sendo verificada:</p>
+                                <p style="margin: 0; color: #002776; font-weight: 600; word-break: break-all;">${urlParaVerificar}</p>
+                            </div>
+                            
+                            <div style="margin-top: 20px;">
+                                <div class="progress" style="height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden;">
+                                    <div class="progress-bar" style="width: 100%; height: 100%; background: linear-gradient(90deg, #002776, #0052CC); animation: progress-animation 2s infinite;"></div>
+                                </div>
+                                <p style="color: #7f8c8d; margin-top: 10px; font-size: 0.9em;">
+                                    <i class="fas fa-hourglass-half"></i> Processando...
+                                </p>
                             </div>
                         </div>
                     `,
                     allowOutsideClick: false,
                     allowEscapeKey: false,
                     showConfirmButton: false,
-
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title'
+                    }
                 });
                 
                 preValidacaoResultado.innerHTML = '<p>Iniciando varredura no site... Isso pode levar alguns minutos.</p>';
@@ -1658,31 +2014,15 @@
                     return;
                 }
 
-                const confirmacao = await Swal.fire({
-                    title: 'Confirmar Envio da Avaliação',
-                    html: `
-                        <div style="text-align: left;">
-                            <p><strong>Você está prestes a enviar a avaliação com os seguintes dados:</strong></p>
-                            <ul style="text-align: left; margin-left: 20px;">
-                                <li><strong>Órgão:</strong> ${secretariaDisplay}</li>
-                                <li><strong>URL Avaliada:</strong> ${urlSecretaria}</li>
-                                <li><strong>Responsável:</strong> ${nomeResponsavel}</li>
-                                <li><strong>E-mail:</strong> ${emailResponsavel}</li>
-                            </ul>
-                            <p style="margin-top: 15px; color: #dc3545; font-weight: bold;">
-                                ⚠️ Após o envio, não será possível editar a avaliação.
-                            </p>
-                        </div>
-                    `,
-                    icon: 'question',
-                    iconColor: 'var(--azul-gov-principal)',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sim, Enviar Avaliação',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: 'var(--verde-sucesso)',
-                    cancelButtonColor: 'var(--vermelho-erro)',
-                    reverseButtons: true
-                });
+                const confirmado = await confirmarEnvioAvaliacao(
+                    secretariaDisplay,
+                    urlSecretaria,
+                    nomeResponsavel,
+                    emailResponsavel
+                );
+                if (!confirmado) {
+                    return;
+                }
 
                 if (!confirmacao.isConfirmed) {
                     return; 
