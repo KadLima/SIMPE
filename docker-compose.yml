@@ -23,7 +23,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/simpe_db
+      DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: N51TWXaGkYFcq7rgH9suQlt8m64pPIVJ
       SMTP_HOST: smtp.gmail.com
       SMTP_PORT: 587
