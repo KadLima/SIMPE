@@ -8,157 +8,153 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* --- VARIÁVEIS (Padrão Unificado) --- */
         :root {
             --azul-gov-principal: #002776;
+            --azul-gov-escuro: #001a4d;
+            --azul-gov-claro: #0052CC;
             --amarelo-gov-detalhe: #FFD700;
-            --cinza-texto: #333333;
-            --cinza-fundo: #f4f4f4;
+            --cinza-texto: #2c3e50;
+            --cinza-claro: #7f8c8d;
+            --cinza-fundo: #f8f9fa;
+            --cinza-card: #ecf0f1;
             --branco: #ffffff;
-            --verde-sucesso: #28a745;
+            --verde-sucesso: #27ae60;
             --vermelho-destaque: #dc3545;
-            --cinza-borda: #ddd;
             --laranja-alerta: #fd7e14;
+            --roxo-recurso: #6f42c1;
+            --sombra-suave: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --sombra-media: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --transicao-padrao: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: var(--cinza-fundo);
-            color: var(--cinza-texto);
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
+            background-color: var(--cinza-fundo); 
+            color: var(--cinza-texto); 
             line-height: 1.6;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
 
-        .main-header {
-            background-color: var(--branco);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 0 5%;
-            position: sticky;
-            top: 0;
+        /* --- HEADER UNIFICADO (igual ao avaliacao.html) --- */
+        .main-header { 
+            background-color: var(--branco); 
+            box-shadow: var(--sombra-suave);
+            padding: 0 5%; 
+            position: sticky; 
+            top: 0; 
             z-index: 1000;
+            border-bottom: 3px solid var(--azul-gov-principal);
         }
 
-        .main-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 70px;
-            max-width: 1200px;
-            margin: 0 auto;
+        .main-nav { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            height: 80px; 
         }
 
         .logo a { 
             text-decoration: none; 
             display: flex; 
             align-items: center; 
-            gap: 12px; 
-            padding: 10px; 
-            padding-top: 0; 
-            padding-bottom: 0;
-            border-bottom: 2px solid transparent; 
-            transition: all 0.3s ease; 
-            position: relative;
+            gap: 16px; 
+            transition: var(--transicao-padrao);
         }
+
+        .logo a:hover { transform: translateY(-2px); }
 
         .logo a > img { 
-            height: 45px; 
-            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0));
+            height: 60px; 
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transition: var(--transicao-padrao);
         }
 
-        .logo a::after {
-            content: '';
-            position: absolute;
-            bottom: 29px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: transparent;
-            transition: background-color 0.3s ease;
-        }
+        .SIMPE-marca-text-group { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .SIMPE-marca-small { height: 60px !important; width: auto; object-fit: contain; }
 
-        .logo a:hover::after {
-            background-color: var(--amarelo-gov-detalhe);
-        }
-
-        .main-nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            gap: 20px;
-        }
-
-        .main-nav ul a {
-            text-decoration: none;
-            color: var(--cinza-texto);
-            font-weight: 600;
-            padding: 10px;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .main-nav ul a:hover, .main-nav ul a.active { 
-            color: var(--azul-gov-principal); 
-            border-bottom-color: var(--amarelo-gov-detalhe); 
-        }
-
-        .main-footer {
-            text-align: center;
-            padding: 20px;
-            margin-top: auto;
-            background-color: var(--branco);
-            font-size: 0.9em;
-            position: relative;
-            height: 60px;
-            box-sizing: content-box;
-        }
-
-        .main-footer .footer-content {
-            display: flex;
-            justify-content: center;
+        #nav-links { 
+            list-style: none; 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            gap: 8px; 
             align-items: center;
-            height: 100%;
         }
 
-        .main-footer img {
-            height: 60px;
-            width: auto;
-            position: absolute;
-            right: 5%;
-            top: 50%;
-            transform: translateY(-50%);
+        #nav-links li { margin: 0; padding: 0; display: flex; }
+
+        #nav-links a { 
+            text-decoration: none; 
+            color: var(--cinza-texto); 
+            font-weight: 600; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            transition: var(--transicao-padrao); 
+            display: block; 
+            font-size: 0.95em; 
+            position: relative;
+            cursor: pointer;
+            white-space: nowrap;
         }
 
-        .main-footer p a {
-            color: var(--cinza-texto);
-            font-weight: 600;
-            text-decoration: none;
+        #nav-links a::after {
+            content: ''; 
+            position: absolute; 
+            bottom: 8px; 
+            left: 20px; 
+            right: 20px; 
+            height: 2px;
+            background-color: var(--amarelo-gov-detalhe); 
+            transform: scaleX(0); 
+            transition: transform 0.3s ease;
         }
 
-        main {
-            padding: 40px 5%;
-            max-width: 1200px;
-            margin: 0 auto;
+        #nav-links a:hover, 
+        #nav-links a.active { 
+            color: var(--azul-gov-principal); 
+            background-color: rgba(0, 39, 118, 0.05); 
+        }
+
+        #nav-links a:hover::after, 
+        #nav-links a.active::after { 
+            transform: scaleX(1); 
+        }
+
+        /* --- MAIN CONTENT --- */
+        main { 
+            padding: 40px 5%; 
+            flex-grow: 1; 
+            display: flex; 
+            justify-content: center; 
+        }
+
+        .report-container { 
             width: 100%;
-            box-sizing: border-box;
+            max-width: 1000px; 
         }
 
-        .status-header {
-            background: var(--branco);
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            text-align: center;
-            border-left: 5px solid var(--verde-sucesso);
+        /* --- CABEÇALHO DO RELATÓRIO (adaptado para nota-final) --- */
+        .status-header { 
+            background: var(--branco); 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: var(--sombra-suave); 
+            margin-bottom: 30px; 
+            border-left: 5px solid var(--azul-gov-principal);
         }
 
-        .status-header h1 {
-            margin: 0 0 10px 0;
-            color: var(--azul-gov-principal);
-            font-size: 1.8em;
+        .status-header h1 { 
+            margin: 0 0 15px 0; 
+            color: var(--azul-gov-principal); 
+            font-size: 1.8em; 
+            font-weight: 700; 
         }
 
         .status-badge {
@@ -174,21 +170,24 @@
             letter-spacing: 1px;
         }
 
-        .orgao-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px 20px;
-            margin-top: 20px;
-            text-align: left;
+        .orgao-info { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            font-size: 0.95em; 
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
         }
 
+        /* --- SCORE PANEL (adaptado) --- */
         .score-panel {
-            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, #0044aa 100%);
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%);
             color: var(--branco);
             padding: 30px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: var(--sombra-media);
         }
 
         .score-panel h2 {
@@ -231,6 +230,7 @@
             opacity: 0.8;
         }
 
+        /* --- CHART --- */
         .chart-container {
             background: rgba(255,255,255,0.1);
             padding: 25px;
@@ -240,71 +240,36 @@
             height: 200px;
         }
 
+        /* --- CONGRATS MESSAGES --- */
         .congrats-message {
-            background: linear-gradient(135deg, var(--verde-sucesso) 0%, #20c997 100%);
-            color: var(--branco);
             padding: 25px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin: 25px 0;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-        }
-
-        .congrats-message h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.4em;
-        }
-
-        .congrats-message p {
-            margin: 0;
-            font-size: 1.1em;
-            opacity: 0.95;
+            box-shadow: var(--sombra-media);
         }
 
         .congrats-message.boa {
             background: linear-gradient(135deg, #90EE90 0%, #76c776 100%);
-            box-shadow: 0 4px 15px rgba(144, 238, 144, 0.3);
+            color: var(--cinza-texto);
         }
-
-        .congrats-message.boa h3, .congrats-message.boa p { 
-            margin: 0 0 10px 0; font-size: 1.4em;
-            margin: 0; font-size: 1.1em; opacity: 0.95;
-        }
-
 
         .congrats-message.alerta {
             background: linear-gradient(135deg, #FFD700 0%, #e6c200 100%);
-            color: var(--cinza-texto); 
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            color: var(--cinza-texto);
         }
-
-        .congrats-message.alerta h3, .congrats-message.alerta p {
-            margin: 0 0 10px 0; font-size: 1.4em;
-            margin: 0; font-size: 1.1em; opacity: 0.95;
-        }
-
 
         .congrats-message.melhoria {
             background: linear-gradient(135deg, var(--laranja-alerta) 0%, #e56a00 100%);
-            box-shadow: 0 4px 15px rgba(253, 126, 20, 0.3);
+            color: var(--branco);
         }
-
-        .congrats-message.melhoria h3, .congrats-message.melhoria p { 
-            margin: 0 0 10px 0; font-size: 1.4em;
-            margin: 0; font-size: 1.1em; opacity: 0.95;
-        }
-
 
         .congrats-message.critica {
             background: linear-gradient(135deg, var(--vermelho-destaque) 0%, #c82333 100%);
-            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            color: var(--branco);
         }
 
-        .congrats-message.critica h3, .congrats-message.critica p { 
-            margin: 0 0 10px 0; font-size: 1.4em;
-            margin: 0; font-size: 1.1em; opacity: 0.95;
-        }
-
+        /* --- DOSSIÊ CARDS (adaptados) --- */
         .dossie-section {
             margin: 40px 0;
         }
@@ -319,27 +284,19 @@
 
         .requisito-dossie {
             background: var(--branco);
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: var(--sombra-suave);
             overflow: hidden;
-            border-left: 5px solid var(--cinza-borda);
+            border-left: 5px solid var(--cinza-claro);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transicao-padrao);
             position: relative;
         }
 
         .requisito-dossie:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        }
-
-        .requisito-dossie.atende:hover {
-            box-shadow: 0 4px 20px rgba(40, 167, 69, 0.3);
-        }
-
-        .requisito-dossie.nao-atende:hover {
-            box-shadow: 0 4px 20px rgba(220, 53, 69, 0.3);
+            box-shadow: var(--sombra-media);
         }
 
         .requisito-dossie.atende {
@@ -350,31 +307,25 @@
             border-left-color: var(--vermelho-destaque);
         }
 
+        .requisito-dossie.com-recurso {
+            border-right: 5px solid var(--roxo-recurso);
+        }
+
         .dossie-header {
             padding: 20px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             flex-wrap: wrap;
             gap: 10px;
-        }
-
-        .requisito-title {
-            flex: 1;
-            min-width: 300px;
+            background-color: #fcfcfc;
         }
 
         .requisito-title h3 {
-            margin: 0 0 5px 0;
+            margin: 0;
             color: var(--azul-gov-principal);
             font-size: 1.1em;
             line-height: 1.3;
-        }
-
-        .requisito-number {
-            color: #666;
-            font-size: 0.9em;
-            font-weight: 600;
         }
 
         .status-indicator {
@@ -383,32 +334,48 @@
             gap: 10px;
         }
 
-        .atende-badge {
-            font-weight: bold;
-            padding: 6px 12px;
-            border-radius: 15px;
-            color: var(--branco);
-            font-size: 0.85em;
-            display: inline-block;
-            white-space: nowrap;
+        .atende-badge { 
+            font-weight: 700; 
+            padding: 5px 12px; 
+            border-radius: 20px; 
+            color: var(--branco); 
+            font-size: 0.8em; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
         }
 
         .atende-sim { background-color: var(--verde-sucesso); }
         .atende-nao { background-color: var(--vermelho-destaque); }
 
+        .recurso-badge {
+            background-color: var(--roxo-recurso);
+            color: var(--branco);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            text-transform: uppercase;
+        }
+
+        /* --- DOSSIÊ CONTENT --- */
         .dossie-content {
             max-height: 0;
             overflow: hidden;
             padding: 0 20px;
             transition: max-height 0.3s ease-out;
-            border-top: none; 
-            margin-top: 0;
+            border-top: none;
+        }
+
+        .dossie-content.expanded {
+            max-height: 2000px;
+            padding: 20px;
+            border-top: 1px solid #f0f0f0;
+            background-color: #fafafa;
         }
 
         .dossie-bloco {
             margin-bottom: 20px;
             padding-bottom: 20px;
-            border-bottom: 1px solid var(--cinza-borda);
+            border-bottom: 1px solid #f0f0f0;
         }
 
         .dossie-bloco:last-child {
@@ -420,54 +387,25 @@
         .bloco-title {
             background: #f8f9fa;
             padding: 10px 15px;
-            margin: 0 -20px 15px -20px; 
+            margin: 0 -20px 15px -20px;
             color: var(--azul-gov-principal);
             font-weight: 600;
             font-size: 0.95em;
-            border-bottom: 1px solid var(--cinza-borda);
-            border-top: 1px solid var(--cinza-borda); 
+            border-bottom: 1px solid #e1e5e9;
+            border-top: 1px solid #e1e5e9;
         }
+
         .dossie-bloco:first-child .bloco-title {
-            border-top: none; 
-            margin-top: -20px; 
-        }
-
-        .comment-container {
-            max-height: 150px;
-            overflow-y: auto;
-            padding: 4px;
-            background: #ffffff;
-            border-radius: 3px;
-            border: 1px solid #ffffff;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-            overflow-wrap: break-word;
-        }
-
-        .comment-container::-webkit-scrollbar {
-            width: 3px;
-        }
-
-        .comment-container::-webkit-scrollbar-track {
-            background: #ffffff;
-            border-radius: 3px;
-        }
-
-        .comment-container::-webkit-scrollbar-thumb {
-            background: #ffffff;
-            border-radius: 3px;
-        }
-
-        .comment-container::-webkit-scrollbar-thumb:hover {
-            background: #ffffff;
+            border-top: none;
+            margin-top: -20px;
         }
 
         .info-grid {
             display: grid;
-            grid-template-columns: auto auto;
+            grid-template-columns: auto 1fr;
             gap: 10px 15px;
             align-items: baseline;
-            justify-content: start;
+            margin-bottom: 10px;
         }
 
         .info-label {
@@ -476,86 +414,19 @@
             font-size: 0.9em;
         }
 
-        .status-badge-small {
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.75em;
-            font-weight: 600;
-            color: var(--branco);
-            text-transform: uppercase;
-        }
-
-        .status-aprovado { background-color: var(--verde-sucesso); }
-        .status-rejeitado { background-color: var(--vermelho-destaque); }
-        .status-alterado { background-color: var(--laranja-alerta); }
-        .status-mantido { background-color: var(--verde-sucesso); }
-        .status-pendente { background-color: #ffc107; color: #333;} 
-
-        .loading-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 1.1em;
-        }
-
-        .error-state {
-            text-align: center;
-            padding: 30px;
-            color: var(--vermelho-destaque);
-            background: #f8d7da;
-            border-radius: 8px;
-            margin: 20px 0;
-            border-left: 5px solid var(--vermelho-destaque);
-        }
-
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.6); display: flex;
-            justify-content: center; align-items: center; z-index: 2000;
-        }
-        .modal-content {
-            background: var(--branco); padding: 30px; border-radius: 8px;
-            width: 90%; max-width: 800px; max-height: 90vh;
-            overflow-y: auto; position: relative;
-        }
-        .modal-close-btn {
-            position: absolute; top: 10px; right: 15px; background: none;
-            border: none; font-size: 2.5em; line-height: 1; color: #aaa;
-            cursor: pointer; transition: color 0.3s ease;
-        }
-        .modal-close-btn:hover { color: #333; }
-
-        .SIMPE-marca-text-group {
-            display: flex;
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            gap: 0;
-        }
-        
-        .site-subtitle-modified { 
-            color: var(--cinza-texto); 
-            font-size: 0.7em;
-            display: block;
-            text-align: center;
-            margin: 0; 
-            line-height: 1;
-            padding: 0;
-        }
-
-        .SIMPE-marca-small {
-            height: 60px; 
-            width: auto;
-            object-fit: contain; 
-            display: block; 
-            margin: 0; 
-            margin-bottom: 5px;
+        .comment-container {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #ddd;
+            word-wrap: break-word;
+            white-space: pre-wrap;
         }
 
         .evidence-list {
             list-style: none;
             padding: 0;
-            margin: 8px 0 0 0;
+            margin: 0;
         }
 
         .evidence-item {
@@ -563,12 +434,12 @@
             padding: 6px 10px;
             border-radius: 4px;
             margin-bottom: 4px;
-            font-size: 0.85em;
+            border: 1px solid #e1e5e9;
         }
 
         .evidence-item a {
             word-break: break-all;
-            color: var(--azul-gov-principal);
+            color: var(--azul-gov-claro);
             text-decoration: none;
         }
 
@@ -586,6 +457,51 @@
             font-size: 0.9em;
         }
 
+        .status-badge-small {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: var(--branco);
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .status-aprovado { background-color: var(--verde-sucesso); }
+        .status-rejeitado { background-color: var(--vermelho-destaque); }
+        .status-pendente { background-color: #ffc107; color: #333; }
+
+        /* --- BOTÕES --- */
+        .btn { 
+            padding: 14px 28px; 
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-claro) 100%); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 1.1em; 
+            font-weight: 700; 
+            transition: var(--transicao-padrao); 
+            box-shadow: var(--sombra-suave);
+        }
+
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: var(--sombra-media); 
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--verde-sucesso) 0%, #20c997 100%);
+        }
+
+        .btn-print {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+
+        .btn-csv {
+            background: linear-gradient(135deg, var(--laranja-alerta) 0%, #fd7e14 100%);
+        }
+
         .action-buttons {
             display: flex;
             gap: 15px;
@@ -594,74 +510,26 @@
             flex-wrap: wrap;
         }
 
-        .btn {
-            padding: 14px 28px;
-            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, #0044aa 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
+        /* --- PERCENTAGE CARD --- */
+        .percentage-header-container {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0, 39, 118, 0.2);
-            position: relative;
-            overflow: hidden;
+            margin-left: 30px;
         }
 
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn:hover::before {
-            left: 100%;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 39, 118, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        }
-
-        .btn-secondary:hover {
-            background: linear-gradient(135deg, #5a6268 0%, #4e555b 100%);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--verde-sucesso) 0%, #20c997 100%);
-        }
-
-        .btn-success:hover {
-            background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
-        }
-
-        .btn-icon::before {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-weight: normal;
-            font-size: 1.1em;
+        .percentage-text-above {
+            font-size: 1.0em;
+            font-weight: 600;
+            color: var(--azul-gov-principal);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .percentage-card-header {
-            width: 80px;
-            height: 80px;
+            width: 120px;
+            height: 120px;
             border-radius: 20px;
             display: flex;
             flex-direction: column;
@@ -670,12 +538,6 @@
             text-align: center;
             padding: 15px;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .percentage-card-header::before {
-            display: none;
         }
 
         .percentage-value-header {
@@ -698,41 +560,21 @@
             background: #FFD700; 
             color: #ffffff;
         }
-
         .percentage-card-header.otimo {
             background: #28a745; 
             color: white;
         }
-
         .percentage-card-header.bom {
             background: #FFD700; 
             color: #333;
         }
-
         .percentage-card-header.melhoria {
             background: #fd7e14; 
             color: white;
         }
-
         .percentage-card-header.critico {
             background: #dc3545; 
             color: white;
-        }
-
-        .percentage-header-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-left: 30px;
-        }
-
-        .percentage-text-above {
-            font-size: 0.9em;
-            font-weight: 600;
-            color: var(--azul-gov-principal);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .header-with-percentage {
@@ -741,56 +583,268 @@
             align-items: flex-start;
         }
 
-        
+        /* --- MODAL --- */
+        .modal-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0, 0, 0, 0.6); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 2000; 
+        }
 
+        .modal-content { 
+            background: var(--branco); 
+            padding: 30px; 
+            border-radius: 16px; 
+            width: 90%; 
+            max-width: 800px; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            position: relative; 
+            border-top: 5px solid var(--azul-gov-principal);
+        }
 
+        .modal-close-btn { 
+            position: absolute; 
+            top: 15px; 
+            right: 20px; 
+            background: none; 
+            border: none; 
+            font-size: 2.5em; 
+            color: #aaa; 
+            cursor: pointer; 
+            transition: color 0.3s;
+        }
+
+        .modal-close-btn:hover { color: var(--vermelho-destaque); }
+
+        /* --- FOOTER (igual ao avaliacao.html) --- */
+        .main-footer { 
+            text-align: center; 
+            padding: 30px 5%; 
+            margin-top: auto;
+            background: linear-gradient(135deg, var(--azul-gov-principal) 0%, var(--azul-gov-escuro) 100%);
+            color: var(--branco); 
+            font-size: 0.95em; 
+            position: relative; 
+            min-height: 80px; 
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-footer .footer-content { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            height: 100%; 
+            position: relative; 
+        }
+
+        .main-footer .footer-portal-link, 
+        .main-footer .footer-logo-link { 
+            position: absolute; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            display: block; 
+            height: 70px; 
+            width: auto; 
+            transition: var(--transicao-padrao); 
+            cursor: pointer;
+        }
+
+        .main-footer .footer-portal-link { left: 0.5%; }
+        .main-footer .footer-logo-link { right: 0.5%; }
+
+        .main-footer .footer-portal-link:hover, 
+        .main-footer .footer-logo-link:hover { 
+            transform: translateY(-50%) scale(1.1); 
+        }
+
+        .main-footer img { 
+            height: 100%; 
+            width: auto; 
+            display: block; 
+            max-height: 70px; 
+            mix-blend-mode: lighten; 
+            object-fit: contain; 
+            filter: brightness(0) invert(1); 
+        }
+
+        .main-footer p { 
+            color: rgba(255, 255, 255, 0.9); 
+            font-weight: 400; 
+            margin: 0; 
+        }
+
+        .main-footer p a { 
+            color: var(--amarelo-gov-detalhe); 
+            font-weight: 600; 
+            text-decoration: none; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+        }
+
+        .main-footer p a:hover { 
+            background-color: rgba(255, 215, 0, 0.2); 
+            text-decoration: underline; 
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.1em;
+            background: var(--branco);
+            border-radius: 12px;
+            box-shadow: var(--sombra-suave);
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 30px;
+            color: var(--vermelho-destaque);
+            background: #f8d7da;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 5px solid var(--vermelho-destaque);
+        }
+
+        .modal-content .status-badge-small {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 0.75em;
+            border-radius: 4px;
+            width: auto;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        /* Grid mais compacto no modal */
+        .modal-content .info-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 5px 10px;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .modal-content .info-grid .info-label {
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+
+        .modal-content .info-grid .status-badge-small {
+            justify-self: start;
+        }
+
+        /* Container de comentário menor */
+        .modal-content .comment-container {
+            padding: 6px 10px;
+            font-size: 0.9em;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        /* Blocos mais compactos */
+        .modal-content .dossie-bloco {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+        }
+
+        .modal-content .bloco-title {
+            padding: 6px 12px;
+            font-size: 0.9em;
+            margin: 0 -20px 8px -20px;
+        }
+
+        /* Lista de evidências mais compacta */
+        .modal-content .evidence-item {
+            padding: 4px 8px;
+            font-size: 0.85em;
+        }
+
+        .modal-content .evidence-item a {
+            word-break: break-all;
+        }
+
+        /* --- RESPONSIVIDADE --- */
+        @media (max-width: 768px) {
+            .main-nav { 
+                flex-direction: column; 
+                height: auto; 
+                padding: 20px 0; 
+            }
+            
+            #nav-links { 
+                flex-direction: column; 
+                width: 100%; 
+                margin-top: 15px; 
+            }
+            
+            .scores-container { 
+                grid-template-columns: 1fr; 
+                gap: 10px; 
+            }
+            
+            .score-panel { 
+                padding: 20px; 
+            }
+            
+            .main-footer { 
+                padding: 20px; 
+            }
+            
+            .main-footer .footer-content { 
+                flex-direction: column; 
+                gap: 15px; 
+            }
+            
+            .main-footer .footer-portal-link,
+            .main-footer .footer-logo-link { 
+                position: static; 
+                transform: none; 
+                height: 50px; 
+                margin: 10px 0; 
+            }
+            
+            .header-with-percentage { 
+                flex-direction: column; 
+                align-items: center; 
+                gap: 20px; 
+            }
+            
+            .percentage-header-container { 
+                margin-left: 0; 
+            }
+        }
+
+        /* --- PRINT --- */
         @media print {
-            .main-header, .main-footer, .action-buttons, #congrats-container {
+            .main-header, .main-footer, .action-buttons, .modal-overlay {
                 display: none !important;
             }
-
-            @page {
-                size: landscape;
-            }
-
+            
             body {
                 background: var(--branco) !important;
             }
-            main {
-                padding: 10px !important;
-                max-width: none !important;
-                width: 100% !important;
+            
+            .dossie-content {
+                max-height: none !important;
+                padding: 20px !important;
+                border-top: 1px solid #ddd !important;
             }
             
-            .requisito-dossie .dossie-content {
-                display: block !important;
-                max-height: none !important;
-                padding: 15px 20px 20px 20px !important;
-                border-top: 1px solid #eee !important;
-                margin-top: 15px !important;
-                overflow: visible !important;
-            }
-
-            .status-header, .score-panel, .requisito-dossie {
-                break-inside: avoid !important;
-                page-break-inside: avoid !important;
+            .requisito-dossie {
+                break-inside: avoid;
+                page-break-inside: avoid;
                 box-shadow: none !important;
                 border: 1px solid #ddd !important;
-            }
-            
-            .score-panel {
-                break-after: page !important;
-                page-break-after: page !important;
-            }
-            
-            .dossie-section {
-                 break-before: avoid !important;
-                 page-break-before: avoid !important;
-            }
-
-            .requisito-dossie {
-                break-before: page !important; 
-                page-break-before: page !important;
             }
         }
 
@@ -800,113 +854,115 @@
     <header class="main-header">
         <nav class="main-nav">
             <div class="logo">
-                <div class="logo">
-                    <a href="/">
-                        <img src="/assets/logo-header.png" alt="Logo do Governo de Pernambuco">
-                        <div class="SIMPE-marca-text-group">                     
-                            <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                     
-                        </div>
-                    </a>
-                </div>
+                <a href="/">
+                    <img src="/assets/logo-header.png" alt="Logo Governo de Pernambuco">
+                    <div class="SIMPE-marca-text-group">                      
+                        <img src="/assets/simpe.png" alt="Logo SIMPE" class="SIMPE-marca-small">                      
+                    </div>
+                </a>
             </div>
-            <ul id="nav-links">
-                 </ul>
+            <ul id="nav-links"></ul>
         </nav>
     </header>
 
     <main id="relatorio-content"> 
-        <section class="status-header">
-            <div class="header-with-percentage">
-                <div style="flex: 1;">
-                    <h1>Relatório Final de Avaliação - Ciclo 2025</h1>
-                    <div class="status-badge">AVALIAÇÃO FINALIZADA</div>
-                    <div class="orgao-info">
-                        <div>
-                            <strong>Órgão Avaliado:</strong>
-                            <span id="orgao-nome">Carregando...</span>
+        <div class="report-container"> 
+            <section class="status-header">
+                <div class="header-with-percentage">
+                    <div style="flex: 1;">
+                        <h1>Relatório Final de Avaliação - Ciclo 2025</h1>
+                        <div class="status-badge">AVALIAÇÃO FINALIZADA</div>
+                        <div class="orgao-info">
+                            <div>
+                                <strong>Órgão Avaliado:</strong>
+                                <span id="orgao-nome">Carregando...</span>
+                            </div>
+                            <div>
+                                <strong>Data de Finalização:</strong>
+                                <span id="data-finalizacao">Carregando...</span>
+                            </div>
+                            <div>
+                                <strong>Enviado por:</strong>
+                                <span id="responsavel-nome">Carregando...</span>
+                            </div>
+                            <div>
+                                <strong>Email:</strong>
+                                <span id="responsavel-email">Carregando...</span>
+                            </div>
                         </div>
-                        <div>
-                            <strong>Data de Finalização:</strong>
-                            <span id="data-finalizacao">Carregando...</span>
-                        </div>
-                        <div>
-                            <strong>Enviado por:</strong>
-                            <span id="responsavel-nome">Carregando...</span>
-                        </div>
-                        <div>
-                            <strong>Email:</strong>
-                            <span id="responsavel-email">Carregando...</span>
+                    </div>
+                    <div class="percentage-header-container">
+                        <div class="percentage-text-above">Nota Final</div>
+                        <div id="percentage-card-header" class="percentage-card-header">
+                            <div class="percentage-value-header">--%</div>
+                            <div class="percentage-label-header">Percentual</div>
                         </div>
                     </div>
                 </div>
-                <div class="percentage-header-container">
-                    <div class="percentage-text-above">Nota Final</div>
-                    <div id="percentage-card-header" class="percentage-card-header">
-                        <div class="percentage-value-header">--%</div>
-                        <div class="percentage-label-header">Percentual</div>
+            </section>
+
+            <section class="score-panel">
+                <h2>Evolução da Pontuação</h2>
+                <div class="scores-container">
+                    <div class="score-item">
+                        <div class="score-label">Autoavaliação</div>
+                        <div class="score-value" id="score-original">--</div>
+                        <div class="score-total">de <span id="total-original">--</span> pontos</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">1ª Análise SCGE</div>
+                        <div class="score-value" id="score-pos-analise">--</div>
+                        <div class="score-total">de <span id="total-pos-analise">--</span> pontos</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">Pós-Recurso</div>
+                        <div class="score-value" id="score-pos-recurso">--</div>
+                        <div class="score-total">de <span id="total-pos-recurso">--</span> pontos</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">Pontuação Final</div>
+                        <div class="score-value" id="score-final">--</div>
+                        <div class="score-total">de <span id="total-final">--</span> pontos</div>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <section class="score-panel">
-            <h2>Evolução da Pontuação</h2>
-            <div class="scores-container">
-                <div class="score-item">
-                    <div class="score-label">Autoavaliação</div>
-                    <div class="score-value" id="score-original">--</div>
-                    <div class="score-total">de <span id="total-original">--</span> pontos</div>
+                <div class="chart-container">
+                    <canvas id="score-chart"></canvas>
                 </div>
-                <div class="score-item">
-                    <div class="score-label">1ª Análise SCGE</div>
-                    <div class="score-value" id="score-pos-analise">--</div>
-                    <div class="score-total">de <span id="total-pos-analise">--</span> pontos</div>
+            </section>
+
+            <div id="congrats-container" style="display: none;">
                 </div>
-                <div class="score-item">
-                    <div class="score-label">Pós-Recurso</div>
-                    <div class="score-value" id="score-pos-recurso">--</div>
-                    <div class="score-total">de <span id="total-pos-recurso">--</span> pontos</div>
+
+            <section class="dossie-section">
+                <h2>Análise Detalhada por Requisito</h2>
+                <div id="dossie-container">
+                    <div class="loading-state">Carregando dados dos requisitos...</div>
                 </div>
-                <div class="score-item">
-                    <div class="score-label">Pontuação Final</div>
-                    <div class="score-value" id="score-final">--</div>
-                    <div class="score-total">de <span id="total-final">--</span> pontos</div>
-                </div>
-            </div>
+            </section>
 
-            <div class="chart-container">
-                <canvas id="score-chart"></canvas>
+            <div class="action-buttons">
+                <button id="email-btn" class="btn btn-success btn-email">
+                    Enviar por Email
+                </button>
+                <button id="pdf-btn" class="btn btn-success btn-pdf">
+                    Salvar como PDF
+                </button>
+                <button id="imprimir-btn" class="btn btn-print">
+                    Imprimir Relatório
+                </button>
+                <button id="csv-btn" class="btn btn-success btn-csv">
+                    Exportar para CSV
+                </button>
             </div>
-        </section>
-
-        <div id="congrats-container" style="display: none;">
-            </div>
-
-        <section class="dossie-section">
-            <h2>Análise Detalhada por Requisito</h2>
-            <div id="dossie-container">
-                <div class="loading-state">Carregando dados dos requisitos...</div>
-            </div>
-        </section>
-
-        <div class="action-buttons">
-            <button id="email-btn" class="btn btn-success btn-email">
-                Enviar por Email
-            </button>
-            <button id="pdf-btn" class="btn btn-success btn-pdf">
-                Salvar como PDF
-            </button>
-            <button id="imprimir-btn" class="btn btn-print">
-                Imprimir Relatório
-            </button>
-            <button id="csv-btn" class="btn btn-success btn-csv">
-                Exportar para CSV
-            </button>
         </div>
     </main>
 
     <footer class="main-footer">
         <div class="footer-content">
+            <a href="https://transparencia.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-portal-link">
+                <img src="/assets/image-portal.png" alt="Portal da Transparência">
+            </a>
             <p>&copy; 2025 Governo de Pernambuco. Todos os direitos reservados. <a id="admin-footer-link" href="/admin" style="display: none;">Área Administrativa</a></p>
             <a href="https://www.scge.pe.gov.br/" target="_blank" rel="noopener noreferrer" class="footer-logo-link">
                 <img src="/assets/logo-footer.png" alt="Logo da Controladoria-Geral do Estado de Pernambuco">
@@ -979,39 +1035,150 @@
             }
 
             function configurarNavegacao() {
-                if (dashboardBtn) {
-                    dashboardBtn.addEventListener('click', () => {
-                        window.location.href = '/dashboard';
+                const navLinks = document.getElementById('nav-links');
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const isAdmin = userData.role === 'ADMIN';
+                const adminFooterLink = document.getElementById('admin-footer-link');
+
+                let menuHTML = '';
+
+                if (isAdmin) {
+                    menuHTML = `
+                        <li><a href="/" class="${window.location.pathname === '/' ? 'active' : ''}">Início</a></li>
+                        <li><a href="/dashboard" class="${window.location.pathname === '/dashboard' ? 'active' : ''}">Minha Área</a></li>
+                        <li><a href="/admin" class="${window.location.pathname.startsWith('/admin') ? 'active' : ''}">Área Administrativa</a></li>
+                        <li><a href="/scanner" class="${window.location.pathname === '/scanner' ? 'active' : ''}">Scanner de Links</a></li>
+                        <li><a href="/formulario" class="${window.location.pathname === '/formulario' ? 'active' : ''}">Autoavaliação</a></li>
+                        <li><a href="#" id="logout-btn">Sair</a></li>
+                    `;
+                } else {
+                    menuHTML = `
+                        <li><a href="/" class="${window.location.pathname === '/' ? 'active' : ''}">Início</a></li>
+                        <li><a href="/minhas-avaliacoes" class="${window.location.pathname === '/minhas-avaliacoes' ? 'active' : ''}">Minha Área</a></li>
+                        <li><a href="/formulario" class="${window.location.pathname === '/formulario' ? 'active' : ''}">Autoavaliação</a></li>
+                        <li><a href="#" id="logout-btn">Sair</a></li>
+                    `;
+                }
+
+                navLinks.innerHTML = menuHTML;
+
+                // Configurar footer admin link
+                if (adminFooterLink) {
+                    adminFooterLink.style.display = isAdmin ? 'inline' : 'none';
+                }
+
+                // Configurar logout
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('userData');
+                        window.location.href = '/login';
                     });
                 }
 
-                if (imprimirBtn) {
-                    imprimirBtn.addEventListener('click', () => {
-                        window.print();
-                    });
-                }
+                // Configurar botões de ação existentes
+                const imprimirBtn = document.getElementById('imprimir-btn');
+                const pdfBtn = document.getElementById('pdf-btn');
+                const emailBtn = document.getElementById('email-btn');
+                const csvBtn = document.getElementById('csv-btn');
 
-                if (emailBtn) {
-                    emailBtn.addEventListener('click', async () => {
-                        await enviarPorEmail();
-                    });
-                }
-
-                if (pdfBtn) {
-                    pdfBtn.addEventListener('click', gerarPDF);
-                }
-
+                // Configurar modal
                 modalCloseBtn.addEventListener('click', fecharModal);
                 modalOverlay.addEventListener('click', (event) => {
-                    if (event.target === modalOverlay) {
-                        fecharModal();
-                    }
+                    if (event.target === modalOverlay) fecharModal();
                 });
                 document.addEventListener('keydown', (event) => {
                     if (event.key === 'Escape' && modalOverlay.style.display === 'flex') {
                         fecharModal();
                     }
                 });
+            }
+
+            function gerarConteudoDetalhadoRequisitoComposto(resposta) {
+                const subRespostas = resposta.subRespostas || [];
+                
+                // Calcular estatísticas
+                const aprovadosFinal = subRespostas.filter(s => 
+                    (s.statusValidacaoPosRecurso || s.statusValidacao) === 'aprovado'
+                ).length;
+                const total = subRespostas.length;
+                const pontuacaoBase = resposta.requisito?.pontuacao || 8;
+                
+                // Gerar tabela de subitens
+                const tabelaSubitens = `
+                    <div style="margin-bottom: 20px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 8px; text-align: left;">#</th>
+                                    <th style="padding: 8px; text-align: left;">Subitem</th>
+                                    <th style="padding: 8px; text-align: center;">Resposta</th>
+                                    <th style="padding: 8px; text-align: center;">1ª Análise</th>
+                                    <th style="padding: 8px; text-align: center;">Análise Final</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${subRespostas.map((sub, index) => {
+                                    const primeiraAnaliseClass = sub.statusValidacao === 'aprovado' ? 'status-aprovado' : 
+                                                                (sub.statusValidacao === 'rejeitado' ? 'status-rejeitado' : 'status-pendente');
+                                    const primeiraAnaliseText = sub.statusValidacao === 'aprovado' ? 'Aprovado' :
+                                                            (sub.statusValidacao === 'rejeitado' ? 'Rejeitado' : 'Pendente');
+                                    
+                                    const finalClass = sub.statusValidacaoPosRecurso === 'aprovado' ? 'status-aprovado' :
+                                                    (sub.statusValidacaoPosRecurso === 'rejeitado' ? 'status-rejeitado' : 'status-pendente');
+                                    const finalText = sub.statusValidacaoPosRecurso === 'aprovado' ? 'Aprovado' :
+                                                    (sub.statusValidacaoPosRecurso === 'rejeitado' ? 'Rejeitado' : 'Pendente');
+                                    
+                                    return `
+                                        <tr>
+                                            <td style="padding: 8px; border-bottom: 1px solid #dee2e6;">${index + 1}</td>
+                                            <td style="padding: 8px; border-bottom: 1px solid #dee2e6;">${sub.subRequisito.texto}</td>
+                                            <td style="padding: 8px; border-bottom: 1px solid #dee2e6; text-align: center;">
+                                                <span class="atende-badge ${sub.atende ? 'atende-sim' : 'atende-nao'}" style="font-size: 0.75em;">
+                                                    ${sub.atende ? 'Atende' : 'Não'}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 8px; border-bottom: 1px solid #dee2e6; text-align: center;">
+                                                <span class="status-badge-small ${primeiraAnaliseClass}">
+                                                    ${primeiraAnaliseText}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 8px; border-bottom: 1px solid #dee2e6; text-align: center;">
+                                                <span class="status-badge-small ${finalClass}">
+                                                    ${finalText}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                // Resumo da pontuação
+                const resumoPontuacao = `
+                    <div class="info-grid">
+                        <span class="info-label">Pontuação Final:</span>
+                        <span>${aprovadosFinal}/${total} itens aprovados</span>
+                    </div>
+                `;
+
+                return `
+                    <div class="dossie-bloco">
+                        <div class="bloco-title">Detalhamento dos Subitens</div>
+                        ${tabelaSubitens}
+                        ${resumoPontuacao}
+                    </div>
+                    ${resposta.comentarioAnaliseFinal ? `
+                        <div class="dossie-bloco">
+                            <div class="bloco-title">Comentário Final</div>
+                            <div class="comment-container">${resposta.comentarioAnaliseFinal}</div>
+                        </div>
+                    ` : ''}
+                `;
             }
 
             function fecharModal() {
@@ -1376,90 +1543,90 @@
             }
 
             function calcularPontuacoes(avaliacao) {
-                if (avaliacao.pontuacaoAutoavaliacao !== null && avaliacao.pontuacaoAutoavaliacao !== undefined &&
-                    avaliacao.pontuacaoPrimeiraAnalise !== null && avaliacao.pontuacaoPrimeiraAnalise !== undefined &&
-                    avaliacao.pontuacaoPosRecurso !== null && avaliacao.pontuacaoPosRecurso !== undefined &&
-                    avaliacao.pontuacaoFinal !== null && avaliacao.pontuacaoFinal !== undefined &&
-                    avaliacao.pontuacaoTotal !== null && avaliacao.pontuacaoTotal !== undefined)
-                {
+                // Se já tem as pontuações calculadas no banco, usa elas
+                if (avaliacao.pontuacaoAutoavaliacao !== null && avaliacao.pontuacaoAutoavaliacao !== undefined) {
                     console.log('[NOTA-FINAL] Usando notas salvas do banco.');
                     return {
-                        original: avaliacao.pontuacaoAutoavaliacao,
-                        posAnalise: avaliacao.pontuacaoPrimeiraAnalise,
-                        posRecurso: avaliacao.pontuacaoPosRecurso,
-                        final: avaliacao.pontuacaoFinal,
+                        original: Number(avaliacao.pontuacaoAutoavaliacao).toFixed(1),
+                        posAnalise: Number(avaliacao.pontuacaoPrimeiraAnalise).toFixed(1),
+                        posRecurso: Number(avaliacao.pontuacaoPosRecurso).toFixed(1),
+                        final: Number(avaliacao.pontuacaoFinal).toFixed(1),
                         total: avaliacao.pontuacaoTotal
                     };
                 }
 
-                console.warn('[NOTA-FINAL] Campos de pontuação não encontrados na avaliação. Calculando manualmente (fallback)...');
+                console.warn('[NOTA-FINAL] Calculando manualmente...');
                 let pontuacaoOriginal = 0;
                 let pontuacaoPosAnalise = 0;
                 let pontuacaoPosRecurso = 0;
-                let pontuacaoFinalCalc = 0; 
+                let pontuacaoFinalCalc = 0;
                 let pontuacaoTotal = 0;
 
-                if (!avaliacao.respostas || !Array.isArray(avaliacao.respostas)) {
-                    console.error('[NOTA-FINAL Fallback] Erro: avaliacao.respostas não é um array válido.');
-                    return { original: 0, posAnalise: 0, posRecurso: 0, final: 0, total: 0 };
+                function calcularPontuacaoPorFaixa(qtdAprovados, pontuacaoBase) {
+                    if (qtdAprovados >= 12) return pontuacaoBase;
+                    if (qtdAprovados >= 8) return pontuacaoBase * 0.7;
+                    if (qtdAprovados >= 4) return pontuacaoBase * 0.5;
+                    if (qtdAprovados >= 1) return pontuacaoBase * 0.3;
+                    return 0;
                 }
 
-
                 avaliacao.respostas.forEach(resposta => {
-                    const pontuacaoRequisito = resposta.requisito?.pontuacao || 0; 
-                    if (!resposta.requisito) {
-                        console.warn(`[NOTA-FINAL Fallback] Requisito não encontrado para resposta ID ${resposta.id}`);
-                    }
-                    pontuacaoTotal += pontuacaoRequisito;
+                    const pontuacaoBase = resposta.requisito?.pontuacao || 0;
+                    pontuacaoTotal += pontuacaoBase;
 
-                    if (resposta.atendeOriginal === true) {
-                        pontuacaoOriginal += pontuacaoRequisito;
-                    }
-
-                    if (resposta.statusValidacao === 'aprovado') {
-                        pontuacaoPosAnalise += pontuacaoRequisito;
-                    }
-
-                    console.log(`[CALCULO PÓS-RECURSO] Requisito ${resposta.requisitoId}:`);
-                    console.log(`  - Pontuação: ${pontuacaoRequisito}`);
-                    console.log(`  - Status validação: ${resposta.statusValidacao}`);
-                    console.log(`  - Recurso Atende: ${resposta.recursoAtende}`);
-                    console.log(`  - Comentário Recurso: ${resposta.comentarioRecurso}`);
-                    console.log(`  - Evidências recurso: ${Array.isArray(resposta.evidencias) ? resposta.evidencias.filter(e => e.tipo === 'recurso').length : 0}`);
-
-                    const teveRecurso = resposta.recursoAtende !== null ||
-                                        resposta.comentarioRecurso ||
-                                        (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
-
-                    console.log(`  - Teve recurso: ${teveRecurso}`);
-
-                    if (teveRecurso) {
-                        pontuacaoPosRecurso += pontuacaoRequisito;
-                        console.log(`  - Adiciona ao pós-recurso: ${pontuacaoRequisito} (teve recurso)`);
-                    } else {
-                        if (resposta.statusValidacao === 'aprovado') {
-                            pontuacaoPosRecurso += pontuacaoRequisito;
-                            console.log(`  - Adiciona ao pós-recurso: ${pontuacaoRequisito} (aprovado na 1ª análise)`);
-                        } else {
-                            console.log(`  - Adiciona ao pós-recurso: 0 (sem recurso e não aprovado)`);
+                    // Requisito Composto (R31)
+                    if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                        const subs = resposta.subRespostas;
+                        
+                        // Autoavaliação
+                        const autoAprovados = subs.filter(s => s.atende === true).length;
+                        pontuacaoOriginal += calcularPontuacaoPorFaixa(autoAprovados, pontuacaoBase);
+                        
+                        // 1ª Análise
+                        const primeiraAprovados = subs.filter(s => s.statusValidacao === 'aprovado').length;
+                        pontuacaoPosAnalise += calcularPontuacaoPorFaixa(primeiraAprovados, pontuacaoBase);
+                        
+                        // Pós-Recurso: Mantém a nota da 1ª análise (não muda)
+                        pontuacaoPosRecurso += calcularPontuacaoPorFaixa(primeiraAprovados, pontuacaoBase);
+                        
+                        // Final: Usa o statusValidacaoPosRecurso
+                        const finalAprovados = subs.filter(s => 
+                            (s.statusValidacaoPosRecurso || s.statusValidacao) === 'aprovado'
+                        ).length;
+                        pontuacaoFinalCalc += calcularPontuacaoPorFaixa(finalAprovados, pontuacaoBase);
+                        
+                        console.log(`[R31] Auto:${autoAprovados}/13, 1ª:${primeiraAprovados}/13, Final:${finalAprovados}/13, Base:${pontuacaoBase}`);
+                    }else {
+                        if (resposta.atendeOriginal === true) {
+                            pontuacaoOriginal += pontuacaoBase;
                         }
-                    }
 
-                    const statusFinalConsiderado = resposta.analiseFinal?.statusValidacaoPosRecurso || resposta.statusValidacao;
-                    if (statusFinalConsiderado === 'aprovado') {
-                        pontuacaoFinalCalc += pontuacaoRequisito;
-                        console.log(`  - Adiciona à nota final: ${pontuacaoRequisito} (status final: ${statusFinalConsiderado})`);
-                    } else {
-                        console.log(`  - Adiciona à nota final: 0 (status final: ${statusFinalConsiderado})`);
+                        if (resposta.statusValidacao === 'aprovado') {
+                            pontuacaoPosAnalise += pontuacaoBase;
+                        }
+
+                        const teveRecurso = resposta.recursoAtende !== null ||
+                                        resposta.comentarioRecurso ||
+                                        (resposta.evidencias && resposta.evidencias.some(e => e.tipo === 'recurso'));
+
+                        if (teveRecurso) {
+                            pontuacaoPosRecurso += pontuacaoBase;
+                        } else if (resposta.statusValidacao === 'aprovado') {
+                            pontuacaoPosRecurso += pontuacaoBase;
+                        }
+
+                        const statusFinal = resposta.analiseFinal?.statusValidacaoPosRecurso || resposta.statusValidacao;
+                        if (statusFinal === 'aprovado') {
+                            pontuacaoFinalCalc += pontuacaoBase;
+                        }
                     }
                 });
 
-
                 return {
-                    original: Math.round(pontuacaoOriginal),
-                    posAnalise: Math.round(pontuacaoPosAnalise),
-                    posRecurso: Math.round(pontuacaoPosRecurso),
-                    final: Math.round(pontuacaoFinalCalc), 
+                    original: pontuacaoOriginal.toFixed(1),
+                    posAnalise: pontuacaoPosAnalise.toFixed(1),
+                    posRecurso: pontuacaoPosRecurso.toFixed(1),
+                    final: pontuacaoFinalCalc.toFixed(1),
                     total: pontuacaoTotal
                 };
             }
@@ -1581,13 +1748,21 @@
                 });
             }
 
+            function ordenarRequisitos(respostas) {
+                return respostas.sort((a, b) => {
+                    const numA = a.requisito?.numero || 999;
+                    const numB = b.requisito?.numero || 999;
+                    return numA - numB;
+                });
+            }
 
-            // FUNÇÃO: Renderizar dossiê (Refatorada para INCLUIR conteúdo detalhado escondido)
             function renderizarDossie(avaliacao) {
                 if (!avaliacao.respostas || avaliacao.respostas.length === 0) {
                     dossieContainer.innerHTML = '<div class="error-state">Nenhum dado de requisito disponível.</div>';
                     return;
                 }
+
+                const respostasOrdenadas = ordenarRequisitos(avaliacao.respostas);
 
                 dossieContainer.innerHTML = avaliacao.respostas.map(resposta => {
                     const statusFinalConsiderado = resposta.analiseFinal?.statusValidacaoPosRecurso || resposta.statusValidacao || 'pendente';
@@ -1597,44 +1772,49 @@
                     const badgeClass = resultadoFinalAtende ? 'atende-sim' : 'atende-nao';
                     const badgeText = resultadoFinalAtende ? 'Atende' : 'Não Atende';
 
+                    // Verificar se houve recurso
+                    const teveRecurso = resposta.atende !== resposta.atendeOriginal ||
+                                        resposta.comentarioRecurso ||
+                                        (resposta.subRespostas && resposta.subRespostas.some(s => 
+                                            s.comentarioRecurso || s.statusValidacaoPosRecurso
+                                        ));
+                    
+                    const recursoClass = teveRecurso ? 'com-recurso' : '';
+
                     const conteudoDetalhado = gerarConteudoDetalhado(resposta);
 
-                    const numeroRequisito = resposta.requisito?.numero ? `REQUISITO ${resposta.requisito.numero}` : (resposta.requisito?.texto.split(' ')[0] || '');
-
-
                     return `
-                        <div class="requisito-dossie ${cardClass}" data-resposta-id="${resposta.id}">
+                        <div class="requisito-dossie ${cardClass} ${recursoClass}" data-resposta-id="${resposta.id}">
                             <div class="dossie-header">
                                 <div class="requisito-title">
                                     <h3>${resposta.requisito?.texto || 'Requisito não encontrado'}</h3>
                                 </div>
                                 <div class="status-indicator">
                                     <span class="atende-badge ${badgeClass}">${badgeText}</span>
+                                    ${teveRecurso ? '<span class="recurso-badge">Recurso</span>' : ''}
                                 </div>
                             </div>
                             
                             <div class="dossie-content">
                                 ${conteudoDetalhado}
                             </div>
-
                         </div>`;
                 }).join('');
 
+                // Adicionar evento de clique para expandir/recolher
                 setTimeout(() => {
                     const cards = document.querySelectorAll('.requisito-dossie');
                     cards.forEach(card => {
                         card.addEventListener('click', (event) => {
-                            if (event.target.tagName === 'A' || event.target.closest('A')) return; 
+                            if (event.target.tagName === 'A' || event.target.closest('A')) return;
 
-                            const respostaId = card.getAttribute('data-resposta-id');
+                            //const content = card.querySelector('.dossie-content');
+                            //content.classList.toggle('expanded');
+
+                            const respostaId = card.dataset.respostaId;
                             const resposta = avaliacaoData.respostas.find(r => r.id == respostaId);
-
                             if (resposta) {
-                                const modalContentHTML = gerarConteudoModal(resposta); 
-                                abrirModal(modalContentHTML);
-                            } else {
-                                console.error(`Resposta com ID ${respostaId} não encontrada.`);
-                                abrirModal('<p>Erro ao carregar detalhes do requisito.</p>');
+                                abrirModal(gerarConteudoModal(resposta));
                             }
                         });
                     });
@@ -1642,6 +1822,10 @@
             }
 
             function gerarConteudoDetalhado(resposta) {
+
+                if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                    return gerarConteudoDetalhadoRequisitoComposto(resposta);
+                }
                 const originalAnswerHTML = `
                 <div class="info-grid">
                     <span class="info-label">Sua Resposta:</span>
@@ -1898,6 +2082,8 @@
 
                     renderizarDossie(avaliacaoData); 
 
+                    configurarNavegacao();
+
                     if (csvBtn) { 
                         csvBtn.addEventListener('click', () => {
                             gerarCSV(avaliacaoData); 
@@ -1918,7 +2104,6 @@
                 }
             }
 
-            configurarNavegacao(); 
             carregarDados(); 
         });
     </script>

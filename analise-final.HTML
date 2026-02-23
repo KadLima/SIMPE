@@ -740,92 +740,130 @@
                     return { autoavaliacao: 0, primeiraAnalise: 0, posRecurso: 0, final: 0, total: 0 };
                 }
 
-                let pontuacaoAutoavaliacao = 0;
-                let pontuacaoPrimeiraAnalise = 0;
-                let pontuacaoPosRecurso = 0;
-                let pontuacaoFinal = 0;
+                let notas = { auto: 0, primeira: 0, recurso: 0, final: 0, total: 0 };
                 let pontuacaoTotal = 0;
 
                 avaliacaoCompleta.respostas.forEach(resposta => {
-                    const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
-                    pontuacaoTotal += pontuacaoRequisito;
+                    const pBase = resposta.requisito?.pontuacao || 0;
+                    pontuacaoTotal += pBase;
 
+                    // --- LÓGICA PARA REQUISITO COMPOSTO (O REQUISITO 31) ---
                     if (resposta.subRespostas && resposta.subRespostas.length > 0) {
-                        const subRespostas = resposta.subRespostas || [];
-                        
-                        const aprovadosSecretaria = subRespostas.filter(s => s.atende === true).length;
-                        pontuacaoAutoavaliacao += calcularPontuacaoPorFaixa(aprovadosSecretaria, pontuacaoRequisito);
+                        const subs = resposta.subRespostas;
 
-                        const aprovadosPrimeira = subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
-                        pontuacaoPrimeiraAnalise += calcularPontuacaoPorFaixa(aprovadosPrimeira, pontuacaoRequisito);
+                        // 1, 2 e 3: Mantêm o histórico (Não mudam)
+                        notas.auto += calcularPontuacaoPorFaixa(subs.filter(s => s.atende === true).length, pBase);
+                        notas.primeira += calcularPontuacaoPorFaixa(subs.filter(s => s.statusValidacao === 'aprovado').length, pBase);
+                        const aprovRec = subs.filter(s => s.statusValidacao === 'aprovado' || s.comentarioRecurso || s.linkComprovanteRecurso).length;
+                        notas.recurso += calcularPontuacaoPorFaixa(aprovRec, pBase);
 
-                        const aprovadosBase = subRespostas.filter(s => s.statusValidacao === 'aprovado').length;
-                        
-                        let quantidadeComRecurso = 0;
-                        subRespostas.forEach(s => {
-                            const teveRecursoPorComentario = s.comentarioRecurso && s.comentarioRecurso.trim() !== '';
-                            const teveRecursoPorLink = s.linkComprovanteRecurso && s.linkComprovanteRecurso.trim() !== '';
-                            const teveRecursoPorStatus = s.statusValidacaoPosRecurso && s.statusValidacaoPosRecurso !== 'pendente';
-                            const teveRecursoPorFlag = s.teveRecurso === true;
-                            
-                            if (teveRecursoPorComentario || teveRecursoPorLink || teveRecursoPorStatus || teveRecursoPorFlag) {
-                                quantidadeComRecurso++;
-                            }
-                        });
-                        
-                        const totalParaRecurso = Math.min(aprovadosBase + quantidadeComRecurso, subRespostas.length);
-                        pontuacaoPosRecurso += calcularPontuacaoPorFaixa(totalParaRecurso, pontuacaoRequisito);
-                        
-                        const aprovadosFinal = subRespostas.filter(s => 
-                            (s.statusValidacaoPosRecurso || s.statusValidacao) === 'aprovado'
-                        ).length;
-                        pontuacaoFinal += calcularPontuacaoPorFaixa(aprovadosFinal, pontuacaoRequisito);
-                        
-                        console.log(`Requisito 31:`, {
-                            aprovadosPrimeira,
-                            comRecurso: quantidadeComRecurso,
-                            totalParaRecurso,
-                            notaRecurso: calcularPontuacaoPorFaixa(totalParaRecurso, pontuacaoRequisito),
-                            aprovadosFinal,
-                            notaFinal: calcularPontuacaoPorFaixa(aprovadosFinal, pontuacaoRequisito)
-                        });
-                        
-                    } else {
-                        if (resposta.atendeOriginal === true) {
-                            pontuacaoAutoavaliacao += pontuacaoRequisito;
-                        }
-                        if (resposta.statusValidacao === 'aprovado') {
-                            pontuacaoPrimeiraAnalise += pontuacaoRequisito;
-                        }
-                        
-                        const teveRecurso = resposta.recursoAtende !== null ||
-                                        resposta.comentarioRecurso ||
-                                        (resposta.evidencias?.some(e => e.tipo === 'recurso'));
-                        
-                        if (teveRecurso) {
-                            if (resposta.recursoAtende === true) {
-                                pontuacaoPosRecurso += pontuacaoRequisito;
-                            }
-                        } else {
-                            if (resposta.statusValidacao === 'aprovado') {
-                                pontuacaoPosRecurso += pontuacaoRequisito;
-                            }
-                        }
+                        // 4. NOTA FINAL DO 31: SÓ conta o que você marcou AGORA (Começa zerado se tudo estiver pendente)
+                        const aprovF = subs.filter(s => s.statusValidacaoPosRecurso === 'aprovado').length;
+                        notas.final += calcularPontuacaoPorFaixa(aprovF, pBase);
 
-                        const statusFinal = resposta.analiseFinal?.statusValidacaoPosRecurso || resposta.statusValidacao;
-                        if (statusFinal === 'aprovado') {
-                            pontuacaoFinal += pontuacaoRequisito;
-                        }
+                    } 
+                    // --- LÓGICA PARA REQUISITOS SIMPLES (R01 ao R30) ---
+                    else {
+                        if (resposta.atendeOriginal === true) notas.auto += pBase;
+                        if (resposta.statusValidacao === 'aprovado') notas.primeira += pBase;
+                        
+                        // Recurso: Mantém nota se aprovado ou se teve recurso
+                        if (resposta.statusValidacao === 'aprovado' || resposta.comentarioRecurso) notas.recurso += pBase;
+
+                        // NOTA FINAL SIMPLES: Se você já avaliou no modal, usa a nova. Se não, mantém a da 1ª análise.
+                        const statusF = (resposta.analiseFinal?.statusValidacaoPosRecurso && resposta.analiseFinal?.statusValidacaoPosRecurso !== 'pendente')
+                                        ? resposta.analiseFinal.statusValidacaoPosRecurso
+                                        : resposta.statusValidacao;
+                        
+                        if (statusF === 'aprovado') notas.final += pBase;
                     }
                 });
 
                 return {
-                    autoavaliacao: parseFloat(pontuacaoAutoavaliacao.toFixed(1)),
-                    primeiraAnalise: parseFloat(pontuacaoPrimeiraAnalise.toFixed(1)),
-                    posRecurso: parseFloat(pontuacaoPosRecurso.toFixed(1)),
-                    final: parseFloat(pontuacaoFinal.toFixed(1)),
+                    autoavaliacao: parseFloat(notas.auto.toFixed(1)),
+                    primeiraAnalise: parseFloat(notas.primeira.toFixed(1)),
+                    posRecurso: parseFloat(notas.recurso.toFixed(1)),
+                    final: parseFloat(notas.final.toFixed(1)),
                     total: pontuacaoTotal
                 };
+            }
+
+            function atualizarVisualCardComposto(respostaId) {
+                const card = document.querySelector(`.resposta-card[data-resposta-id="${respostaId}"]`);
+                if (!card) return;
+
+                const resposta = avaliacaoCompleta.respostas.find(r => r.id === parseInt(respostaId));
+                if (!resposta || !resposta.subRespostas) return;
+
+                const aprovados = resposta.subRespostas.filter(s => {
+                    const st = (s.statusValidacaoPosRecurso && s.statusValidacaoPosRecurso !== 'pendente') 
+                            ? s.statusValidacaoPosRecurso 
+                            : s.statusValidacao;
+                    return st === 'aprovado';
+                }).length;
+
+                const total = resposta.subRespostas.length;
+                const pBase = resposta.requisito?.pontuacao || 8;
+                const notaAtual = calcularPontuacaoPorFaixa(aprovados, pBase);
+                const percentual = Math.round((aprovados / total) * 100);
+
+                // Atualiza o Badge de Nota no topo do card
+                const badge = card.querySelector('.summary-status-badge');
+                if (badge) {
+                    badge.textContent = `${aprovados}/${total} (${notaAtual.toFixed(1)}/${pBase} pts)`;
+                    badge.className = `summary-status-badge ${aprovados === total ? 'summary-status-mantido' : 'summary-status-alterado-rejeitado'}`;
+                }
+            }
+
+            function atualizarInterfaceCardR31(respostaId) {
+                console.log('🔄 Atualizando interface do card R31:', respostaId);
+                
+                const card = document.querySelector(`.resposta-card[data-resposta-id="${respostaId}"]`);
+                if (!card) {
+                    console.warn('⚠️ Card não encontrado para ID:', respostaId);
+                    return;
+                }
+
+                const resposta = avaliacaoCompleta.respostas.find(r => r.id === parseInt(respostaId));
+                if (!resposta || !resposta.subRespostas) {
+                    console.warn('⚠️ Resposta não encontrada ou sem subRespostas');
+                    return;
+                }
+
+                // Conta quantos estão aprovados na coluna de Análise Final
+                const aprovadosF = resposta.subRespostas.filter(s => s.statusValidacaoPosRecurso === 'aprovado').length;
+                const total = resposta.subRespostas.length;
+                const pBase = resposta.requisito?.pontuacao || 8;
+                
+                // Calcula a nota e o percentual
+                const notaAtual = calcularPontuacaoPorFaixa(aprovadosF, pBase);
+                const percentual = Math.round((aprovadosF / total) * 100);
+
+                console.log(`📊 Resultado: ${aprovadosF}/${total} aprovados, nota: ${notaAtual.toFixed(1)}/${pBase}, percentual: ${percentual}%`);
+
+                // 1. ATUALIZA O BADGE DO HEADER
+                const badge = card.querySelector('.summary-status-badge');
+                if (badge) {
+                    let statusClass = '';
+                    if (aprovadosF === total) {
+                        statusClass = 'summary-status-mantido';
+                    } else if (aprovadosF === 0) {
+                        statusClass = 'summary-status-nao-atende';
+                    } else {
+                        statusClass = 'summary-status-alterado-rejeitado';
+                    }
+                    
+                    badge.textContent = `${aprovadosF}/${total} (${notaAtual.toFixed(1)}/${pBase} pts)`;
+                    badge.className = `summary-status-badge ${statusClass}`;
+                }
+
+                // 2. ATUALIZA A BARRA DE PROGRESSO (se existir)
+                const barra = card.querySelector('.resposta-body > div[style*="height: 20px"] div');
+                if (barra) {
+                    barra.style.width = `${percentual}%`;
+                    barra.textContent = `${percentual}%`;
+                    barra.style.background = percentual === 100 ? '#28a745' : (percentual >= 70 ? '#17a2b8' : '#ffc107');
+                }
             }
 
             function exibirQuatroNotas() {
@@ -837,6 +875,14 @@
                 scoreFinalEl.textContent = `${notas.final} / ${notas.total}`;
 
                 scoreContainerQuatroNotas.style.display = 'grid';
+                
+                console.log('📊 Notas atualizadas:', {
+                    auto: notas.autoavaliacao,
+                    primeira: notas.primeiraAnalise,
+                    recurso: notas.posRecurso,
+                    final: notas.final,
+                    total: notas.total
+                });
             }
 
             function construirInterfaceValidacaoModal(resposta) {
@@ -1750,15 +1796,26 @@
             }
 
             function configurarListenersSubitens() {
+                console.log('🔄 Configurando listeners dos subitens...');
+                
                 document.querySelectorAll('.subitem-validacao').forEach(select => {
+                    // Remove listeners antigos clonando e substituindo
                     const novoSelect = select.cloneNode(true);
                     select.parentNode.replaceChild(novoSelect, select);
-
+                    
                     novoSelect.addEventListener('change', async function() {
                         const subRespostaId = this.dataset.subrespostaId;
                         const status = this.value;
+                        const selectElement = this;
+                        const linha = this.closest('tr');
+                        const card = this.closest('.resposta-card');
+                        const respostaId = card?.dataset.respostaId;
                         
-                        this.disabled = true;
+                        console.log('=== MUDANÇA NO SUBITEM ===');
+                        console.log('SubResposta ID:', subRespostaId, 'Status:', status);
+                        console.log('Resposta ID do card:', respostaId);
+                        
+                        selectElement.disabled = true;
 
                         try {
                             const response = await fetch(`/api/subrespostas/${subRespostaId}/validar-recurso`, {
@@ -1771,64 +1828,105 @@
                             });
 
                             if (response.ok) {
+                                console.log('✅ Status do subitem atualizado no servidor');
+                                
+                                // Atualiza os dados locais
                                 const respostaIndex = avaliacaoCompleta.respostas.findIndex(r => 
                                     r.subRespostas?.some(s => s.id === parseInt(subRespostaId))
                                 );
                                 
                                 if (respostaIndex !== -1) {
-                                    const subIndex = avaliacaoCompleta.respostas[respostaIndex].subRespostas.findIndex(s => s.id === parseInt(subRespostaId));
+                                    const subIndex = avaliacaoCompleta.respostas[respostaIndex].subRespostas.findIndex(
+                                        s => s.id === parseInt(subRespostaId)
+                                    );
+                                    
                                     if (subIndex !== -1) {
                                         avaliacaoCompleta.respostas[respostaIndex].subRespostas[subIndex].statusValidacaoPosRecurso = status;
+                                        console.log('📊 Dados locais atualizados');
+                                        
+                                        // 🔥 ATUALIZAÇÕES CRÍTICAS
+                                        // 1. Atualiza as pontuações no topo
+                                        exibirQuatroNotas();
+                                        
+                                        // 2. Atualiza o badge do card do requisito 31
+                                        if (respostaId) {
+                                            atualizarInterfaceCardR31(parseInt(respostaId));
+                                        } else {
+                                            // Se não temos o respostaId diretamente, busca pelo índice
+                                            const rId = avaliacaoCompleta.respostas[respostaIndex].id;
+                                            atualizarInterfaceCardR31(rId);
+                                        }
+                                        
+                                        // 3. Feedback visual rápido
+                                        Swal.fire({ 
+                                            toast: true, 
+                                            position: 'top-end', 
+                                            icon: 'success', 
+                                            title: 'Nota Atualizada!', 
+                                            showConfirmButton: false, 
+                                            timer: 1000 
+                                        });
                                     }
                                 }
-
-                                exibirQuatroNotas();
-                                
-                                Swal.fire({
-                                    toast: true,
-                                    position: 'top-end',
-                                    icon: 'success',
-                                    title: 'Análise final salva!',
-                                    showConfirmButton: false,
-                                    timer: 1500
-                                });
+                            } else {
+                                const errorText = await response.text();
+                                console.error('❌ Erro no servidor:', errorText);
+                                Swal.fire('Erro!', 'Não foi possível salvar a validação.', 'error');
                             }
                         } catch (error) {
-                            console.error('Erro:', error);
-                            Swal.fire('Erro!', 'Não foi possível salvar.', 'error');
+                            console.error('❌ Erro na requisição:', error);
+                            Swal.fire('Erro!', 'Falha na comunicação com o servidor.', 'error');
                         } finally {
-                            this.disabled = false;
+                            selectElement.disabled = false;
                         }
                     });
                 });
+                
+                console.log('✅ Listeners dos subitens configurados!');
+            }
 
-                document.querySelectorAll('.analise-final-comment').forEach(textarea => {
-                    const novoTextarea = textarea.cloneNode(true);
-                    textarea.parentNode.replaceChild(novoTextarea, textarea);
-
-                    let timeout;
-                    novoTextarea.addEventListener('input', function() {
-                        clearTimeout(timeout);
-                        const card = this.closest('.resposta-card');
-                        const respostaId = card.dataset.respostaId;
-                        const comentario = this.value;
-
-                        timeout = setTimeout(async () => {
-                            try {
-                                await fetch(`/api/respostas/${respostaId}`, {
-                                    method: 'PATCH',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${authToken}`
-                                    },
-                                    body: JSON.stringify({ comentarioAnaliseFinal: comentario })
-                                });
-                            } catch (error) {
-                                console.error('Erro ao salvar comentário:', error);
-                            }
-                        }, 500);
-                    });
-                });
+            function atualizarBadgeRequisitoComposto(resposta) {
+                const card = document.querySelector(`.resposta-card[data-resposta-id="${resposta.id}"]`);
+                if (!card) return;
+                
+                const subRespostas = resposta.subRespostas || [];
+                const aprovadosFinal = subRespostas.filter(s => 
+                    (s.statusValidacaoPosRecurso || s.statusValidacao) === 'aprovado'
+                ).length;
+                const total = subRespostas.length;
+                const pontuacaoBase = resposta.requisito?.pontuacao || 8;
+                
+                let pontuacaoFinal = 0;
+                let statusClass = 'summary-status-pendente';
+                let statusTexto = 'PENDENTE';
+                
+                if (aprovadosFinal >= 12) {
+                    pontuacaoFinal = pontuacaoBase;
+                    statusClass = 'summary-status-mantido';
+                    statusTexto = `COMPLETO (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
+                } else if (aprovadosFinal >= 8) {
+                    pontuacaoFinal = pontuacaoBase * 0.7;
+                    statusClass = 'summary-status-alterado-rejeitado';
+                    statusTexto = `${aprovadosFinal}/${total} (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
+                } else if (aprovadosFinal >= 4) {
+                    pontuacaoFinal = pontuacaoBase * 0.5;
+                    statusClass = 'summary-status-alterado-rejeitado';
+                    statusTexto = `${aprovadosFinal}/${total} (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
+                } else if (aprovadosFinal >= 1) {
+                    pontuacaoFinal = pontuacaoBase * 0.3;
+                    statusClass = 'summary-status-alterado-rejeitado';
+                    statusTexto = `${aprovadosFinal}/${total} (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
+                } else {
+                    pontuacaoFinal = 0;
+                    statusClass = 'summary-status-nao-atende';
+                    statusTexto = `NENHUM (0/${pontuacaoBase})`;
+                }
+                
+                const badge = card.querySelector('.summary-status-badge');
+                if (badge) {
+                    badge.className = `summary-status-badge ${statusClass}`;
+                    badge.textContent = statusTexto;
+                }
             }
 
             function renderizarRequisitoCompostoAnaliseFinal(resposta) {
@@ -1915,12 +2013,13 @@
                                     const primeiraAnaliseText = sub.statusValidacao === 'aprovado' ? 'Aprovado' :
                                                             (sub.statusValidacao === 'rejeitado' ? 'Rejeitado' : 'Pendente');
 
-                                    const recursoClass = sub.recursoAtende === true ? 'atende-sim' :
-                                                    (sub.recursoAtende === false ? 'atende-nao' : 'status-pendente');
-                                    const recursoText = sub.recursoAtende === true ? 'Atende' :
-                                                    (sub.recursoAtende === false ? 'Não' : '—');
-
                                     const statusFinalAtual = sub.statusValidacaoPosRecurso || sub.statusValidacao || 'pendente';
+                                    
+                                    // Verificar se o subitem teve recurso
+                                    const teveRecursoSub = sub.comentarioRecurso || 
+                                                        sub.linkComprovanteRecurso ||
+                                                        (sub.statusValidacaoPosRecurso && sub.statusValidacaoPosRecurso !== 'pendente') ||
+                                                        sub.teveRecurso === true;
                                     
                                     return `
                                     <tr>
@@ -1942,33 +2041,32 @@
                                             </span>
                                         </td>
                                         <td>
-                                            ${(() => {
-                                                const teveRecurso = sub.comentarioRecurso || 
-                                                                sub.linkComprovanteRecurso ||
-                                                                (sub.statusValidacaoPosRecurso && sub.statusValidacaoPosRecurso !== 'pendente') ||
-                                                                sub.teveRecurso === true;
-                                                
-                                                return teveRecurso ? 
-                                                    `<span class="recurso-badge" style="background-color: var(--roxo-recurso); color: white; padding: 3px 8px; border-radius: 12px; font-size:0.7em;">Sim</span>` : 
-                                                    `<span style="color:#999;">—</span>`;
-                                            })()}
+                                            ${teveRecursoSub ? 
+                                                `<span class="recurso-badge" 
+                                                    onclick="abrirModalRecursoSubitem(this)" 
+                                                    data-subitem='${JSON.stringify({
+                                                            id: sub.id,
+                                                            texto: sub.subRequisito.texto,
+                                                            atende: sub.atende,
+                                                            comentarioRecurso: sub.comentarioRecurso || '',
+                                                            linkComprovanteRecurso: sub.linkComprovanteRecurso || '',
+                                                            evidenciasRecurso: sub.evidencias?.filter(e => e.tipo === 'recurso') || [],
+                                                            linkComprovante: sub.linkComprovante || '',
+                                                            evidenciasOriginal: sub.evidencias?.filter(e => e.tipo === 'original') || []
+                                                        }).replace(/'/g, "&apos;")}' 
+                                                    style="background-color: var(--roxo-recurso); color: white; padding: 3px 8px; border-radius: 12px; font-size:0.7em; cursor: pointer;">
+                                                Sim
+                                                </span>` : 
+                                                `<span style="color:#999;">—</span>`
+                                            }
                                         </td>
                                         <td>
-                                            ${(() => {
-                                                const teveRecurso = sub.comentarioRecurso || 
-                                                                sub.linkComprovanteRecurso ||
-                                                                (sub.statusValidacaoPosRecurso && sub.statusValidacaoPosRecurso !== 'pendente') ||
-                                                                sub.teveRecurso === true;
-                                                
-                                                return `
-                                                    <select class="subitem-validacao" data-subresposta-id="${sub.id}" 
-                                                            style="width:100%; padding:4px; ${teveRecurso ? 'border-left: 3px solid var(--roxo-recurso);' : ''}">
-                                                        <option value="pendente" ${(sub.statusValidacaoPosRecurso || 'pendente') === 'pendente' ? 'selected' : ''}>Pendente</option>
-                                                        <option value="aprovado" ${sub.statusValidacaoPosRecurso === 'aprovado' ? 'selected' : ''}>Aprovar</option>
-                                                        <option value="rejeitado" ${sub.statusValidacaoPosRecurso === 'rejeitado' ? 'selected' : ''}>Rejeitar</option>
-                                                    </select>
-                                                `;
-                                            })()}
+                                            <select class="subitem-validacao" data-subresposta-id="${sub.id}" 
+                                                    style="width:100%; padding:4px; ${teveRecursoSub ? 'border-left: 3px solid var(--roxo-recurso);' : ''}">
+                                                <option value="pendente" ${(sub.statusValidacaoPosRecurso || 'pendente') === 'pendente' ? 'selected' : ''}>Pendente</option>
+                                                <option value="aprovado" ${sub.statusValidacaoPosRecurso === 'aprovado' ? 'selected' : ''}>Aprovar</option>
+                                                <option value="rejeitado" ${sub.statusValidacaoPosRecurso === 'rejeitado' ? 'selected' : ''}>Rejeitar</option>
+                                            </select>
                                         </td>
                                     </tr>
                                 `}).join('')}
@@ -2109,6 +2207,8 @@
                             </div>`;
                     }
                 }).join('');
+
+                configurarListenersSubitens();
 
                 configurarListenersSalvarAutomatico();
             }
@@ -2508,6 +2608,72 @@
             carregarDados();
 
         });
+
+        window.abrirModalRecursoSubitem = function(elemento) {
+            let sub;
+            try {
+                sub = JSON.parse(elemento.getAttribute('data-subitem').replace(/&apos;/g, "'"));
+            } catch (e) {
+                console.error("Erro ao carregar dados do subitem:", e);
+                return;
+            }
+
+            const modalBody = document.getElementById('modal-body');
+            const modalOverlay = document.getElementById('modal-overlay');
+
+            let originalLinksHTML = '';
+            if (sub.linkComprovante || sub.evidenciasOriginal?.length > 0) {
+                originalLinksHTML = `
+                    <div class="evidence-section" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+                        <h5 style="color: var(--azul-gov-principal); font-size: 0.9em;">Evidências Iniciais:</h5>
+                        <ul class="evidence-list">
+                            ${sub.linkComprovante ? `<li class="evidence-item"><a href="${sub.linkComprovante}" target="_blank">${sub.linkComprovante}</a></li>` : ''}
+                            ${sub.evidenciasOriginal.map(ev => `<li class="evidence-item"><a href="${ev.url}" target="_blank">${ev.url}</a></li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            let recursoLinksHTML = '';
+            if (sub.linkComprovanteRecurso || sub.evidenciasRecurso?.length > 0) {
+                recursoLinksHTML = `
+                    <div class="evidence-section" style="margin-top: 10px;">
+                        <h5 style="color: var(--roxo-recurso); font-size: 0.9em;">Novos Links (Recurso):</h5>
+                        <ul class="evidence-list">
+                            ${sub.linkComprovanteRecurso ? `<li class="evidence-item"><a href="${sub.linkComprovanteRecurso}" target="_blank">${sub.linkComprovanteRecurso}</a></li>` : ''}
+                            ${sub.evidenciasRecurso.map(ev => `<li class="evidence-item"><a href="${ev.url}" target="_blank">${ev.url}</a></li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            modalBody.innerHTML = `
+                <div class="info-block">
+                    <h4 style="margin-bottom: 5px;">Histórico do Subitem</h4>
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 20px;">${sub.texto}</p>
+                    
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ccc;">
+                        <h5 style="margin-bottom: 10px;">1. Envio Original</h5>
+                        ${originalLinksHTML || '<p style="font-size: 0.85em; color: #999;">Nenhum link enviado inicialmente.</p>'}
+                    </div>
+
+                    <div style="padding: 15px; background: #f0e6ff; border-radius: 8px; border-left: 4px solid var(--roxo-recurso);">
+                        <h5 style="margin-bottom: 10px; color: var(--roxo-recurso);">2. Fase de Recurso</h5>
+                        <p><strong>Nova Resposta:</strong> 
+                            <span class="atende-badge ${sub.atende ? 'atende-sim' : 'atende-nao'}">
+                                ${sub.atende ? 'Atende' : 'Não Atende'}
+                            </span>
+                        </p>
+                        ${sub.comentarioRecurso ? `
+                            <div style="margin-top: 10px; font-style: italic; color: #444;">
+                                " ${sub.comentarioRecurso} "
+                            </div>
+                        ` : ''}
+                        ${recursoLinksHTML}
+                    </div>
+                </div>
+            `;
+            
+            modalOverlay.style.display = 'flex';
+        }
     </script>
     <script src="/global.js"></script>
 </body>

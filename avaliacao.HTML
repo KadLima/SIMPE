@@ -983,7 +983,7 @@
                 }
 
             try {
-                const response = await fetch(`/api/avaliacoes/${avaliacaoId}`, { 
+                const response = await fetch(`/api/admin/avaliacao-completa/${avaliacaoId}`, { 
                     headers: { 'Authorization': `Bearer ${authToken}` } 
                 });
                 if (!response.ok) throw new Error('Não foi possível carregar os dados desta avaliação.');

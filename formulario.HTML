@@ -1138,7 +1138,7 @@
                         });
                         
                         subitens.push({
-                        subRequisitoId: null, 
+                        subRequisitoOrdem: index + 1,
                         ordem: index,
                         atende: atende,
                         linkComprovante: evidencias[0] || null,
@@ -1769,10 +1769,10 @@
                                 }
                             });
                             
-                            const subRequisitoId = mapaSubRequisitos[index];
+                            const subRequisitoOrdem = index + 1;
                             
-                            if (!subRequisitoId) {
-                                console.error(`❌ ERRO: subRequisitoId não encontrado para índice ${index}`);
+                            if (!subRequisitoOrdem) {
+                                console.error(`❌ ERRO: subRequisitoOrdem não encontrado para índice ${index}`);
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Erro no Subitem',
@@ -1783,7 +1783,7 @@
                             }
                             
                             subitensParaEnviar.push({
-                                subRequisitoId: subRequisitoId,
+                                subRequisitoOrdem: index + 1, 
                                 requisitoId: requisitoId,
                                 ordem: index,
                                 atende: atende,
@@ -1791,9 +1791,13 @@
                                 evidencias: evidencias
                             });
                             
-                            console.log(`Subitem ${index}: ID=${subRequisitoId}, atende=${atende}`);
+                            console.log(`Subitem ${index}: Ordem=${index + 1}, atende=${atende}`);
                         });
                     });
+
+                    console.log('=== DEBUG DE SUBITENS ===');
+                    console.log('Subitens a serem enviados:', JSON.stringify(subitensParaEnviar, null, 2));
+                    console.log('Quantidade de subitens:', subitensParaEnviar.length);
 
                     if (!formValido) {
                         enviarAvaliacaoBtn.disabled = false;
@@ -1821,6 +1825,11 @@
                         })),
                         subitens: subitensParaEnviar
                     };
+
+                    console.log('=== PAYLOAD COMPLETO ===');
+                    console.log('Total de respostas:', payload.respostas.length);
+                    console.log('Total de subitens:', payload.subitens.length);
+                    console.log('Payload:', JSON.stringify(payload, null, 2));
 
                     console.log('📤 Enviando payload para /api/avaliacoes (SIMPLIFICADO):', JSON.stringify(payload));
 

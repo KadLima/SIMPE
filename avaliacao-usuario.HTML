@@ -1861,8 +1861,7 @@
                         
                         <div style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 10px;">
                             ${itensRejeitados.map((sub, index) => {
-                                const subItemIndex = sub.subRequisito?.id ? (sub.subRequisito.id - 1) : index;
-                                const textoSubitem = textosSubitens[subItemIndex] || `Subitem ${index + 1}`;
+                                const textoSubitem = sub.subRequisito?.texto || `Subitem ${index + 1}`;
                                 
                                 return `
                                 <div class="checkbox-recurso-item" style="display: flex; align-items: center; gap: 12px; padding: 15px; background: white; border-radius: 8px; border: 2px solid #e1e5e9; transition: all 0.2s ease;" data-subresposta-id="${sub.id}">
@@ -3036,7 +3035,7 @@
                     });
                     respostaPayload.evidencias = evidencias;
 
-                    console.log(`Recurso enviado - Original: ${resposta.atendeOriginal}, Recurso: ${recursoAtende}`);
+                    console.log(`Recurso enviado - Original: ${resposta?.atendeOriginal ?? 'N/A'}, Recurso: ${recursoAtende}`);
 
                     if (recursoAtende && evidencias.length === 0) {
                         Swal.fire({ 

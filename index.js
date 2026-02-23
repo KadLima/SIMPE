@@ -974,6 +974,51 @@ app.get('/api/my-avaliacoes', authenticateToken, async (req, res) => {
     }
 });
 
+// ROTA PARA ADMIN BUSCAR AVALIAÇÃO COM SUBITENS
+app.get('/api/admin/avaliacao-completa/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { id: parseInt(id) },
+            include: { 
+                secretaria: true, 
+                respostas: {
+                    include: {
+                        requisito: true,
+                        evidencias: true,
+                        linksAnalista: true,
+                        linksAnaliseFinal: true,
+                        subRespostas: {
+                            include: {
+                                subRequisito: true,
+                                evidencias: true
+                            },
+                            orderBy: {
+                                subRequisito: {
+                                    ordem: 'asc'
+                                }
+                            }
+                        }
+                    },
+                    orderBy: {
+                        requisitoId: 'asc'
+                    }
+                } 
+            }
+        });
+
+        if (!avaliacao) {
+            return res.status(404).json({ error: "Avaliação não encontrada." });
+        }
+
+        res.json(avaliacao);
+    } catch (error) {
+        console.error('Erro ao buscar avaliação completa:', error);
+        res.status(500).json({ error: "Erro ao buscar detalhes da avaliação." });
+    }
+});
+
 // ROTA 2: Busca a avaliação finalizada para exibição na página de Nota Final
 app.get('/api/my-nota-final/:id', authenticateToken, async (req, res) => {
     try {
@@ -989,7 +1034,23 @@ app.get('/api/my-nota-final/:id', authenticateToken, async (req, res) => {
                         requisito: true,
                         evidencias: true,
                         linksAnalista: true,
-                        linksAnaliseFinal: true
+                        linksAnaliseFinal: true,
+                        subRespostas: { 
+                            include: {
+                                subRequisito: true,
+                                evidencias: true
+                            },
+                            orderBy: {
+                                subRequisito: {
+                                    ordem: 'asc'
+                                }
+                            }
+                        }
+                    },
+                    orderBy: {
+                        requisito: {
+                            id: 'asc'  
+                        }
                     }
                 }
             }
@@ -1025,7 +1086,23 @@ app.get('/api/admin/nota-final/:id', authenticateToken, authenticateAdmin, async
                         requisito: true,
                         evidencias: true,
                         linksAnalista: true,
-                        linksAnaliseFinal: true
+                        linksAnaliseFinal: true,
+                        subRespostas: { 
+                            include: {
+                                subRequisito: true,
+                                evidencias: true
+                            },
+                            orderBy: {
+                                subRequisito: {
+                                    ordem: 'asc'
+                                }
+                            }
+                        }
+                    },
+                    orderBy: {
+                        requisito: {
+                            id: 'asc'  
+                        }
                     }
                 }
             }
@@ -1535,9 +1612,20 @@ app.post('/api/subrespostas/recurso', authenticateToken, async (req, res) => {
             linkComprovante: sub.linkComprovante,
             comentarioRecurso: sub.comentario,
             statusValidacaoPosRecurso: 'pendente',
-            teveRecurso: true 
+            teveRecurso: true
           }
         });
+        
+        if (sub.evidencias && sub.evidencias.length > 0) {
+          await prisma.subEvidencia.createMany({
+            data: sub.evidencias.map(ev => ({
+              subRespostaId: sub.id,
+              tipo: 'recurso',
+              url: ev.url
+            }))
+          });
+        }
+        
         atualizadas.push(atualizada);
       }
       
@@ -1750,7 +1838,8 @@ app.post('/api/avaliacoes/:id/finalizar', authenticateToken, authenticateAdmin, 
                 respostas: {
                     include: {
                         requisito: true,
-                        evidencias: true
+                        evidencias: true,
+                        subRespostas: true
                     },
                     orderBy: { requisitoId: 'asc' }
                 },
@@ -1788,11 +1877,32 @@ app.post('/api/avaliacoes/:id/finalizar', authenticateToken, authenticateAdmin, 
 
           if (resposta.subRespostas && resposta.subRespostas.length > 0) {
             const subAprovados = resposta.subRespostas.filter(s => {
-              const statusFinal = s.statusValidacaoPosRecurso || s.statusValidacao;
-              return statusFinal === 'aprovado';
+                const statusFinal = s.statusValidacaoPosRecurso || s.statusValidacao;
+                return statusFinal === 'aprovado';
             }).length;
             
-            const pontuacaoProporcional = (subAprovados / resposta.subRespostas.length) * pontuacaoRequisito;
+            // Calcular pontuação por faixa (12=100%, 8=70%, 4=50%, 1=30%)
+            let pontuacaoProporcional = 0;
+            if (subAprovados >= 12) {
+                pontuacaoProporcional = pontuacaoRequisito;
+            } else if (subAprovados >= 8) {
+                pontuacaoProporcional = pontuacaoRequisito * 0.7;
+            } else if (subAprovados >= 4) {
+                pontuacaoProporcional = pontuacaoRequisito * 0.5;
+            } else if (subAprovados >= 1) {
+                pontuacaoProporcional = pontuacaoRequisito * 0.3;
+            } else {
+                pontuacaoProporcional = 0;
+            }
+            
+            if (resposta.atendeOriginal === true) {
+                pontuacaoAutoavaliacao += pontuacaoRequisito; 
+            }
+            
+            pontuacaoFinal += pontuacaoProporcional;
+            
+            console.log(`  📊 Requisito composto: ${subAprovados}/${resposta.subRespostas.length} aprovados → ${pontuacaoProporcional.toFixed(1)}/${pontuacaoRequisito} pts`);
+
             
             if (resposta.atendeOriginal === true) {
               pontuacaoAutoavaliacao += pontuacaoRequisito;
@@ -1847,10 +1957,10 @@ app.post('/api/avaliacoes/:id/finalizar', authenticateToken, authenticateAdmin, 
             where: { id: parseInt(avaliacaoId) },
             data: {
                 status: 'FINALIZADA',
-                pontuacaoFinal: Math.round(pontuacaoFinal),
-                pontuacaoAutoavaliacao: Math.round(pontuacaoAutoavaliacao),
-                pontuacaoPrimeiraAnalise: Math.round(pontuacaoPrimeiraAnalise),
-                pontuacaoPosRecurso: pontuacaoPosRecurso,
+                pontuacaoFinal: parseFloat(pontuacaoFinal.toFixed(1)),  
+                pontuacaoAutoavaliacao: parseFloat(pontuacaoAutoavaliacao.toFixed(1)),
+                pontuacaoPrimeiraAnalise: parseFloat(pontuacaoPrimeiraAnalise.toFixed(1)),
+                pontuacaoPosRecurso: parseFloat(pontuacaoPosRecurso.toFixed(1)),
                 pontuacaoTotal: pontuacaoTotal,
                 dataFinalizacao: new Date()
             },
@@ -3006,6 +3116,10 @@ function calcularPontuacaoFinal(respostas) {
 // ROTA PARA SALVAR UMA NOVA AVALIAÇÃO COMPLETA 
 app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
     const { urlSecretaria, nomeResponsavel, emailResponsavel, respostas, subitens } = req.body;
+    console.log('=== RECEBENDO NOVA AVALIAÇÃO ===');
+    console.log('Total de respostas:', respostas?.length);
+    console.log('Total de subitens:', subitens?.length);
+    console.log('Subitens:', JSON.stringify(subitens, null, 2));
     const userId = req.user.userId;
 
     console.log('=== INICIANDO SALVAMENTO DE AVALIAÇÃO ===');
@@ -3099,70 +3213,94 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
         }
 
         if (subitens && Array.isArray(subitens) && subitens.length > 0) {
-            console.log(`📝 Salvando ${subitens.length} subitens...`);
-            
-            const subitensPorRequisito = {};
-            subitens.forEach(sub => {
-                if (!subitensPorRequisito[sub.requisitoId]) {
-                    subitensPorRequisito[sub.requisitoId] = [];
-                }
-                subitensPorRequisito[sub.requisitoId].push(sub);
-            });
-            
-            for (const [requisitoId, listaSubitens] of Object.entries(subitensPorRequisito)) {
-                const respostaIndex = respostas.findIndex(r => r.requisitoId === parseInt(requisitoId));
-                
-                if (respostaIndex !== -1) {
-                    const respostaCriadaId = respostasCriadas[respostaIndex];
-                    
-                    console.log(`📌 Processando ${listaSubitens.length} subitens para resposta ${respostaCriadaId}`);
-                    
-                    for (const sub of listaSubitens) {
-                        try {
-                            if (!sub.subRequisitoId) {
-                                console.warn(`⚠️ Subitem sem subRequisitoId ignorado:`, sub);
-                                continue;
-                            }
-                            
-                            const subResposta = await prisma.subResposta.create({
-                                data: {
-                                    respostaId: respostaCriadaId,
-                                    subRequisitoId: sub.subRequisitoId,
-                                    atende: sub.atende || false,
-                                    linkComprovante: sub.linkComprovante || null,
-                                    comentarioSecretaria: sub.comentario || null,
-                                    statusValidacao: 'pendente'
-                                }
-                            });
-                            
-                            console.log(`  ✅ Subresposta ${subResposta.id} criada para subrequisito ${sub.subRequisitoId}`);
-                            
-                            if (sub.evidencias && Array.isArray(sub.evidencias) && sub.evidencias.length > 0) {
-                                for (const ev of sub.evidencias) {
-                                    if (ev.url && ev.url.trim() !== '') {
-                                        await prisma.subEvidencia.create({
-                                            data: {
-                                                subRespostaId: subResposta.id,
-                                                tipo: 'original',
-                                                url: ev.url.trim()
-                                            }
-                                        });
-                                    }
-                                }
-                                console.log(`    ✅ ${sub.evidencias.length} evidências criadas para subitem`);
-                            }
-                            
-                        } catch (error) {
-                            console.error(`❌ Erro ao criar subresposta:`, error);
-                        }
-                    }
-                }
-            }
-            
-            console.log(`✅ Todos os ${subitens.length} subitens processados`);
-        } else {
-            console.log('ℹ️ Nenhum subitem para salvar');
-        }
+          console.log(`📝 Salvando ${subitens.length} subitens...`);
+          console.log('subitens[0]:', JSON.stringify(subitens[0], null, 2));
+          console.log('respostas array:', respostas.map(r => ({ requisitoId: r.requisitoId, tipo: typeof r.requisitoId })));
+          
+          const subitensPorRequisito = {};
+          
+          subitens.forEach(sub => {
+              if (!subitensPorRequisito[sub.requisitoId]) {
+                  subitensPorRequisito[sub.requisitoId] = [];
+              }
+              subitensPorRequisito[sub.requisitoId].push(sub);
+          });
+          
+          for (const [requisitoId, listaSubitens] of Object.entries(subitensPorRequisito)) {
+              console.log(`🔍 Procurando requisito ID: ${requisitoId} (tipo: ${typeof requisitoId})`);
+              const respostaIndex = respostas.findIndex(r => 
+                r.requisitoId == requisitoId  
+              );
+              
+              console.log(`respostaIndex encontrado: ${respostaIndex}`);
+              
+              if (respostaIndex !== -1) {
+                  const respostaCriadaId = respostasCriadas[respostaIndex];
+                  
+                  console.log(`📌 Processando ${listaSubitens.length} subitens para resposta ${respostaCriadaId}`);
+                  
+                  for (const sub of listaSubitens) {
+                      try {
+                          if (!sub.subRequisitoOrdem) {
+                              console.warn(`⚠️ Subitem sem subRequisitoOrdem ignorado:`, sub);
+                              continue;
+                          }
+
+                          const ordemParaBuscar = sub.subRequisitoOrdem;
+                          
+                          const subRequisito = await prisma.subRequisito.findFirst({
+                              where: {
+                                  requisitoPaiId: parseInt(requisitoId),
+                                  ordem: ordemParaBuscar
+                              }
+                          });
+
+                          if (!subRequisito) {
+                              console.error(`❌ Subrequisito não encontrado para ordem ${sub.subRequisitoOrdem} no requisito ${requisitoId}`);
+                              continue;
+                          }
+                          
+                          const subResposta = await prisma.subResposta.create({
+                              data: {
+                                  respostaId: respostaCriadaId,
+                                  subRequisitoId: subRequisito.id, 
+                                  atende: sub.atende || false,
+                                  linkComprovante: sub.linkComprovante || null,
+                                  comentarioSecretaria: sub.comentario || null,
+                                  statusValidacao: 'pendente'
+                              }
+                          });
+                          
+                          console.log(`  ✅ Subresposta ${subResposta.id} criada para ordem ${sub.subRequisitoOrdem}`);
+                          
+                          if (sub.evidencias && Array.isArray(sub.evidencias) && sub.evidencias.length > 0) {
+                              for (const ev of sub.evidencias) {
+                                  if (ev.url && ev.url.trim() !== '') {
+                                      await prisma.subEvidencia.create({
+                                          data: {
+                                              subRespostaId: subResposta.id,
+                                              tipo: 'original',
+                                              url: ev.url.trim()
+                                          }
+                                      });
+                                  }
+                              }
+                              console.log(`    ✅ ${sub.evidencias.length} evidências criadas para ordem ${sub.subRequisitoOrdem}`);
+                          }
+                          
+                      } catch (error) {
+                          console.error(`❌ Erro ao criar subresposta para ordem ${sub.subRequisitoOrdem}:`, error);
+                      }
+                  }
+              } else {
+                  console.log(`❌ NÃO ENCONTROU resposta para requisitoId ${requisitoId}`);
+              }
+          }
+          
+          console.log(`✅ Todos os ${subitens.length} subitens processados`);
+      } else {
+          console.log('ℹ️ Nenhum subitem para salvar');
+      }
 
         console.log(`✅ Processo concluído. ${respostasCriadas.length} respostas criadas.`);
 

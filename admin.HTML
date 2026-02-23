@@ -242,6 +242,35 @@
         .main-footer .footer-portal-link:hover, .main-footer .footer-logo-link:hover { transform: translateY(-50%) scale(1.1); filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)); }
         .main-footer img { height: 100%; width: auto; display: block; max-height: 70px; mix-blend-mode: lighten; object-fit: contain; filter: brightness(0) invert(1); }
         .main-footer p { color: rgba(255, 255, 255, 0.9); }
+
+        /* Adicione no final do CSS, antes de @media */
+        .req-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .req-actions .btn {
+            padding: 8px 12px;
+            font-size: 0.85em;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .req-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--sombra-suave);
+        }
+
+        .req-actions .btn-primary {
+            background: var(--azul-gov-principal);
+            color: white;
+        }
+
+        .req-actions .btn-danger {
+            background: var(--vermelho-erro);
+            color: white;
+        }
         
         @media (max-width: 768px) {
             .admin-actions { flex-direction: column; }
@@ -648,6 +677,51 @@
             const manageGlobalBtn = document.getElementById('manage-global-reqs-btn');
             const globalModal = document.getElementById('manage-global-modal');
 
+            // Tornar a função global para que possa ser chamada de qualquer lugar
+            window.loadRequisitosExtras = async function(secretariaId) {
+                const extrasList = document.getElementById('extras-list');
+                extrasList.innerHTML = '<div style="padding:20px; text-align:center;"><i class="fas fa-sync fa-spin"></i> Buscando...</div>';
+                
+                try {
+                    const response = await fetch(`/api/secretarias/${secretariaId}/requisitos-extras`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    
+                    if (!response.ok) throw new Error('Erro ao carregar requisitos');
+                    
+                    const extras = await response.json();
+                    
+                    if (!extras || extras.length === 0) {
+                        extrasList.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-style:italic;">Nenhum requisito específico para este órgão.</div>';
+                    } else {
+                        extrasList.innerHTML = extras.map(req => `
+                            <div class="req-item" style="border-left: 4px solid var(--laranja-alerta); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <div class="req-info" style="flex:1;">
+                                    <div class="req-text" style="font-weight: bold; color: var(--azul-gov-principal);">
+                                        ${req.texto}
+                                    </div>
+                                    <div style="font-size: 0.85em; color: var(--cinza-claro); margin: 5px 0; padding-left: 5px; border-left: 2px solid #eee;">
+                                        <strong>Guia:</strong> ${req.textoAjuda || 'Nenhuma instrução cadastrada.'}
+                                    </div>
+                                    <span class="req-points"><i class="fas fa-star"></i> Vale ${req.pontuacao} pontos</span>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn btn-primary" onclick="window.editarRequisitoEspecifico(${req.id})" style="padding: 8px 12px;">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </button>
+                                    <button class="btn btn-danger" onclick="window.excluirRequisitoExtra(${req.id})" style="padding: 8px 12px;">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                } catch (e) {
+                    console.error('Erro:', e);
+                    extrasList.innerHTML = '<div style="color:red; padding:10px;">Erro ao carregar requisitos.</div>';
+                }
+            };
+
             // --- Lógica do Novo Modal de Requisitos ---
             manageGlobalBtn.addEventListener('click', () => {
                 globalModal.style.display = 'flex';
@@ -675,7 +749,7 @@
                 const secId = this.value;
                 if (secId) {
                     extrasContainer.style.display = 'block';
-                    await loadRequisitosExtras(secId);
+                    await window.loadRequisitosExtras(secId);
                 } else {
                     extrasContainer.style.display = 'none';
                 }
@@ -777,17 +851,24 @@
                         extrasList.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-style:italic;">Nenhum requisito específico para este órgão.</div>';
                     } else {
                         extrasList.innerHTML = extras.map(req => `
-                            <div class="req-item">
+                            <div class="req-item" style="border-left: 4px solid var(--laranja-alerta); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                                 <div class="req-info" style="flex:1;">
-                                    <div class="req-text" title="${req.texto}">${req.texto}</div>
-                                    <div style="font-size: 0.85em; color: var(--cinza-claro); margin-top: 5px; font-style: italic;">
+                                    <div class="req-text" style="font-weight: bold; color: var(--azul-gov-principal);">
+                                        ${req.texto}  <!-- ✅ Mostra apenas o texto digitado -->
+                                    </div>
+                                    <div style="font-size: 0.85em; color: var(--cinza-claro); margin: 5px 0; padding-left: 5px; border-left: 2px solid #eee;">
                                         <strong>Guia:</strong> ${req.textoAjuda || 'Nenhuma instrução cadastrada.'}
                                     </div>
                                     <span class="req-points"><i class="fas fa-star"></i> Vale ${req.pontuacao} pontos</span>
                                 </div>
-                                <button class="btn btn-danger" onclick="window.excluirRequisitoExtra(${req.id})" style="padding: 8px 12px; margin-left:15px;">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn btn-primary" onclick="editarRequisitoEspecifico(${req.id})" style="padding: 8px 12px;">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </button>
+                                    <button class="btn btn-danger" onclick="window.excluirRequisitoExtra(${req.id})" style="padding: 8px 12px;">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                         `).join('');
 
@@ -1384,6 +1465,144 @@
         window.excluirRequisitoExtra = (id) => window.excluirRequisitoGlobal(id);
 
         window.fecharModalGlobal = () => document.getElementById('manage-global-modal').style.display = 'none';
+
+        // Função para editar requisito específico
+        window.editarRequisitoEspecifico = async function(id) {
+            const secretariaId = document.getElementById('req-secretaria-select').value;
+            
+            if (!secretariaId) {
+                Swal.fire('Erro', 'Selecione uma secretaria primeiro.', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/secretarias/${secretariaId}/requisitos-extras`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (!response.ok) throw new Error('Erro ao buscar requisitos');
+                
+                const extras = await response.json();
+                const req = extras.find(r => r.id === id);
+                
+                if (!req) {
+                    Swal.fire('Erro', 'Requisito não encontrado.', 'error');
+                    return;
+                }
+                
+                const { value: formValues } = await Swal.fire({
+                    title: 'Editar Requisito Específico',
+                    html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--azul-gov-principal);">
+                                    Texto do Requisito
+                                </label>
+                                <textarea id="swal-texto" class="swal2-textarea" 
+                                    style="width: 100%; min-height: 80px; padding: 8px; border: 2px solid #e1e5e9; border-radius: 6px;"
+                                    placeholder="Digite o texto do requisito...">${req.texto.replace(/</g, '&lt;')}</textarea>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--azul-gov-principal);">
+                                    Texto de Ajuda (Guia de Transparência)
+                                </label>
+                                <textarea id="swal-ajuda" class="swal2-textarea" 
+                                    style="width: 100%; min-height: 60px; padding: 8px; border: 2px solid #e1e5e9; border-radius: 6px;"
+                                    placeholder="Explique como comprovar este requisito...">${req.textoAjuda ? req.textoAjuda.replace(/</g, '&lt;') : ''}</textarea>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--azul-gov-principal);">
+                                    Pontuação
+                                </label>
+                                <input id="swal-pontuacao" type="number" class="swal2-input" 
+                                    style="width: 100%; padding: 8px; border: 2px solid #e1e5e9; border-radius: 6px;"
+                                    value="${req.pontuacao}" min="1" max="10" step="0.5">
+                            </div>
+                        </div>
+                    `,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonText: 'Salvar Alterações',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: 'var(--verde-sucesso)',
+                    cancelButtonColor: 'var(--cinza-claro)',
+                    preConfirm: () => {
+                        const texto = document.getElementById('swal-texto').value.trim();
+                        const pontuacao = parseFloat(document.getElementById('swal-pontuacao').value);
+                        
+                        if (!texto) {
+                            Swal.showValidationMessage('O texto do requisito é obrigatório');
+                            return false;
+                        }
+                        
+                        if (isNaN(pontuacao) || pontuacao <= 0) {
+                            Swal.showValidationMessage('A pontuação deve ser um número positivo');
+                            return false;
+                        }
+                        
+                        return {
+                            texto: texto,
+                            textoAjuda: document.getElementById('swal-ajuda').value.trim(),
+                            pontuacao: pontuacao
+                        };
+                    }
+                });
+
+                if (formValues) {
+                    // Mostra loading
+                    Swal.fire({
+                        title: 'Salvando...',
+                        text: 'Aguarde enquanto as alterações são salvas.',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+                    
+                    try {
+                        const updateResponse = await fetch(`/api/requisitos/${id}`, {
+                            method: 'PATCH',
+                            headers: { 
+                                'Content-Type': 'application/json', 
+                                'Authorization': `Bearer ${authToken}` 
+                            },
+                            body: JSON.stringify(formValues)
+                        });
+                        
+                        if (updateResponse.ok) {
+                            Swal.close();
+                            await Swal.fire({
+                                icon: 'success',
+                                title: 'Sucesso!',
+                                text: 'Requisito atualizado com sucesso!',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                            
+                            // 🔥 FORÇA O RECARREGAMENTO DA LISTA
+                            await window.loadRequisitosExtras(secretariaId);
+                            
+                        } else {
+                            const error = await updateResponse.json();
+                            throw new Error(error.error || 'Erro ao atualizar');
+                        }
+                    } catch (e) { 
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: e.message || 'Falha ao atualizar o requisito.'
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao buscar requisito:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: 'Não foi possível carregar os dados do requisito.'
+                });
+            }
+        };
         
     </script>
     <script src="/global.js"></script>
