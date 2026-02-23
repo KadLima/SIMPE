@@ -214,7 +214,50 @@
             font-size: 0.95em;
         }
 
-        .form-group input {
+        .password-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-input-wrapper input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 14px 45px 14px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: var(--transicao-padrao);
+            background-color: var(--branco);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #95a5a6;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px;
+            transition: var(--transicao-padrao);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .password-toggle:hover {
+            color: var(--azul-gov-principal);
+        }
+
+        .password-toggle:focus {
+            outline: none;
+            color: var(--azul-gov-principal);
+        }
+
+        .form-group input:not(.password-input-wrapper input) {
             width: 100%;
             box-sizing: border-box;
             padding: 14px 16px;
@@ -364,6 +407,30 @@
             border-color: var(--azul-gov-principal);
             outline: none;
             box-shadow: 0 0 0 3px rgba(0, 39, 118, 0.15);
+        }
+
+        /* Ajustes adicionais para os inputs do SweetAlert */
+        .swal2-input {
+            width: 100% !important;
+            padding: 12px 16px !important;
+            margin: 5px 0 0 0 !important;
+            border: 2px solid #e1e5e9 !important;
+            border-radius: 10px !important;
+            font-size: 0.95em !important;
+            transition: all 0.3s !important;
+            box-sizing: border-box !important;
+        }
+
+        .swal2-input:focus {
+            border-color: #002776 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1) !important;
+        }
+
+        /* Ajuste para o texto de ajuda nos modais */
+        .swal-custom-html p {
+            margin: 0 0 15px 0;
+            font-size: 0.95em;
         }
 
         .refresh-captcha {
@@ -681,6 +748,213 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(0, 39, 118, 0.15);
         }
+
+        /* Personalização do SweetAlert para os modais */
+        .swal-custom-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border-top: 5px solid #002776 !important;
+        }
+
+        .swal-custom-title {
+            color: #002776 !important;
+            font-weight: 700 !important;
+            font-size: 1.5em !important;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .swal-custom-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: #FFD700;
+        }
+
+        .swal-custom-html {
+            margin: 0 !important;
+            padding: 10px 0 !important;
+        }
+
+        .swal-custom-confirm {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        }
+
+        .swal-custom-cancel {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        }
+
+        .swal-custom-confirm:hover,
+        .swal-custom-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+        }
+
+        .swal-custom-container {
+            padding: 2rem !important;
+        }
+
+        /* Ajustes para os inputs dentro do SweetAlert */
+        .swal2-input,
+        .swal2-textarea {
+            border: 2px solid #e1e5e9 !important;
+            border-radius: 10px !important;
+            padding: 14px !important;
+            font-size: 1em !important;
+            transition: all 0.3s !important;
+            width: 100% !important;
+            margin: 10px 0 !important;
+        }
+
+        .swal2-input:focus,
+        .swal2-textarea:focus {
+            border-color: #002776 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1) !important;
+        }
+
+        /* Container para o input de senha com olho */
+        .swal-password-wrapper {
+            position: relative;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .swal-password-wrapper input {
+            width: 100%;
+            padding: 14px 45px 14px 16px !important;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+            background-color: #fff;
+            box-sizing: border-box;
+        }
+
+        .swal-password-wrapper input:focus {
+            border-color: #002776;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1);
+        }
+
+        .swal-password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #95a5a6;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .swal-password-toggle:hover {
+            color: #002776;
+        }
+
+        /* Estilo para o botão de sugestão de senha */
+        .swal-suggest-password {
+            background: none;
+            border: none;
+            color: #002776;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-decoration: underline;
+            margin: 5px 0 15px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .swal-suggest-password:hover {
+            color: #0052CC;
+            background-color: rgba(0, 39, 118, 0.05);
+        }
+
+        /* Ajuste para os requisitos de senha */
+        .swal-password-requirements {
+            text-align: left;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .swal-password-requirements p {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95em;
+        }
+
+        .swal-requirement-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .swal-requirement-item.valid {
+            color: #27ae60;
+        }
+
+        .swal-requirement-item.invalid {
+            color: #dc3545;
+        }
+
+        .swal-requirement-icon {
+            margin-right: 8px;
+            font-size: 0.9em;
+            width: 18px;
+            text-align: center;
+        }
+
+        /* Ajuste para o medidor de força da senha */
+        .swal-strength-meter {
+            height: 6px;
+            background: #e1e5e9;
+            border-radius: 3px;
+            margin: 15px 0 10px;
+            overflow: hidden;
+        }
+
+        .swal-strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .swal-strength-fill.weak { background: #dc3545; width: 25%; }
+        .swal-strength-fill.fair { background: #fd7e14; width: 50%; }
+        .swal-strength-fill.good { background: #ffc107; width: 75%; }
+        .swal-strength-fill.strong { background: #27ae60; width: 100%; }
+
+        .swal-strength-text {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            font-weight: 600;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -711,7 +985,12 @@
                 </div>
                 <div class="form-group">
                     <label for="password">Senha</label>
-                    <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Digite sua senha">
+                    <div class="password-input-wrapper">
+                        <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Digite sua senha">
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', this)">
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -773,6 +1052,39 @@
     </footer>
 
     <script>
+        // Função para alternar visibilidade da senha
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Função para alternar visibilidade da senha em modais do SweetAlert
+        function toggleSwalPasswordVisibility(button) {
+            const wrapper = button.closest('.swal-password-wrapper');
+            const input = wrapper.querySelector('input');
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
         // MANTIDO O JAVASCRIPT ORIGINAL DO login.html - BACKEND PRESERVADO
         let currentCaptchaId = '';
 
@@ -1061,7 +1373,14 @@
                                 text: 'Você será redirecionado em instantes.',
                                 timer: 2000,
                                 showConfirmButton: false,
-                                allowOutsideClick: false
+                                allowOutsideClick: false,
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title',
+                                    htmlContainer: 'swal-custom-html',
+                                    confirmButton: 'swal-custom-confirm',
+                                    cancelButton: 'swal-custom-cancel'
+                                }
                             });
 
                             localStorage.setItem('userData', JSON.stringify({
@@ -1148,6 +1467,10 @@
                     allowOutsideClick: false,
                     didOpen: () => {
                         Swal.showLoading();
+                    },
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title'
                     }
                 });
 
@@ -1175,26 +1498,63 @@
                     icon: 'error',
                     title: 'Erro',
                     text: error.message,
-                    confirmButtonColor: 'var(--vermelho-erro)'
+                    confirmButtonColor: 'var(--vermelho-erro)',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
                 }).then(() => {
                     window.location.reload();
                 });
             }
         }
 
+        // Função handlePasswordRecovery - versão corrigida com inputs menores
         async function handlePasswordRecovery() {
             const { value: email } = await Swal.fire({
                 title: 'Recuperação de Senha',
-                input: 'email',
-                inputLabel: 'Digite seu email cadastrado',
-                inputPlaceholder: 'seu@email.gov.br',
+                width: '550px', // Reduzi um pouco a largura total
+                html: `
+                    <div style="padding: 5px 0;">
+                        <p style="color: #7f8c8d; font-size: 0.95em; margin-bottom: 15px; text-align: left;">
+                            <i class="fas fa-info-circle" style="color: #002776; margin-right: 5px;"></i>
+                            Digite seu email cadastrado para receber o código de recuperação.
+                        </p>
+                        <div style="text-align: left;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                <i class="fas fa-envelope" style="margin-right: 8px;"></i>
+                                E-mail
+                            </label>
+                            <input type="email" id="swal-input1" class="swal2-input" 
+                                placeholder="seu.email@secretaria.pe.gov.br"
+                                style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'Enviar código',
                 cancelButtonText: 'Cancelar',
-                confirmButtonColor: 'var(--azul-gov-principal)',
-                inputValidator: (value) => {
-                    if (!value) return 'Por favor, digite seu email!';
-                    if (!isValidEmail(value)) return 'Digite um email válido!';
+                confirmButtonColor: '#002776',
+                cancelButtonColor: '#7f8c8d',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm',
+                    cancelButton: 'swal-custom-cancel'
+                },
+                preConfirm: () => {
+                    const email = document.getElementById('swal-input1').value;
+                    if (!email) {
+                        Swal.showValidationMessage('Por favor, digite seu email');
+                        return false;
+                    }
+                    if (!isValidEmail(email)) {
+                        Swal.showValidationMessage('Digite um email válido');
+                        return false;
+                    }
+                    return email;
                 }
             });
 
@@ -1213,7 +1573,12 @@
                             icon: 'success',
                             title: 'Código enviado!',
                             text: 'Enviamos um código de verificação para seu email.',
-                            confirmButtonColor: 'var(--azul-gov-principal)'
+                            confirmButtonColor: '#002776',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
 
                         await solicitarCodigoVerificacao(email, 'recuperacao');
@@ -1225,25 +1590,62 @@
                         icon: 'error',
                         title: 'Erro',
                         text: error.message,
-                        confirmButtonColor: 'var(--vermelho-erro)'
+                        confirmButtonColor: '#dc3545',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
                     });
                 }
             }
         }
 
+        // Função handleFirstAccess - versão corrigida com inputs menores
         async function handleFirstAccess() {
             const { value: email } = await Swal.fire({
                 title: 'Primeiro Acesso',
-                input: 'email',
-                inputLabel: 'Digite o email cadastrado no sistema',
-                inputPlaceholder: 'seu@email.gov.br',
+                width: '550px', // Reduzi a largura
+                html: `
+                    <div style="padding: 5px 0;">
+                        <p style="color: #7f8c8d; font-size: 0.95em; margin-bottom: 15px; text-align: left;">
+                            <i class="fas fa-info-circle" style="color: #002776; margin-right: 5px;"></i>
+                            Digite o email cadastrado no sistema para iniciar seu primeiro acesso.
+                        </p>
+                        <div style="text-align: left;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                <i class="fas fa-envelope" style="margin-right: 8px;"></i>
+                                E-mail
+                            </label>
+                            <input type="email" id="swal-input1" class="swal2-input" 
+                                placeholder="seu.email@secretaria.pe.gov.br"
+                                style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'Solicitar acesso',
                 cancelButtonText: 'Cancelar',
-                confirmButtonColor: 'var(--azul-gov-principal)',
-                inputValidator: (value) => {
-                    if (!value) return 'Por favor, digite seu email!';
-                    if (!isValidEmail(value)) return 'Digite um email válido!';
+                confirmButtonColor: '#002776',
+                cancelButtonColor: '#7f8c8d',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm',
+                    cancelButton: 'swal-custom-cancel'
+                },
+                preConfirm: () => {
+                    const email = document.getElementById('swal-input1').value;
+                    if (!email) {
+                        Swal.showValidationMessage('Por favor, digite seu email');
+                        return false;
+                    }
+                    if (!isValidEmail(email)) {
+                        Swal.showValidationMessage('Digite um email válido');
+                        return false;
+                    }
+                    return email;
                 }
             });
 
@@ -1262,7 +1664,12 @@
                             icon: 'success',
                             title: 'Solicitação enviada!',
                             text: 'Enviamos um código de verificação para seu email.',
-                            confirmButtonColor: 'var(--azul-gov-principal)'
+                            confirmButtonColor: '#002776',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
 
                         await solicitarCodigoVerificacao(email, 'primeiro_acesso');
@@ -1274,7 +1681,12 @@
                         icon: 'error',
                         title: 'Erro',
                         text: error.message,
-                        confirmButtonColor: 'var(--vermelho-erro)'
+                        confirmButtonColor: '#dc3545',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
                     });
                 }
             }
@@ -1302,7 +1714,11 @@
                         title: 'Código reenviado!',
                         text: 'Enviamos um novo código para seu email.',
                         timer: 2000,
-                        showConfirmButton: false
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title'
+                        }
                     });
                 } else {
                     throw new Error(data.error || 'Erro ao reenviar código');
@@ -1312,7 +1728,12 @@
                     icon: 'error',
                     title: 'Erro',
                     text: error.message,
-                    confirmButtonColor: 'var(--vermelho-erro)'
+                    confirmButtonColor: 'var(--vermelho-erro)',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
                 });
                 throw error; 
             }
@@ -1340,7 +1761,13 @@
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: 'var(--azul-gov-principal)',
                 allowOutsideClick: false, 
-                allowEscapeKey: true, 
+                allowEscapeKey: true,
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm',
+                    cancelButton: 'swal-custom-cancel'
+                },
                 preConfirm: () => {
                     const inputs = Swal.getHtmlContainer().querySelectorAll('.code-input');
                     let codigo = '';
@@ -1401,7 +1828,11 @@
                     text: 'A página será recarregada para reiniciar o fluxo.',
                     timer: 2000,
                     showConfirmButton: false,
-                    allowOutsideClick: false
+                    allowOutsideClick: false,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title'
+                    }
                 });
                 
                 window.location.reload();
@@ -1438,7 +1869,13 @@
                         confirmButtonText: 'Receber novo código',
                         cancelButtonText: 'Cancelar e recarregar', 
                         confirmButtonColor: 'var(--azul-gov-principal)',
-                        cancelButtonColor: 'var(--vermelho-erro)'
+                        cancelButtonColor: 'var(--vermelho-erro)',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm',
+                            cancelButton: 'swal-custom-cancel'
+                        }
                     });
 
                     if (result.dismiss === Swal.DismissReason.cancel) {
@@ -1447,7 +1884,11 @@
                             title: 'Recarregando...',
                             text: 'A página será recarregada.',
                             timer: 1500,
-                            showConfirmButton: false
+                            showConfirmButton: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title'
+                            }
                         });
                         window.location.reload();
                         return;
@@ -1466,34 +1907,89 @@
             
             const result = await Swal.fire({
                 title: 'Nova Senha',
+                width: '600px',
                 html: `
-                    <input type="password" id="nova-senha" class="swal2-input" placeholder="Nova senha" required>
-                    <input type="password" id="confirmar-senha" class="swal2-input" placeholder="Confirmar nova senha" required>
-                    <div id="passwordRequirements"></div>
-                    ${suggestedPassword ? `
-                        <button type="button" class="suggest-password" onclick="document.getElementById('nova-senha').value='${suggestedPassword}'; document.getElementById('confirmar-senha').value='${suggestedPassword}'; checkPasswordStrength('${suggestedPassword}')">
-                            🔒 Usar senha forte sugerida
-                        </button>
-                    ` : ''}
+                    <div style="text-align: left;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776;">
+                                <i class="fas fa-lock" style="margin-right: 8px;"></i>
+                                Nova Senha
+                            </label>
+                            <div class="swal-password-wrapper">
+                                <input type="password" id="nova-senha" placeholder="Digite sua nova senha" autocomplete="new-password">
+                                <button type="button" class="swal-password-toggle" onclick="toggleSwalPasswordVisibility(this)">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776;">
+                                <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                                Confirmar Nova Senha
+                            </label>
+                            <div class="swal-password-wrapper">
+                                <input type="password" id="confirmar-senha" placeholder="Confirme sua nova senha" autocomplete="new-password">
+                                <button type="button" class="swal-password-toggle" onclick="toggleSwalPasswordVisibility(this)">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        ${suggestedPassword ? `
+                            <button type="button" class="swal-suggest-password" onclick="document.getElementById('nova-senha').value='${suggestedPassword}'; document.getElementById('confirmar-senha').value='${suggestedPassword}'; checkSwalPasswordStrength('${suggestedPassword}')">
+                                <i class="fas fa-magic"></i> Usar senha forte sugerida
+                            </button>
+                        ` : ''}
+
+                        <div id="swal-password-requirements" class="swal-password-requirements">
+                            <p><i class="fas fa-shield-alt"></i> Requisitos da senha:</p>
+                            <div class="swal-requirement-item invalid" id="req-length">
+                                <span class="swal-requirement-icon">✗</span>
+                                Mínimo 8 caracteres
+                            </div>
+                            <div class="swal-requirement-item invalid" id="req-uppercase">
+                                <span class="swal-requirement-icon">✗</span>
+                                Letra maiúscula
+                            </div>
+                            <div class="swal-requirement-item invalid" id="req-lowercase">
+                                <span class="swal-requirement-icon">✗</span>
+                                Letra minúscula
+                            </div>
+                            <div class="swal-requirement-item invalid" id="req-number">
+                                <span class="swal-requirement-icon">✗</span>
+                                Número
+                            </div>
+                            <div class="swal-requirement-item invalid" id="req-special">
+                                <span class="swal-requirement-icon">✗</span>
+                                Caractere especial
+                            </div>
+                        </div>
+                    </div>
                 `,
                 focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'Redefinir Senha',
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: 'var(--azul-gov-principal)',
-                allowOutsideClick: false,  
-                allowEscapeKey: true,  
+                allowOutsideClick: false,
+                allowEscapeKey: true,
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm',
+                    cancelButton: 'swal-custom-cancel'
+                },
                 didOpen: () => {
                     const novaSenhaInput = document.getElementById('nova-senha');
-                    const confirmarSenhaInput = document.getElementById('confirmar-senha');
                     
                     novaSenhaInput.addEventListener('input', (e) => {
-                        checkPasswordStrength(e.target.value);
+                        checkSwalPasswordStrength(e.target.value);
                     });
                 },
                 preConfirm: () => {
-                    const novaSenha = Swal.getPopup().querySelector('#nova-senha').value;
-                    const confirmarSenha = Swal.getPopup().querySelector('#confirmar-senha').value;
+                    const novaSenha = document.getElementById('nova-senha').value;
+                    const confirmarSenha = document.getElementById('confirmar-senha').value;
                     
                     if (!novaSenha || !confirmarSenha) {
                         Swal.showValidationMessage('Preencha ambos os campos');
@@ -1502,6 +1998,13 @@
                     
                     if (novaSenha !== confirmarSenha) {
                         Swal.showValidationMessage('As senhas não coincidem');
+                        return false;
+                    }
+
+                    // Validação da força da senha
+                    const requirements = checkSwalPasswordStrength(novaSenha);
+                    if (!requirements.isValid) {
+                        Swal.showValidationMessage('A senha não atende todos os requisitos');
                         return false;
                     }
                     
@@ -1521,7 +2024,11 @@
                     text: 'A página será recarregada para reiniciar o fluxo.',
                     timer: 2000,
                     showConfirmButton: false,
-                    allowOutsideClick: false
+                    allowOutsideClick: false,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title'
+                    }
                 });
                 
                 window.location.reload();
@@ -1545,7 +2052,12 @@
                             icon: 'success',
                             title: 'Senha redefinida!',
                             text: 'Sua senha foi alterada com sucesso.',
-                            confirmButtonColor: 'var(--azul-gov-principal)'
+                            confirmButtonColor: 'var(--azul-gov-principal)',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
                     } else {
                         throw new Error(data.error || 'Erro ao redefinir senha');
@@ -1555,10 +2067,58 @@
                         icon: 'error',
                         title: 'Erro',
                         text: error.message,
-                        confirmButtonColor: 'var(--vermelho-erro)'
+                        confirmButtonColor: 'var(--vermelho-erro)',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
                     });
                 }
             }
+        }
+
+        // Função para verificar força da senha nos modais
+        function checkSwalPasswordStrength(password) {
+            const requirements = {
+                minLength: password.length >= 8,
+                hasUpperCase: /[A-Z]/.test(password),
+                hasLowerCase: /[a-z]/.test(password),
+                hasNumbers: /[0-9]/.test(password),
+                hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            };
+
+            const isValid = Object.values(requirements).every(Boolean);
+
+            // Atualizar UI dos requisitos
+            const reqLength = document.getElementById('req-length');
+            const reqUppercase = document.getElementById('req-uppercase');
+            const reqLowercase = document.getElementById('req-lowercase');
+            const reqNumber = document.getElementById('req-number');
+            const reqSpecial = document.getElementById('req-special');
+
+            if (reqLength) {
+                reqLength.className = `swal-requirement-item ${requirements.minLength ? 'valid' : 'invalid'}`;
+                reqLength.querySelector('.swal-requirement-icon').textContent = requirements.minLength ? '✓' : '✗';
+            }
+            if (reqUppercase) {
+                reqUppercase.className = `swal-requirement-item ${requirements.hasUpperCase ? 'valid' : 'invalid'}`;
+                reqUppercase.querySelector('.swal-requirement-icon').textContent = requirements.hasUpperCase ? '✓' : '✗';
+            }
+            if (reqLowercase) {
+                reqLowercase.className = `swal-requirement-item ${requirements.hasLowerCase ? 'valid' : 'invalid'}`;
+                reqLowercase.querySelector('.swal-requirement-icon').textContent = requirements.hasLowerCase ? '✓' : '✗';
+            }
+            if (reqNumber) {
+                reqNumber.className = `swal-requirement-item ${requirements.hasNumbers ? 'valid' : 'invalid'}`;
+                reqNumber.querySelector('.swal-requirement-icon').textContent = requirements.hasNumbers ? '✓' : '✗';
+            }
+            if (reqSpecial) {
+                reqSpecial.className = `swal-requirement-item ${requirements.hasSpecialChar ? 'valid' : 'invalid'}`;
+                reqSpecial.querySelector('.swal-requirement-icon').textContent = requirements.hasSpecialChar ? '✓' : '✗';
+            }
+
+            return { ...requirements, isValid };
         }
 
         async function criarSenhaPrimeiroAcesso(email) {
@@ -1566,18 +2126,65 @@
             
             const result = await Swal.fire({
                 title: 'Criar Senha',
+                width: '600px',
                 html: `
-                    <input type="password" id="nova-senha" class="swal2-input" placeholder="Crie sua senha" required>
-                    <input type="password" id="confirmar-senha" class="swal2-input" placeholder="Confirmar senha" required>
-                    <div id="passwordRequirements"></div>
-                    ${suggestedPassword ? `
-                        <button type="button" class="suggest-password" onclick="document.getElementById('nova-senha').value='${suggestedPassword}'; document.getElementById('confirmar-senha').value='${suggestedPassword}'; checkPasswordStrength('${suggestedPassword}')">
-                            🔒 Usar senha forte sugerida
-                        </button>
-                    ` : ''}
-                    <p style="font-size: 0.8em; color: #666; text-align: left; margin-top: 10px;">
-                        A senha deve ter: 8+ caracteres, letra maiúscula, minúscula, número e caractere especial.
-                    </p>
+                    <div style="text-align: left;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776;">
+                                <i class="fas fa-lock" style="margin-right: 8px;"></i>
+                                Crie sua senha
+                            </label>
+                            <div class="swal-password-wrapper">
+                                <input type="password" id="nova-senha" placeholder="Digite sua senha" autocomplete="new-password">
+                                <button type="button" class="swal-password-toggle" onclick="toggleSwalPasswordVisibility(this)">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776;">
+                                <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                                Confirmar senha
+                            </label>
+                            <div class="swal-password-wrapper">
+                                <input type="password" id="confirmar-senha" placeholder="Confirme sua senha" autocomplete="new-password">
+                                <button type="button" class="swal-password-toggle" onclick="toggleSwalPasswordVisibility(this)">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        ${suggestedPassword ? `
+                            <button type="button" class="swal-suggest-password" onclick="document.getElementById('nova-senha').value='${suggestedPassword}'; document.getElementById('confirmar-senha').value='${suggestedPassword}'; checkSwalPasswordStrength('${suggestedPassword}')">
+                                <i class="fas fa-magic"></i> Usar senha forte sugerida
+                            </button>
+                        ` : ''}
+
+                        <div id="swal-password-requirements" class="swal-password-requirements">
+                            <p><i class="fas fa-shield-alt"></i> Requisitos da senha:</p>
+                            <div class="swal-requirement-item invalid" id="req-length">
+                                <span class="swal-requirement-icon">✗</span>
+                                Mínimo 8 caracteres
+                            </div>
+                            <div class="swal-requirement-item invalid" id="req-uppercase">
+                                <span class="swal-requirement-icon">✗</span>
+                                Letra maiúscula
+                            </div>
+                            <div class="swal-requirement-item invalid" id="req-lowercase">
+                                <span class="swal-requirement-icon">✗</span>
+                                Letra minúscula
+                            </div>
+                            <div class="swal-requirement-item invalid" id="req-number">
+                                <span class="swal-requirement-icon">✗</span>
+                                Número
+                            </div>
+                            <div class="swal-requirement-item invalid" id="req-special">
+                                <span class="swal-requirement-icon">✗</span>
+                                Caractere especial
+                            </div>
+                        </div>
+                    </div>
                 `,
                 focusConfirm: false,
                 showCancelButton: true,
@@ -1586,17 +2193,22 @@
                 confirmButtonColor: 'var(--azul-gov-principal)',
                 allowOutsideClick: false,
                 allowEscapeKey: true,
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm',
+                    cancelButton: 'swal-custom-cancel'
+                },
                 didOpen: () => {
                     const novaSenhaInput = document.getElementById('nova-senha');
-                    const confirmarSenhaInput = document.getElementById('confirmar-senha');
                     
                     novaSenhaInput.addEventListener('input', (e) => {
-                        checkPasswordStrength(e.target.value);
+                        checkSwalPasswordStrength(e.target.value);
                     });
                 },
                 preConfirm: () => {
-                    const novaSenha = Swal.getPopup().querySelector('#nova-senha').value;
-                    const confirmarSenha = Swal.getPopup().querySelector('#confirmar-senha').value;
+                    const novaSenha = document.getElementById('nova-senha').value;
+                    const confirmarSenha = document.getElementById('confirmar-senha').value;
                     
                     if (!novaSenha || !confirmarSenha) {
                         Swal.showValidationMessage('Preencha ambos os campos');
@@ -1605,6 +2217,13 @@
                     
                     if (novaSenha !== confirmarSenha) {
                         Swal.showValidationMessage('As senhas não coincidem');
+                        return false;
+                    }
+
+                    // Validação da força da senha
+                    const requirements = checkSwalPasswordStrength(novaSenha);
+                    if (!requirements.isValid) {
+                        Swal.showValidationMessage('A senha não atende todos os requisitos');
                         return false;
                     }
                     
@@ -1624,7 +2243,11 @@
                     text: 'A página será recarregada para reiniciar o fluxo.',
                     timer: 2000,
                     showConfirmButton: false,
-                    allowOutsideClick: false
+                    allowOutsideClick: false,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title'
+                    }
                 });
                 
                 window.location.reload();
@@ -1659,7 +2282,11 @@
                             text: 'Fazendo login automaticamente...',
                             timer: 2000,
                             showConfirmButton: false,
-                            allowOutsideClick: false
+                            allowOutsideClick: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title'
+                            }
                         });
 
                         window.location.href = '/';
@@ -1672,7 +2299,12 @@
                         icon: 'error',
                         title: 'Erro',
                         text: error.message,
-                        confirmButtonColor: 'var(--vermelho-erro)'
+                        confirmButtonColor: 'var(--vermelho-erro)',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
                     });
                 }
             }
