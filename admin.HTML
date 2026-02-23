@@ -169,6 +169,7 @@
             width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
             animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;
         }
+
         @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -186,6 +187,62 @@
         .modal-close:hover { background: var(--vermelho-erro); transform: rotate(90deg); }
 
         .modal-body { padding: 30px; }
+
+        /* Personalização do SweetAlert para o modal de edição */
+        .swal-custom-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border-top: 5px solid #002776 !important;
+        }
+
+        .swal-custom-title {
+            color: #002776 !important;
+            font-weight: 700 !important;
+            font-size: 1.5em !important;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .swal-custom-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: #FFD700;
+        }
+
+        .swal-custom-html {
+            margin: 0 !important;
+            padding: 10px 0 !important;
+        }
+
+        .swal-custom-confirm {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        }
+
+        .swal-custom-cancel {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        }
+
+        .swal-custom-confirm:hover,
+        .swal-custom-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+        }
+
+        .swal-custom-container {
+            padding: 2rem !important;
+        }
 
         /* Form Elements */
         .form-group { margin-bottom: 20px; }
@@ -778,31 +835,98 @@
 
                     if (!response.ok) throw new Error('Erro ao salvar no servidor');
                     
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Requisito Adicionado!', showConfirmButton: false, timer: 2000 });
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Requisito Adicionado!',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        },
+                        customClass: {
+                            popup: 'swal-custom-popup'
+                        }
+                    });
                     
                     
                     addReqForm.reset();                    
                     await loadRequisitosExtras(secretariaId);
 
                 } catch (error) {
-                    Swal.fire('Erro', error.message, 'error');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: error.message,
+                        confirmButtonColor: '#dc3545',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
                 }
             });
 
             window.editarRequisitoGlobal = async function(id, textoAtual, pontosAtuais) {
                 const { value: formValues } = await Swal.fire({
                     title: 'Editar Requisito Global',
-                    html:
-                        `<label>Texto do Requisito</label><textarea id="swal-input1" class="swal2-textarea">${textoAtual}</textarea>` +
-                        `<label>Pontuação</label><input id="swal-input2" type="number" class="swal2-input" value="${pontosAtuais}">`,
+                    width: '600px',
+                    html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 1em;">
+                                    <i class="fas fa-align-left" style="margin-right: 8px;"></i>
+                                    Texto do Requisito *
+                                </label>
+                                <textarea id="swal-input1" class="swal2-textarea" 
+                                    style="width: 100%; min-height: 100px; padding: 14px; border: 2px solid #e1e5e9; border-radius: 10px;"
+                                    placeholder="Digite o texto do requisito...">${textoAtual.replace(/</g, '&lt;')}</textarea>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 1em;">
+                                    <i class="fas fa-star" style="margin-right: 8px; color: #FFD700;"></i>
+                                    Pontuação *
+                                </label>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <input id="swal-input2" type="number" class="swal2-input" 
+                                        style="flex: 1; padding: 14px; border: 2px solid #e1e5e9; border-radius: 10px;"
+                                        value="${pontosAtuais}" min="1" max="10" step="0.5">
+                                    <span style="color: #7f8c8d;">pontos</span>
+                                </div>
+                            </div>
+                        </div>
+                    `,
                     focusConfirm: false,
                     showCancelButton: true,
                     confirmButtonText: 'Salvar Alterações',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#27ae60',
+                    cancelButtonColor: '#7f8c8d',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm',
+                        cancelButton: 'swal-custom-cancel'
+                    },
                     preConfirm: () => {
-                        return {
-                            texto: document.getElementById('swal-input1').value,
-                            pontuacao: document.getElementById('swal-input2').value
+                        const texto = document.getElementById('swal-input1').value.trim();
+                        const pontuacao = parseFloat(document.getElementById('swal-input2').value);
+                        
+                        if (!texto) {
+                            Swal.showValidationMessage('O texto do requisito é obrigatório');
+                            return false;
                         }
+                        if (isNaN(pontuacao) || pontuacao <= 0) {
+                            Swal.showValidationMessage('A pontuação deve ser um número positivo');
+                            return false;
+                        }
+                        
+                        return { texto, pontuacao };
                     }
                 });
 
@@ -810,14 +934,42 @@
                     try {
                         const response = await fetch(`/api/requisitos/${id}`, {
                             method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+                            headers: { 
+                                'Content-Type': 'application/json', 
+                                'Authorization': `Bearer ${localStorage.getItem('authToken')}` 
+                            },
                             body: JSON.stringify(formValues)
                         });
+                        
                         if (response.ok) {
-                            Swal.fire('Sucesso', 'Requisito atualizado!', 'success');
+                            await Swal.fire({
+                                icon: 'success',
+                                title: 'Sucesso!',
+                                text: 'Requisito atualizado com sucesso!',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title'
+                                }
+                            });
                             carregarRequisitosGlobais();
+                        } else {
+                            throw new Error('Erro ao atualizar');
                         }
-                    } catch (e) { Swal.fire('Erro', 'Falha ao atualizar', 'error'); }
+                    } catch (e) { 
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: 'Falha ao atualizar o requisito.',
+                            confirmButtonColor: '#dc3545',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
+                        });
+                    }
                 }
             }
 
@@ -983,15 +1135,42 @@
                 
                 const result = await Swal.fire({
                     title: 'Confirmar Exclusão',
-                    html: `Tem certeza que deseja excluir o usuário <strong>${userEmail}</strong>?<br><br>
-                        <span style="color: var(--vermelho-erro); font-size: 0.9em;">
-                        ⚠️ Esta ação não pode ser desfeita!</span>`,
+                    width: '500px',
+                    html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                    Esta ação não pode ser desfeita!
+                                </p>
+                            </div>
+                            
+                            <p style="margin: 0 0 15px 0; color: #2c3e50; font-size: 1.1em;">
+                                Tem certeza que deseja excluir o usuário?
+                            </p>
+                            
+                            <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                <p style="margin: 0; font-weight: 600; color: #002776; word-break: break-all;">
+                                    <i class="fas fa-user" style="margin-right: 8px;"></i>
+                                    ${userEmail}
+                                </p>
+                            </div>
+                        </div>
+                    `,
                     icon: 'warning',
+                    iconColor: '#dc3545',
                     showCancelButton: true,
-                    confirmButtonColor: 'var(--vermelho-erro)',
-                    cancelButtonColor: 'var(--cinza-texto)',
                     confirmButtonText: 'Sim, excluir!',
-                    cancelButtonText: 'Cancelar'
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#7f8c8d',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm',
+                        cancelButton: 'swal-custom-cancel'
+                    }
                 });
 
                 if (result.isConfirmed) {
@@ -1009,11 +1188,16 @@
                             throw new Error(errorData.error || 'Erro ao excluir usuário');
                         }
 
-                        Swal.fire({
+                        await Swal.fire({
                             title: 'Excluído!',
                             text: `Usuário "${userEmail}" foi excluído com sucesso.`,
                             icon: 'success',
-                            confirmButtonColor: 'var(--verde-sucesso)'
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title'
+                            }
                         });
 
                         loadUsersList();
@@ -1024,7 +1208,12 @@
                             title: 'Erro!',
                             text: `Não foi possível excluir o usuário: ${error.message}`,
                             icon: 'error',
-                            confirmButtonColor: 'var(--vermelho-destaque)'
+                            confirmButtonColor: '#dc3545',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
                     }
                 }
@@ -1195,7 +1384,12 @@
                         title: 'Sucesso!',
                         text: `Usuário "${data.email}" criado com sucesso.`,
                         icon: 'success',
-                        confirmButtonColor: 'var(--verde-sucesso)'
+                        confirmButtonColor: '#27ae60',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
                     });
                     
                     closeUserModal();
@@ -1206,7 +1400,12 @@
                         title: 'Erro!',
                         text: `Não foi possível criar o usuário: ${error.message}`,
                         icon: 'error',
-                        confirmButtonColor: 'var(--vermelho-destaque)'
+                        confirmButtonColor: '#dc3545',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
                     });
                 } finally {
                     submitButton.disabled = false;
@@ -1305,26 +1504,75 @@
         };
 
         window.excluirRequisitoGlobal = async function(id) {
-            const confirm = await Swal.fire({ 
-                title: 'Excluir Requisito Padrão?', 
-                text: "Isso afetará o formulário de TODOS os órgãos!", 
-                icon: 'warning', 
+            const result = await Swal.fire({
+                title: 'Excluir Requisito Padrão?',
+                width: '500px',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                            <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                Esta ação não pode ser desfeita!
+                            </p>
+                        </div>
+                        <p style="margin: 20px 0 0 0; color: #2c3e50;">
+                            Isso afetará o formulário de <strong>TODOS os órgãos</strong> que utilizam este requisito.
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                iconColor: '#dc3545',
                 showCancelButton: true,
-                confirmButtonColor: '#c0392b',
                 confirmButtonText: 'Sim, excluir!',
-                cancelButtonText: 'Cancelar'  
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#7f8c8d',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm',
+                    cancelButton: 'swal-custom-cancel'
+                }
             });
-            if (confirm.isConfirmed) {
-                const res = await fetch(`/api/requisitos/${id}?force=true`, { 
-                    method: 'DELETE', 
-                    headers: { 'Authorization': `Bearer ${authToken}` } 
-                });
-                if (res.ok) {
-                    Swal.fire('Excluído!', '', 'success');
-                    carregarRequisitosGlobais();
+
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/requisitos/${id}?force=true`, { 
+                        method: 'DELETE', 
+                        headers: { 'Authorization': `Bearer ${authToken}` } 
+                    });
+                    
+                    if (res.ok) {
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Excluído!',
+                            text: 'Requisito removido com sucesso.',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title'
+                            }
+                        });
+                        carregarRequisitosGlobais();
+                    } else {
+                        throw new Error('Erro ao excluir');
+                    }
+                } catch (e) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: 'Não foi possível excluir o requisito.',
+                        confirmButtonColor: '#dc3545',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
                 }
             }
-        };
+        }
 
         window.fecharModalRequisitoGlobal = function() {
             document.getElementById('modal-requisito-global').style.display = 'none';
@@ -1409,7 +1657,11 @@
                     title: 'Sucesso!',
                     text: requisitoId ? 'Requisito atualizado com sucesso!' : 'Requisito criado com sucesso!',
                     timer: 2000,
-                    showConfirmButton: false
+                    showConfirmButton: false,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title'
+                    }
                 });
                 
                 fecharModalRequisitoGlobal();
@@ -1419,7 +1671,13 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro!',
-                    text: error.message
+                    text: error.message,
+                    confirmButtonColor: '#dc3545',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
                 });
             } finally {
                 submitBtn.disabled = false;
@@ -1443,35 +1701,96 @@
         });
 
         window.excluirAvaliacao = async function(id) {
-            const confirm = await Swal.fire({ 
-                title: 'Excluir Avaliação?', 
-                text: "Isso apagará permanentemente todas as respostas desta secretaria.", 
-                icon: 'warning', 
-                showCancelButton: true, 
-                confirmButtonColor: '#c0392b' 
+            const result = await Swal.fire({
+                title: 'Excluir Avaliação?',
+                width: '500px',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                            <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                Atenção! Esta ação é permanente!
+                            </p>
+                        </div>
+                        <p style="margin: 20px 0 0 0; color: #2c3e50;">
+                            Isso apagará permanentemente todas as respostas desta secretaria.
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                iconColor: '#dc3545',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, excluir!',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#7f8c8d',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm',
+                    cancelButton: 'swal-custom-cancel'
+                }
             });
-            if (confirm.isConfirmed) {
-                const res = await fetch(`/api/avaliacoes/${id}`, { 
-                    method: 'DELETE', 
-                    headers: { 'Authorization': `Bearer ${authToken}` } 
-                });
-                if (res.ok) { 
-                    await Swal.fire('Excluída!', 'A avaliação foi deletada da lista.', 'success');
-                    loadAvaliacoes(); 
+
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/avaliacoes/${id}`, { 
+                        method: 'DELETE', 
+                        headers: { 'Authorization': `Bearer ${authToken}` } 
+                    });
+                    
+                    if (res.ok) { 
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Excluída!',
+                            text: 'A avaliação foi deletada da lista.',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title'
+                            }
+                        });
+                        loadAvaliacoes(); 
+                    } else {
+                        throw new Error('Erro ao excluir');
+                    }
+                } catch (e) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: 'Não foi possível excluir a avaliação.',
+                        confirmButtonColor: '#dc3545',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
                 }
             }
-        };
+        }
 
         window.excluirRequisitoExtra = (id) => window.excluirRequisitoGlobal(id);
 
         window.fecharModalGlobal = () => document.getElementById('manage-global-modal').style.display = 'none';
 
-        // Função para editar requisito específico
+        // Função para editar requisito específico (CORRIGIDA)
         window.editarRequisitoEspecifico = async function(id) {
             const secretariaId = document.getElementById('req-secretaria-select').value;
             
             if (!secretariaId) {
-                Swal.fire('Erro', 'Selecione uma secretaria primeiro.', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: 'Selecione uma secretaria primeiro.',
+                    confirmButtonColor: '#dc3545',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
+                });
                 return;
             }
             
@@ -1486,39 +1805,79 @@
                 const req = extras.find(r => r.id === id);
                 
                 if (!req) {
-                    Swal.fire('Erro', 'Requisito não encontrado.', 'error');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: 'Requisito não encontrado.',
+                        confirmButtonColor: '#dc3545',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
                     return;
                 }
                 
                 const { value: formValues } = await Swal.fire({
                     title: 'Editar Requisito Específico',
+                    width: '700px',
+                    padding: '2em',
+                    background: 'white',
+                    backdrop: 'rgba(0,20,60,0.6)',
                     html: `
                         <div style="text-align: left; padding: 10px;">
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--azul-gov-principal);">
-                                    Texto do Requisito
+                            <!-- Texto do Requisito -->
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 1em; text-align: left;">
+                                    <i class="fas fa-align-left" style="margin-right: 8px;"></i>
+                                    Texto do Requisito *
                                 </label>
-                                <textarea id="swal-texto" class="swal2-textarea" 
-                                    style="width: 100%; min-height: 80px; padding: 8px; border: 2px solid #e1e5e9; border-radius: 6px;"
+                                <textarea id="swal-texto" 
+                                    style="width: 100%; min-height: 100px; padding: 14px; border: 2px solid #e1e5e9; border-radius: 10px; 
+                                        font-size: 1em; font-family: inherit; resize: vertical; background-color: #fcfcfc;
+                                        transition: all 0.3s;"
+                                    onfocus="this.style.borderColor='#002776'; this.style.boxShadow='0 0 0 4px rgba(0,39,118,0.1)'; this.style.backgroundColor='#fff';"
+                                    onblur="this.style.borderColor='#e1e5e9'; this.style.boxShadow='none'; this.style.backgroundColor='#fcfcfc';"
                                     placeholder="Digite o texto do requisito...">${req.texto.replace(/</g, '&lt;')}</textarea>
+                                <small style="display: block; margin-top: 5px; color: #7f8c8d; font-size: 0.85em; text-align: left;">
+                                    <i class="fas fa-info-circle"></i> Descreva claramente o requisito que deve ser cumprido
+                                </small>
                             </div>
                             
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--azul-gov-principal);">
+                            <!-- Texto de Ajuda -->
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 1em; text-align: left;">
+                                    <i class="fas fa-question-circle" style="margin-right: 8px;"></i>
                                     Texto de Ajuda (Guia de Transparência)
                                 </label>
-                                <textarea id="swal-ajuda" class="swal2-textarea" 
-                                    style="width: 100%; min-height: 60px; padding: 8px; border: 2px solid #e1e5e9; border-radius: 6px;"
-                                    placeholder="Explique como comprovar este requisito...">${req.textoAjuda ? req.textoAjuda.replace(/</g, '&lt;') : ''}</textarea>
+                                <textarea id="swal-ajuda" 
+                                    style="width: 100%; min-height: 80px; padding: 14px; border: 2px solid #e1e5e9; border-radius: 10px;
+                                        font-size: 1em; font-family: inherit; resize: vertical; background-color: #fcfcfc;
+                                        transition: all 0.3s;"
+                                    onfocus="this.style.borderColor='#002776'; this.style.boxShadow='0 0 0 4px rgba(0,39,118,0.1)'; this.style.backgroundColor='#fff';"
+                                    onblur="this.style.borderColor='#e1e5e9'; this.style.boxShadow='none'; this.style.backgroundColor='#fcfcfc';"
+                                    placeholder="Explique como a secretaria deve comprovar este item...">${req.textoAjuda ? req.textoAjuda.replace(/</g, '&lt;') : ''}</textarea>
+                                <small style="display: block; margin-top: 5px; color: #7f8c8d; font-size: 0.85em; text-align: left;">
+                                    <i class="fas fa-lightbulb"></i> Instruções para ajudar na comprovação do requisito
+                                </small>
                             </div>
                             
+                            <!-- Pontuação -->
                             <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--azul-gov-principal);">
-                                    Pontuação
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 1em; text-align: left;">
+                                    <i class="fas fa-star" style="margin-right: 8px; color: #FFD700;"></i>
+                                    Pontuação *
                                 </label>
-                                <input id="swal-pontuacao" type="number" class="swal2-input" 
-                                    style="width: 100%; padding: 8px; border: 2px solid #e1e5e9; border-radius: 6px;"
-                                    value="${req.pontuacao}" min="1" max="10" step="0.5">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <input id="swal-pontuacao" type="number" 
+                                        style="flex: 1; padding: 14px; border: 2px solid #e1e5e9; border-radius: 10px; 
+                                            font-size: 1em; background-color: #fcfcfc; transition: all 0.3s;"
+                                        onfocus="this.style.borderColor='#002776'; this.style.boxShadow='0 0 0 4px rgba(0,39,118,0.1)'; this.style.backgroundColor='#fff';"
+                                        onblur="this.style.borderColor='#e1e5e9'; this.style.boxShadow='none'; this.style.backgroundColor='#fcfcfc';"
+                                        value="${req.pontuacao}" min="1" max="10" step="0.5">
+                                    <span style="color: #7f8c8d; font-size: 0.9em;">pontos</span>
+                                </div>
                             </div>
                         </div>
                     `,
@@ -1526,8 +1885,19 @@
                     showCancelButton: true,
                     confirmButtonText: 'Salvar Alterações',
                     cancelButtonText: 'Cancelar',
-                    confirmButtonColor: 'var(--verde-sucesso)',
-                    cancelButtonColor: 'var(--cinza-claro)',
+                    confirmButtonColor: '#27ae60',
+                    cancelButtonColor: '#7f8c8d',
+                    customClass: {
+                        container: 'swal-custom-container',
+                        popup: 'swal-custom-popup',
+                        header: 'swal-custom-header',
+                        title: 'swal-custom-title',
+                        closeButton: 'swal-custom-close',
+                        htmlContainer: 'swal-custom-html',
+                        confirmButton: 'swal-custom-confirm',
+                        cancelButton: 'swal-custom-cancel',
+                        footer: 'swal-custom-footer'
+                    },
                     preConfirm: () => {
                         const texto = document.getElementById('swal-texto').value.trim();
                         const pontuacao = parseFloat(document.getElementById('swal-pontuacao').value);
@@ -1551,7 +1921,6 @@
                 });
 
                 if (formValues) {
-                    // Mostra loading
                     Swal.fire({
                         title: 'Salvando...',
                         text: 'Aguarde enquanto as alterações são salvas.',
@@ -1579,7 +1948,6 @@
                                 showConfirmButton: false
                             });
                             
-                            // 🔥 FORÇA O RECARREGAMENTO DA LISTA
                             await window.loadRequisitosExtras(secretariaId);
                             
                         } else {
@@ -1590,7 +1958,13 @@
                         Swal.fire({
                             icon: 'error',
                             title: 'Erro!',
-                            text: e.message || 'Falha ao atualizar o requisito.'
+                            text: e.message || 'Falha ao atualizar o requisito.',
+                            confirmButtonColor: '#dc3545',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
                     }
                 }
@@ -1599,7 +1973,13 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro!',
-                    text: 'Não foi possível carregar os dados do requisito.'
+                    text: 'Não foi possível carregar os dados do requisito.',
+                    confirmButtonColor: '#dc3545',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
                 });
             }
         };
