@@ -8,6 +8,3 @@ scanner_completo.log
 
 prisma/dev.db
 prisma/dev.db-journal
-
-teste_conexao.py
-teste_simples.py
