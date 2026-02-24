@@ -1160,8 +1160,6 @@
             let warned5min = false;
             let warned1min = false;
 
-            console.log('=== INICIANDO APLICAÇÃO ===');
-
             function debounce(func, wait) {
                 let timeout;
                 return function executedFunction(...args) {
@@ -1428,10 +1426,7 @@
                 });
             }
 
-            function salvarRascunhoRecurso() {
-                console.log('=== SALVANDO RASCUNHO SIMPLIFICADO ===');
-                console.log('LocalStorage atual:', localStorage.getItem(`rascunho_recurso_${avaliacaoId}`));
-                
+            function salvarRascunhoRecurso() {              
                 const rascunhoRecurso = {};
                 let temDados = false;
 
@@ -1453,8 +1448,6 @@
                         }
                     }
 
-                    console.log(`Salvando resposta ${respostaId}`);
-
                     const evidencias = [];
                     box.querySelectorAll('.evidence-item').forEach(item => {
                         if (item.dataset.link) {
@@ -1475,7 +1468,6 @@
 
                 if (temDados) {
                     localStorage.setItem(`rascunho_recurso_${avaliacaoId}`, JSON.stringify(rascunhoRecurso));
-                    console.log("Rascunho do recurso salvo com sucesso:", rascunhoRecurso);
 
                     Swal.fire({
                         toast: true,
@@ -1618,12 +1610,10 @@
                                 timer: 2000
                             });
                         } else {
-                            // Se não quiser carregar, limpa os rascunhos
                             localStorage.removeItem(`rascunho_recurso_${avaliacaoId}`);
                             localStorage.removeItem(`rascunho_subitens_${avaliacaoId}`);
                             console.log('Rascunhos removidos por opção do usuário');
                             
-                            // Recarrega a página para resetar tudo
                             window.location.reload();
                         }
                     });
@@ -2840,7 +2830,7 @@
                         } else {
                             const respostaData = JSON.stringify(resposta).replace(/"/g, '&quot;');
                             return `
-                                <div class="resposta-card ${cardClass} ${classeRecursoIndicador}" data-resposta='${respostaData}' role="article">
+                                <div class="resposta-card ${cardClass} ${classeRecursoIndicador}" data-resposta-id="${resposta.id}"data-resposta='${respostaData}' role="article">
                                     <div class="summary-header" tabindex="0" role="button" aria-expanded="false">
                                         <strong>${resposta.requisito.texto}</strong>
                                         <div class="summary-status-container"> 
@@ -3251,59 +3241,87 @@
                 });
             }
 
-            // NOVA FUNÇÃO PARA CALCULAR E SALVAR NOTA PÓS-RECURSO 
-            async function calcularESalvarNotaPosRecurso(avaliacaoId, respostasDoRecurso) {
+            // FUNÇÃO PARA CALCULAR E SALVAR NOTA PÓS-RECURSO (COM CÁLCULO CORRETO)
+            async function calcularESalvarNotaPosRecurso(avaliacaoId, authToken, avaliacaoCompleta) {
                 try {
-                    console.log('🧮 Calculando nota pós-recurso...');
+                    console.log('🧮 ===== CALCULANDO NOTA PÓS-RECURSO (ENVIO) =====');
                     
-                    const response = await fetch(`/api/my-avaliacoes/${avaliacaoId}`, {
-                        headers: { 'Authorization': `Bearer ${authToken}` }
-                    });
+                    // Pega os dados do rascunho atual
+                    const rascunhoRecurso = localStorage.getItem(`rascunho_recurso_${avaliacaoId}`);
+                    const rascunhoSubitens = localStorage.getItem(`rascunho_subitens_${avaliacaoId}`);
                     
-                    if (!response.ok) {
-                        throw new Error('Não foi possível buscar dados da avaliação');
-                    }
+                    // Faz uma cópia da avaliação para simular
+                    const avaliacaoSimulada = JSON.parse(JSON.stringify(avaliacaoCompleta));
                     
-                    const avaliacaoAtualizada = await response.json();
                     let pontuacaoPosRecurso = 0;
                     let pontuacaoTotal = 0;
-
-                    avaliacaoAtualizada.respostas.forEach(resposta => {
-                        const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
-                        pontuacaoTotal += pontuacaoRequisito;
-
-                        let pontuacaoRequisitoPosRecurso = 0;
-                        const teveRecurso = resposta.recursoAtende !== null || 
-                                        resposta.comentarioRecurso ||
-                                        (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
-
-                        console.log(`Requisito ${resposta.requisitoId}:`);
-                        console.log(`   - Pontuação: ${pontuacaoRequisito}`);
-                        console.log(`   - Teve recurso: ${teveRecurso}`);
-                        console.log(`   - recursoAtende: ${resposta.recursoAtende}`);
-
-                        if (teveRecurso) {
-                            if (resposta.recursoAtende === true) {
-                                pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
-                                console.log(`   ✅ Adiciona ${pontuacaoRequisito} (recurso = true)`);
+                    
+                    avaliacaoSimulada.respostas.forEach(resposta => {
+                        // Verifica se é requisito composto (R31)
+                        if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                            const pontuacaoBase = resposta.requisito?.pontuacao || 8;
+                            pontuacaoTotal += pontuacaoBase;
+                            
+                            // Contar aprovações considerando os rascunhos de recurso
+                            let aprovados = 0;
+                            
+                            resposta.subRespostas.forEach(sub => {
+                                let subAtende = sub.statusValidacao === 'aprovado';
+                                
+                                if (rascunhoSubitens) {
+                                    const subitensRascunho = JSON.parse(rascunhoSubitens);
+                                    const rascunhoSub = subitensRascunho.find(s => s.id === sub.id);
+                                    
+                                    if (rascunhoSub) {
+                                        subAtende = rascunhoSub.atende;
+                                    }
+                                }
+                                
+                                if (subAtende) aprovados++;
+                            });
+                            
+                            // Calcula a pontuação proporcional
+                            let pontuacaoRequisito = 0;
+                            
+                            if (aprovados >= 12) {
+                                pontuacaoRequisito = 8.0;
+                            } else if (aprovados >= 8) {
+                                pontuacaoRequisito = 5.6;
+                            } else if (aprovados >= 4) {
+                                pontuacaoRequisito = 4.0;
+                            } else if (aprovados >= 1) {
+                                pontuacaoRequisito = 2.4;
                             } else {
-                                console.log(`   ❌ Não adiciona (recurso = false)`);
+                                pontuacaoRequisito = 0;
                             }
+                            
+                            pontuacaoPosRecurso += pontuacaoRequisito;
+                            
                         } else {
-                            if (resposta.statusValidacao === 'aprovado') {
-                                pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
-                                console.log(`   ✅ Adiciona ${pontuacaoRequisito} (sem recurso, aprovado)`);
+                            // Requisitos normais
+                            const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
+                            pontuacaoTotal += pontuacaoRequisito;
+                            
+                            // Verifica se este requisito tem rascunho de recurso
+                            const temRascunhoRecurso = rascunhoRecurso ? 
+                                JSON.parse(rascunhoRecurso)[resposta.id] : null;
+                            
+                            if (temRascunhoRecurso) {
+                                if (temRascunhoRecurso.sim === true) {
+                                    pontuacaoPosRecurso += pontuacaoRequisito;
+                                }
                             } else {
-                                console.log(`   ❌ Não adiciona (sem recurso, não aprovado)`);
+                                if (resposta.statusValidacao === 'aprovado') {
+                                    pontuacaoPosRecurso += pontuacaoRequisito;
+                                }
                             }
                         }
-                        
-                        pontuacaoPosRecurso += pontuacaoRequisitoPosRecurso;
                     });
-
-                    const notaCalculada = Math.round(pontuacaoPosRecurso);
+                    
+                    const notaCalculada = parseFloat(pontuacaoPosRecurso.toFixed(2));
                     console.log(`🎯 Nota pós-recurso calculada: ${notaCalculada}/${pontuacaoTotal}`);
 
+                    // Envia para o backend
                     const saveResponse = await fetch(`/api/avaliacoes/${avaliacaoId}/nota-pos-recurso`, {
                         method: 'PATCH',
                         headers: {
@@ -3329,6 +3347,14 @@
             }
 
             async function enviarRecurso() {
+                console.log('📦 Cards encontrados no momento do envio:');
+                document.querySelectorAll('.resposta-card').forEach(card => {
+                    console.log({
+                        id: card.dataset.respostaId,
+                        temRecursoBox: !!card.querySelector('.recurso-box[data-is-editable="true"]')
+                    });
+                });
+                
                 if (prazoExpirado) {
                     Swal.fire({
                         title: 'Prazo Expirado',
@@ -3644,7 +3670,7 @@
                                 }
 
                                 console.log('🔄 Confirmando nota atual como pós-recurso...');
-                                const notaResult = await calcularESalvarNotaPosRecurso(avaliacaoId, []);
+                                const notaResult = await calcularESalvarNotaPosRecurso(avaliacaoId, authToken, avaliacaoCompleta);
                                 
                                 if (notaResult.success) {
                                     console.log('🎉 Nota pós-recurso confirmada com sucesso');
@@ -3794,7 +3820,7 @@
                             }
 
                             console.log('🔄 Iniciando cálculo da nota pós-recurso...');
-                            const notaResult = await calcularESalvarNotaPosRecurso(avaliacaoId, respostasDoRecurso);
+                            const notaResult = await calcularESalvarNotaPosRecurso(avaliacaoId, authToken, avaliacaoCompleta);
                             
                             if (notaResult.success) {
                                 console.log('🎉 Nota pós-recurso salva com sucesso durante envio do recurso');
@@ -4172,9 +4198,6 @@
                 if(avaliacaoCompleta.status === 'AGUARDANDO_RECURSO' && !prazoExpirado) {
                     recursoActionsContainer.innerHTML = `
                         <div style="display: flex; gap: 20px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 30px 0;">
-                            <button id="visualizar-nota-btn" class="btn" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); min-width: 250px;">
-                                <i class="fas fa-eye"></i> Visualizar Nota (sem enviar)
-                            </button>
                             <button id="csv-recurso-btn" class="btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); min-width: 250px;">
                                 <i class="fas fa-download"></i> Baixar CSV para Análise
                             </button>
@@ -4185,14 +4208,11 @@
                         <div style="text-align: center; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--azul-gov-claro);">
                             <p style="margin: 0; font-size: 0.95em; color: #495057;">
                                 <i class="fas fa-info-circle" style="color: var(--azul-gov-claro);"></i>
-                                <strong>Dica:</strong> Use o botão "Visualizar Nota" para ver o cálculo antes de enviar.
+                                <strong>Dica:</strong> Caso concorde com a validação da SCGE, envie a avaliação do jeito que está
                             </p>
                         </div>
                     `;
 
-                    document.getElementById('visualizar-nota-btn').addEventListener('click', function() {
-                        visualizarNotaPosRecurso(avaliacaoId, authToken, avaliacaoCompleta);
-                    });
                     document.getElementById('enviar-recurso-btn').addEventListener('click', enviarRecurso);
                     document.getElementById('csv-recurso-btn').addEventListener('click', gerarCSVRecurso);
                 } else if (avaliacaoCompleta.status === 'AGUARDANDO_RECURSO' && prazoExpirado) {
@@ -4227,182 +4247,6 @@
             
         });
 
-        // FUNÇÃO PARA VISUALIZAR NOTA SEM ENVIAR RECURSO (COM CÁLCULO CORRETO DOS SUBITENS)
-        function visualizarNotaPosRecurso(avaliacaoId, authToken, avaliacaoCompleta) {
-            console.log('🎯 ===== VISUALIZAÇÃO DA NOTA PÓS-RECURSO (SEM ENVIAR) =====');
-            console.log('📌 Avaliação ID:', avaliacaoId);
-            
-            // Pega os dados do rascunho atual
-            const rascunhoRecurso = localStorage.getItem(`rascunho_recurso_${avaliacaoId}`);
-            const rascunhoSubitens = localStorage.getItem(`rascunho_subitens_${avaliacaoId}`);
-            
-            console.log('📦 Rascunho de requisitos:', rascunhoRecurso ? JSON.parse(rascunhoRecurso) : 'Nenhum');
-            console.log('📦 Rascunho de subitens:', rascunhoSubitens ? JSON.parse(rascunhoSubitens) : 'Nenhum');
-            
-            // Faz uma cópia da avaliação para simular
-            const avaliacaoSimulada = JSON.parse(JSON.stringify(avaliacaoCompleta));
-            
-            let pontuacaoPosRecurso = 0;
-            let pontuacaoTotal = 0;
-            
-            console.log('\n📋 ===== ANALISANDO CADA REQUISITO =====');
-            
-            avaliacaoSimulada.respostas.forEach((resposta, index) => {
-                // Verifica se é requisito composto (R31)
-                if (resposta.subRespostas && resposta.subRespostas.length > 0) {
-                    console.log(`\n🔹 REQUISITO ${index + 1} - COMPOSTO (R31):`);
-                    console.log(`   📝 ${resposta.requisito?.texto?.substring(0, 60)}...`);
-                    
-                    const pontuacaoBase = resposta.requisito?.pontuacao || 8;
-                    pontuacaoTotal += pontuacaoBase;
-                    
-                    // Contar aprovações considerando os rascunhos de recurso
-                    let aprovados = 0;
-                    
-                    resposta.subRespostas.forEach((sub, subIndex) => {
-                        // Verifica se este subitem tem rascunho de recurso
-                        let subAtende = sub.statusValidacao === 'aprovado';
-                        
-                        if (rascunhoSubitens) {
-                            const subitensRascunho = JSON.parse(rascunhoSubitens);
-                            const rascunhoSub = subitensRascunho.find(s => s.id === sub.id);
-                            
-                            if (rascunhoSub) {
-                                // Se tem rascunho, usa a decisão do rascunho
-                                subAtende = rascunhoSub.atende;
-                                console.log(`   📌 Subitem ${subIndex + 1}: RASCUNHO = ${subAtende ? 'Atende' : 'Não atende'} (original: ${sub.statusValidacao})`);
-                            } else {
-                                // Se não tem rascunho, mantém a validação original
-                                console.log(`   📌 Subitem ${subIndex + 1}: ${subAtende ? 'Aprovado' : 'Rejeitado'} (sem rascunho)`);
-                            }
-                        } else {
-                            console.log(`   📌 Subitem ${subIndex + 1}: ${subAtende ? 'Aprovado' : 'Rejeitado'}`);
-                        }
-                        
-                        if (subAtende) aprovados++;
-                    });
-                    
-                    // Calcula a pontuação proporcional baseada na quantidade de aprovados
-                    let pontuacaoRequisito = 0;
-                    let percentual = 0;
-                    
-                    if (aprovados >= 12) {
-                        pontuacaoRequisito = 8.0; // 100%
-                        percentual = 100;
-                    } else if (aprovados >= 8) {
-                        pontuacaoRequisito = 5.6; // 70%
-                        percentual = 70;
-                    } else if (aprovados >= 4) {
-                        pontuacaoRequisito = 4.0; // 50%
-                        percentual = 50;
-                    } else if (aprovados >= 1) {
-                        pontuacaoRequisito = 2.4; // 30%
-                        percentual = 30;
-                    } else {
-                        pontuacaoRequisito = 0;
-                        percentual = 0;
-                    }
-                    
-                    console.log(`   📊 Total de aprovados: ${aprovados}/13`);
-                    console.log(`   📊 Percentual: ${percentual}%`);
-                    console.log(`   ⭐ Pontuação calculada: ${pontuacaoRequisito.toFixed(1)}/${pontuacaoBase}`);
-                    
-                    pontuacaoPosRecurso += pontuacaoRequisito;
-                    
-                } else {
-                    // Dentro do else dos requisitos normais, antes de verificar o rascunho:
-                    console.log(`   🔍 Buscando rascunho para ID: ${resposta.id}`);
-                    console.log(`   📦 Rascunho disponível:`, rascunhoRecurso ? Object.keys(JSON.parse(rascunhoRecurso)) : 'nenhum');
-                    // Requisitos normais
-                    const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
-                    pontuacaoTotal += pontuacaoRequisito;
-                    
-                    let pontuacaoRequisitoPosRecurso = 0;
-                    
-                    // Verifica se este requisito tem rascunho de recurso
-                    const temRascunhoRecurso = rascunhoRecurso ? 
-                        JSON.parse(rascunhoRecurso)[resposta.id] : null;
-                    
-                    console.log(`\n🔹 REQUISITO ${index + 1}:`);
-                    console.log(`   📝 ${resposta.requisito?.texto?.substring(0, 60)}...`);
-                    console.log(`   ⭐ Pontuação base: ${pontuacaoRequisito}`);
-                    console.log(`   👤 Resposta original: ${resposta.atende ? 'Atende' : 'Não atende'}`);
-                    console.log(`   ✅ Validação SCGE: ${resposta.statusValidacao || 'pendente'}`);
-                    
-                    // Verifica se o usuário clicou em "Editar Decisão" (tem rascunho)
-                    if (temRascunhoRecurso) {
-                        console.log(`   🔄 TEM RASCUNHO DE RECURSO!`);
-                        console.log(`   📝 Resposta no recurso: ${temRascunhoRecurso.sim ? 'Atende' : 'Não atende'}`);
-                        
-                        // A NOTA É BASEADA NA RESPOSTA DO RECURSO, NÃO NA VALIDAÇÃO ORIGINAL
-                        if (temRascunhoRecurso.sim === true) {
-                            pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
-                            console.log(`   ✅ ADICIONA ${pontuacaoRequisito} pontos (recurso = Atende)`);
-                        } else {
-                            pontuacaoRequisitoPosRecurso = 0;
-                            console.log(`   ❌ NÃO adiciona pontos (recurso = Não atende)`);
-                        }
-                    } else {
-                        // Sem recurso, usa a validação original da SCGE
-                        if (resposta.statusValidacao === 'aprovado') {
-                            pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
-                            console.log(`   ✅ ADICIONA ${pontuacaoRequisito} pontos (aprovado sem recurso)`);
-                        } else {
-                            pontuacaoRequisitoPosRecurso = 0;
-                            console.log(`   ❌ NÃO adiciona pontos (não aprovado, sem recurso)`);
-                        }
-                    }
-                    
-                    pontuacaoPosRecurso += pontuacaoRequisitoPosRecurso;
-                }
-            });
-            
-            const notaCalculada = pontuacaoPosRecurso.toFixed(2);
-            
-            console.log('\n📊 ===== RESUMO DA VISUALIZAÇÃO =====');
-            console.log(`🎯 Pontuação Total Disponível: ${pontuacaoTotal}`);
-            console.log(`🎯 Pontuação Pós-Recurso (simulada): ${pontuacaoPosRecurso.toFixed(2)}/${pontuacaoTotal}`);
-            console.log(`🎯 Nota Final (arredondada): ${notaCalculada}/${pontuacaoTotal}`);
-            
-            // Mostra um alerta bonitinho com a nota
-            Swal.fire({
-                title: 'Prévia da Nota Pós-Recurso',
-                width: '500px',
-                html: `
-                    <div style="text-align: left; padding: 10px;">
-                        <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                            <p style="margin: 0; color: #002776; font-weight: 500;">
-                                <i class="fas fa-calculator" style="margin-right: 8px;"></i>
-                                Simulação baseada no rascunho atual
-                            </p>
-                        </div>
-                        
-                        <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; border: 1px solid #e1e5e9;">
-                            <p style="margin: 0 0 10px 0; font-size: 1.1em;">
-                                <strong>Nota calculada:</strong>
-                            </p>
-                            <p style="margin: 0; font-size: 2em; font-weight: 800; color: #002776; text-align: center;">
-                                ${notaCalculada} / ${pontuacaoTotal}
-                            </p>
-                        </div>
-                        
-                        <p style="margin-top: 15px; color: #7f8c8d; font-size: 0.9em;">
-                            <i class="fas fa-info-circle"></i> 
-                            Esta é apenas uma simulação. A nota real será calculada após o envio.
-                        </p>
-                    </div>
-                `,
-                icon: 'info',
-                iconColor: '#002776',
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#002776',
-                customClass: {
-                    popup: 'swal-custom-popup',
-                    title: 'swal-custom-title',
-                    confirmButton: 'swal-custom-confirm'
-                }
-            });
-        }
     </script>
     <script src="/global.js"></script>
 </body>
