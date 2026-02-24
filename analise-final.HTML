@@ -2275,13 +2275,22 @@
                             finalizarBtn.disabled = true;
                             finalizarBtn.textContent = 'Finalizando...';
 
+                            const notasParaSalvar = calcularQuatroNotas();
+
                             try {
                                 const response = await fetch(`/api/avaliacoes/${avaliacaoId}/finalizar`, {
                                     method: 'POST',
                                     headers: {
                                         'Authorization': `Bearer ${authToken}`,
                                         'Content-Type': 'application/json'
-                                    }
+                                    },
+
+                                    body: JSON.stringify({
+                                        notaAutoavaliacao: notasParaSalvar.autoavaliacao,
+                                        notaPrimeiraAnalise: notasParaSalvar.primeiraAnalise,
+                                        notaPosRecurso: notasParaSalvar.posRecurso,
+                                        notaFinal: notasParaSalvar.final
+                                    })
                                 });
 
                                 if (!response.ok) {
