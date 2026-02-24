@@ -740,37 +740,27 @@
                     return { autoavaliacao: 0, primeiraAnalise: 0, posRecurso: 0, final: 0, total: 0 };
                 }
 
-                let notas = { auto: 0, primeira: 0, recurso: 0, final: 0, total: 0 };
+                let notas = { auto: 0, primeira: 0, final: 0, total: 0 };
                 let pontuacaoTotal = 0;
 
                 avaliacaoCompleta.respostas.forEach(resposta => {
                     const pBase = resposta.requisito?.pontuacao || 0;
                     pontuacaoTotal += pBase;
 
-                    // --- LÓGICA PARA REQUISITO COMPOSTO (O REQUISITO 31) ---
+                    // Requisito composto (R31)
                     if (resposta.subRespostas && resposta.subRespostas.length > 0) {
                         const subs = resposta.subRespostas;
 
-                        // 1, 2 e 3: Mantêm o histórico (Não mudam)
                         notas.auto += calcularPontuacaoPorFaixa(subs.filter(s => s.atende === true).length, pBase);
                         notas.primeira += calcularPontuacaoPorFaixa(subs.filter(s => s.statusValidacao === 'aprovado').length, pBase);
-                        const aprovRec = subs.filter(s => s.statusValidacao === 'aprovado' || s.comentarioRecurso || s.linkComprovanteRecurso).length;
-                        notas.recurso += calcularPontuacaoPorFaixa(aprovRec, pBase);
-
-                        // 4. NOTA FINAL DO 31: SÓ conta o que você marcou AGORA (Começa zerado se tudo estiver pendente)
+                        
                         const aprovF = subs.filter(s => s.statusValidacaoPosRecurso === 'aprovado').length;
                         notas.final += calcularPontuacaoPorFaixa(aprovF, pBase);
-
                     } 
-                    // --- LÓGICA PARA REQUISITOS SIMPLES (R01 ao R30) ---
                     else {
                         if (resposta.atendeOriginal === true) notas.auto += pBase;
                         if (resposta.statusValidacao === 'aprovado') notas.primeira += pBase;
-                        
-                        // Recurso: Mantém nota se aprovado ou se teve recurso
-                        if (resposta.statusValidacao === 'aprovado' || resposta.comentarioRecurso) notas.recurso += pBase;
-
-                        // NOTA FINAL SIMPLES: Se você já avaliou no modal, usa a nova. Se não, mantém a da 1ª análise.
+                                                
                         const statusF = (resposta.analiseFinal?.statusValidacaoPosRecurso && resposta.analiseFinal?.statusValidacaoPosRecurso !== 'pendente')
                                         ? resposta.analiseFinal.statusValidacaoPosRecurso
                                         : resposta.statusValidacao;
@@ -782,7 +772,7 @@
                 return {
                     autoavaliacao: parseFloat(notas.auto.toFixed(1)),
                     primeiraAnalise: parseFloat(notas.primeira.toFixed(1)),
-                    posRecurso: parseFloat(notas.recurso.toFixed(1)),
+                    posRecurso: parseFloat(avaliacaoCompleta.pontuacaoPosRecurso?.toFixed(1) || '0'), // USA A NOTA DO BANCO!
                     final: parseFloat(notas.final.toFixed(1)),
                     total: pontuacaoTotal
                 };
@@ -2288,7 +2278,7 @@
                                     body: JSON.stringify({
                                         notaAutoavaliacao: notasParaSalvar.autoavaliacao,
                                         notaPrimeiraAnalise: notasParaSalvar.primeiraAnalise,
-                                        notaPosRecurso: notasParaSalvar.posRecurso,
+                                        notaPosRecurso: avaliacaoCompleta.pontuacaoPosRecurso,
                                         notaFinal: notasParaSalvar.final
                                     })
                                 });
