@@ -1905,7 +1905,7 @@ app.patch('/api/avaliacoes/:id/nota-pos-recurso', authenticateToken, async (req,
         const avaliacaoAtualizada = await prisma.avaliacao.update({
             where: { id: parseInt(id) },
             data: {
-                pontuacaoPosRecurso: Math.round(pontuacaoPosRecurso)
+                pontuacaoPosRecurso: parseFloat(pontuacaoPosRecurso) 
             }
         });
 
