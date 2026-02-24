@@ -350,6 +350,82 @@
         .main-footer p a { color: var(--amarelo-gov-detalhe); font-weight: 600; text-decoration: none; padding: 4px 8px; border-radius: 4px; }
         .main-footer p a:hover { background-color: rgba(255, 215, 0, 0.2); text-decoration: underline; }
 
+        /* Personalização do SweetAlert para o avaliacao.html */
+        .swal-custom-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border-top: 5px solid #002776 !important;
+            padding: 1.5em !important;
+        }
+
+        .swal-custom-title {
+            color: #002776 !important;
+            font-weight: 700 !important;
+            font-size: 1.5em !important;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .swal-custom-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: #FFD700;
+        }
+
+        .swal-custom-html {
+            margin: 0 !important;
+            padding: 10px 0 !important;
+        }
+
+        .swal-custom-confirm {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-cancel {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-confirm:hover,
+        .swal-custom-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+        }
+
+        .swal-custom-container {
+            padding: 2rem !important;
+        }
+
+        .swal2-input {
+            width: 100% !important;
+            padding: 12px 16px !important;
+            margin: 5px 0 0 0 !important;
+            border: 2px solid #e1e5e9 !important;
+            border-radius: 10px !important;
+            font-size: 0.95em !important;
+            transition: all 0.3s !important;
+            box-sizing: border-box !important;
+        }
+
+        .swal2-input:focus {
+            border-color: #002776 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1) !important;
+        }
+
         @media (max-width: 768px) {
             .main-nav { flex-direction: column; height: auto; padding: 20px 0; }
             .report-container { padding: 0; }
@@ -972,13 +1048,21 @@
                     
                     await salvarAnaliseAutomatica(respostaId);
                     
-                    Swal.fire({ 
-                        toast: true, 
-                        position: 'top-end', 
-                        icon: 'success', 
-                        title: 'Link removido!', 
-                        showConfirmButton: false, 
-                        timer: 1500 
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Link removido!',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        },
+                        customClass: {
+                            popup: 'swal-custom-popup'
+                        }
                     });
                 }
 
@@ -997,10 +1081,11 @@
                 const dataFormatada = new Date(avaliacaoCompleta.createdAt).toLocaleString('pt-BR');
                 summaryContainer.innerHTML = `
                     <h1>${avaliacaoCompleta.secretaria.nome} (${avaliacaoCompleta.secretaria.sigla})</h1>
-                    <div class="report-summary">
-                        <span><strong>URL Avaliada:</strong> ${avaliacaoCompleta.urlSecretaria}</span>
-                        <span><strong>Enviado em:</strong> ${dataFormatada}</span>
-                        <span><strong>Responsável:</strong> ${avaliacaoCompleta.nomeResponsavel}</span>
+                    <div class="report-summary" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <span><strong><i class="fas fa-user" style="margin-right: 5px;"></i>Responsável:</strong> ${avaliacaoCompleta.nomeResponsavel}</span>
+                        <span><strong><i class="fas fa-envelope" style="margin-right: 5px;"></i>E-mail:</strong> ${avaliacaoCompleta.emailResponsavel || 'Não informado'}</span>
+                        <span><strong><i class="fas fa-link" style="margin-right: 5px;"></i>URL avaliada:</strong> <a href="${avaliacaoCompleta.urlSecretaria}" target="_blank">${avaliacaoCompleta.urlSecretaria}</a></span>
+                        <span><strong><i class="fas fa-calendar" style="margin-right: 5px;"></i>Enviado em:</strong> ${dataFormatada}</span>
                     </div>
                 `;
 
@@ -1185,10 +1270,32 @@
                             }
                             
                             Swal.fire({
-                                icon: 'error',
                                 title: 'Análise Incompleta',
-                                html: `Você não pode devolver a avaliação, pois existem itens pendentes:<br><br>${mensagem}`,
-                                confirmButtonColor: 'var(--azul-gov-principal)'
+                                width: '550px',
+                                html: `
+                                    <div style="text-align: left; padding: 10px;">
+                                        <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                            <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                                Não é possível prosseguir com a análise incompleta!
+                                            </p>
+                                        </div>
+                                        
+                                        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                            <p style="margin: 0 0 10px 0; font-weight: 600; color: #002776;">Itens pendentes:</p>
+                                            ${mensagem}
+                                        </div>
+                                    </div>
+                                `,
+                                icon: 'error',
+                                iconColor: '#dc3545',
+                                confirmButtonText: 'Entendi',
+                                confirmButtonColor: '#002776',
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title',
+                                    confirmButton: 'swal-custom-confirm'
+                                }
                             });
                             return; 
                         }
@@ -1206,10 +1313,32 @@
                             }
                             
                             Swal.fire({
-                                icon: 'error',
                                 title: 'Análise Incompleta',
-                                html: `Você não pode devolver a avaliação, pois existem itens pendentes:<br><br>${mensagem}`,
-                                confirmButtonColor: 'var(--azul-gov-principal)'
+                                width: '550px',
+                                html: `
+                                    <div style="text-align: left; padding: 10px;">
+                                        <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                            <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                                Não é possível prosseguir com a análise incompleta!
+                                            </p>
+                                        </div>
+                                        
+                                        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                            <p style="margin: 0 0 10px 0; font-weight: 600; color: #002776;">Itens pendentes:</p>
+                                            ${mensagem}
+                                        </div>
+                                    </div>
+                                `,
+                                icon: 'error',
+                                iconColor: '#dc3545',
+                                confirmButtonText: 'Entendi',
+                                confirmButtonColor: '#002776',
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title',
+                                    confirmButton: 'swal-custom-confirm'
+                                }
                             });
                             return; 
                         }
@@ -1229,13 +1358,39 @@
 
                         Swal.fire({
                             title: swalConfig.title,
-                            text: swalConfig.text,
+                            width: '500px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: ${isRecursoAnalysisPhase ? '#e8f4fd' : '#fff3cd'}; border-left: 4px solid ${isRecursoAnalysisPhase ? '#002776' : '#ffc107'}; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                        <p style="margin: 0; color: ${isRecursoAnalysisPhase ? '#002776' : '#856404'}; font-weight: 500;">
+                                            <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                                            ${swalConfig.text}
+                                        </p>
+                                    </div>
+                                    
+                                    <p style="margin: 0; color: #2c3e50;">
+                                        <strong>Deseja realmente prosseguir?</strong>
+                                    </p>
+                                    ${isRecursoAnalysisPhase ? 
+                                        '<p style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">A nota final será calculada e o processo será concluído. Esta ação é definitiva.</p>' : 
+                                        '<p style="margin-top: 10px; font-size: 0.9em; color: #7f8c8d;">O status será alterado para "Aguardando Recurso" e a secretaria será notificada.</p>'
+                                    }
+                                </div>
+                            `,
                             icon: 'warning',
+                            iconColor: isRecursoAnalysisPhase ? '#002776' : '#ffc107',
                             showCancelButton: true,
-                            confirmButtonColor: '#002776',
-                            cancelButtonColor: '#6c757d',
                             confirmButtonText: swalConfig.confirmButtonText,
-                            cancelButtonText: 'Cancelar'
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonColor: isRecursoAnalysisPhase ? '#27ae60' : '#002776',
+                            cancelButtonColor: '#7f8c8d',
+                            reverseButtons: true,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm',
+                                cancelButton: 'swal-custom-cancel'
+                            }
                         }).then(async (result) => {
                             if (result.isConfirmed) {
                                 try {
@@ -1261,8 +1416,12 @@
                                         title: 'Sucesso!',
                                         text: 'A avaliação foi processada com sucesso.',
                                         icon: 'success',
-                                        confirmButtonColor: 'var(--azul-gov-principal)',
-                                        confirmButtonText: 'OK'
+                                        timer: 2000,
+                                        showConfirmButton: false,
+                                        customClass: {
+                                            popup: 'swal-custom-popup',
+                                            title: 'swal-custom-title'
+                                        }
                                     });
                                     window.location.href = '/admin';
                                 } catch (error) {
@@ -1479,10 +1638,22 @@
                         card.className = 'resposta-card'; 
                         card.classList.add(novoStatus); 
 
-                        Swal.fire({ 
-                            toast: true, position: 'top-end', icon: 'success', 
-                            title: 'Salvo!', showConfirmButton: false, timer: 1500 
-                        });    
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Salvo!',
+                            showConfirmButton: false,
+                            timer: 1500,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer);
+                                toast.addEventListener('mouseleave', Swal.resumeTimer);
+                            },
+                            customClass: {
+                                popup: 'swal-custom-popup'
+                            }
+                        }); 
                     } catch (error) {
                         console.error("Erro completo:", error);
                         Swal.fire('Erro!', `Erro: ${error.message}`, 'error');
@@ -1567,32 +1738,48 @@
                                     avaliacaoCompleta.respostas[index].comentarioAdmin = comentario;
                                 }
 
-                                Swal.fire({ 
-                                    toast: true, 
-                                    position: 'top-end', 
-                                    icon: 'success', 
-                                    title: 'Comentário salvo!', 
-                                    showConfirmButton: false, 
-                                    timer: 1500 
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'success',
+                                    title: 'Comentário salvo!',
+                                    showConfirmButton: false,
+                                    timer: 1500,
+                                    timerProgressBar: true,
+                                    didOpen: (toast) => {
+                                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                    },
+                                    customClass: {
+                                        popup: 'swal-custom-popup'
+                                    }
                                 });
                             } else {
                                 const errorText = await response.text();
                                 console.error("❌ Erro ao salvar comentário:", errorText);
                                 
-                                Swal.fire({ 
-                                    toast: true, 
-                                    position: 'top-end', 
-                                    icon: 'error', 
-                                    title: 'Erro ao salvar', 
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'error',
+                                    title: 'Erro ao salvar',
                                     text: errorText,
-                                    showConfirmButton: false, 
-                                    timer: 2000 
+                                    showConfirmButton: false,
+                                    timer: 2000,
+                                    timerProgressBar: true,
+                                    didOpen: (toast) => {
+                                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                    },
+                                    customClass: {
+                                        popup: 'swal-custom-popup'
+                                    }
                                 });
                             }
                         } catch (error) {
                             console.error("❌ Erro na requisição:", error);
                         }
-                    }, 500); 
+                    }, 1500); 
                 } else {
                     console.log('❌ Não é um admin-comment');
                 }
