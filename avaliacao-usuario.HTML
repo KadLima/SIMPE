@@ -988,6 +988,82 @@
         .main-footer p a { color: var(--amarelo-gov-detalhe); font-weight: 600; text-decoration: none; padding: 4px 8px; border-radius: 4px; }
         .main-footer p a:hover { background-color: rgba(255, 215, 0, 0.2); text-decoration: underline; }
 
+        /* Personalização do SweetAlert */
+        .swal-custom-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border-top: 5px solid #002776 !important;
+            padding: 1.5em !important;
+        }
+
+        .swal-custom-title {
+            color: #002776 !important;
+            font-weight: 700 !important;
+            font-size: 1.5em !important;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .swal-custom-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: #FFD700;
+        }
+
+        .swal-custom-html {
+            margin: 0 !important;
+            padding: 10px 0 !important;
+        }
+
+        .swal-custom-confirm {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-cancel {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-confirm:hover,
+        .swal-custom-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+        }
+
+        .swal-custom-container {
+            padding: 2rem !important;
+        }
+
+        .swal2-input {
+            width: 100% !important;
+            padding: 12px 16px !important;
+            margin: 5px 0 0 0 !important;
+            border: 2px solid #e1e5e9 !important;
+            border-radius: 10px !important;
+            font-size: 0.95em !important;
+            transition: all 0.3s !important;
+            box-sizing: border-box !important;
+        }
+
+        .swal2-input:focus {
+            border-color: #002776 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1) !important;
+        }
+
         /* --- RESPONSIVIDADE --- */
         @media (max-width: 768px) {
             .main-nav { flex-direction: column; height: auto; padding: 20px 0; }
@@ -1125,40 +1201,72 @@
                         const evidenceList = this.closest('.evidence-container').querySelector('.evidence-list');
                         Swal.fire({
                             title: 'Adicionar Nova Evidência',
-                            input: 'text',
-                            inputLabel: 'URL do Link de Comprovação',
-                            inputPlaceholder: 'exemplo.com.br ou https://exemplo.com.br',
-                            confirmButtonText: 'Adicionar',
-                            confirmButtonColor: 'var(--azul-gov-principal)',
+                            width: '550px',
+                            html: `
+                                <div style="text-align: left; padding: 5px 0;">
+                                    <p style="color: #7f8c8d; font-size: 0.95em; margin-bottom: 20px; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 8px; border-left: 4px solid #002776;">
+                                        <i class="fas fa-info-circle" style="color: #002776; margin-right: 5px;"></i>
+                                        Adicione um link que comprove o atendimento ao requisito.
+                                    </p>
+                                    
+                                    <div style="margin-bottom: 20px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                            <i class="fas fa-link" style="margin-right: 8px;"></i>
+                                            URL do Link de Comprovação *
+                                        </label>
+                                        <input type="url" id="swal-input1" class="swal2-input" 
+                                            placeholder="https://exemplo.com.br/documento.pdf"
+                                            style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                        <small style="display: block; margin-top: 5px; color: #7f8c8d; font-size: 0.85em;">
+                                            <i class="fas fa-external-link-alt"></i> 
+                                            Exemplo: https://www.site.gov.br/relatorio.pdf
+                                        </small>
+                                    </div>
+
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                            <i class="fas fa-tag" style="margin-right: 8px;"></i>
+                                            Descrição (opcional)
+                                        </label>
+                                        <input type="text" id="swal-input2" class="swal2-input" 
+                                            placeholder="Ex: Relatório de gestão 2024"
+                                            style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                    </div>
+                                </div>
+                            `,
+                            focusConfirm: false,
                             showCancelButton: true,
+                            confirmButtonText: 'Adicionar',
                             cancelButtonText: 'Cancelar',
-                            cancelButtonColor: 'var(--vermelho-erro)',
-                            inputValidator: (value) => {
-                                if (!value) {
-                                    return 'Você precisa digitar um endereço web!';
-                                }
-                                if (/\s/.test(value)) { 
-                                    return 'O endereço não pode conter espaços.';
-                                }
-                                if (value.length > 0 && !value.includes('.')) { 
-                                    return 'Insira um endereço válido (ex: exemplo.com)';
-                                }
-                                return null; 
+                            confirmButtonColor: '#27ae60',
+                            cancelButtonColor: '#dc3545',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm',
+                                cancelButton: 'swal-custom-cancel'
                             },
-                            preConfirm: (value) => {
-                                let finalUrl = value.trim();
+                            preConfirm: () => {
+                                const url = document.getElementById('swal-input1').value.trim();
+                                const descricao = document.getElementById('swal-input2').value.trim();
                                 
-                                finalUrl = finalUrl.replace(/^(https?:\/\/|\/\/)/i, '');
-                                
-                                if (!/^(https?:\/\/)/i.test(finalUrl)) {
-                                    finalUrl = 'https://' + finalUrl;
+                                if (!url) {
+                                    Swal.showValidationMessage('A URL é obrigatória');
+                                    return false;
                                 }
                                 
-                                return finalUrl;
+                                try {
+                                    new URL(url);
+                                } catch {
+                                    Swal.showValidationMessage('Digite uma URL válida (incluindo http:// ou https://)');
+                                    return false;
+                                }
+                                
+                                return { url, descricao };
                             }
                         }).then((result) => {
                             if (result.isConfirmed && result.value) {
-                                const url = result.value;
+                                const { url, descricao } = result.value;
                                 const newItem = document.createElement('li');
                                 newItem.className = 'evidence-item';
                                 newItem.dataset.link = url;
@@ -1196,40 +1304,40 @@
             }
 
             function aplicarEstadoRascunhoAoBox(boxElement, dadosRascunho) {
-                 const comentarioEl = boxElement.querySelector('.recurso-comment');
-                 if (comentarioEl && dadosRascunho?.comentario !== undefined) {
-                     comentarioEl.value = dadosRascunho.comentario;
-                 }
+                const comentarioEl = boxElement.querySelector('.recurso-comment');
+                if (comentarioEl && dadosRascunho?.comentario !== undefined) {
+                    comentarioEl.value = dadosRascunho.comentario;
+                }
 
-                 const botaoSim = boxElement.querySelector('[data-action="sim-recurso"]');
-                 const botaoNao = boxElement.querySelector('[data-action="nao-recurso"]');
-                 const evidenceWrapper = boxElement.querySelector('.link-comprovante-wrapper');
+                const botaoSim = boxElement.querySelector('[data-action="sim-recurso"]');
+                const botaoNao = boxElement.querySelector('[data-action="nao-recurso"]');
+                const evidenceWrapper = boxElement.querySelector('.link-comprovante-wrapper');
 
-                 if (botaoSim && botaoNao) {
-                     botaoSim.classList.remove('active');
-                     botaoNao.classList.remove('active');
-                     if (dadosRascunho?.sim === true) {
-                         botaoSim.classList.add('active');
-                         if (evidenceWrapper) evidenceWrapper.classList.add('show');
-                     } else {
-                         botaoNao.classList.add('active');
-                         if (evidenceWrapper) evidenceWrapper.classList.remove('show');
-                     }
-                 }
+                if (botaoSim && botaoNao) {
+                    botaoSim.classList.remove('active');
+                    botaoNao.classList.remove('active');
+                    if (dadosRascunho?.sim === true) {
+                        botaoSim.classList.add('active');
+                        if (evidenceWrapper) evidenceWrapper.classList.add('show');
+                    } else {
+                        botaoNao.classList.add('active');
+                        if (evidenceWrapper) evidenceWrapper.classList.remove('show');
+                    }
+                }
 
-                 const evidenceList = boxElement.querySelector('.evidence-list-recurso');
-                 if (evidenceList && Array.isArray(dadosRascunho?.evidencias)) {
-                     evidenceList.innerHTML = '';
-                     dadosRascunho.evidencias.forEach(url => {
-                         const newItem = document.createElement('li');
-                         newItem.className = 'evidence-item';
-                         newItem.dataset.link = url;
-                         newItem.innerHTML = `<a href="${url}" target="_blank" title="${url}">${url}</a><button class="remove-evidence-btn" title="Remover Evidência">&times;</button>`;
-                         evidenceList.appendChild(newItem);
-                     });
-                 } else if (evidenceList) {
-                      evidenceList.innerHTML = '';
-                 }
+                const evidenceList = boxElement.querySelector('.evidence-list-recurso');
+                if (evidenceList && Array.isArray(dadosRascunho?.evidencias)) {
+                    evidenceList.innerHTML = '';
+                    dadosRascunho.evidencias.forEach(url => {
+                        const newItem = document.createElement('li');
+                        newItem.className = 'evidence-item';
+                        newItem.dataset.link = url;
+                        newItem.innerHTML = `<a href="${url}" target="_blank" title="${url}">${url}</a><button class="remove-evidence-btn" title="Remover Evidência">&times;</button>`;
+                        evidenceList.appendChild(newItem);
+                    });
+                } else if (evidenceList) {
+                    evidenceList.innerHTML = '';
+                }
             }
 
             async function verificarPrazoRecurso() {
@@ -1322,13 +1430,28 @@
 
             function salvarRascunhoRecurso() {
                 console.log('=== SALVANDO RASCUNHO SIMPLIFICADO ===');
+                console.log('LocalStorage atual:', localStorage.getItem(`rascunho_recurso_${avaliacaoId}`));
                 
                 const rascunhoRecurso = {};
                 let temDados = false;
 
                 document.querySelectorAll('.recurso-box[data-is-editable="true"]').forEach(box => {
                     const respostaCard = box.closest('.resposta-card');
-                    const respostaId = parseInt(respostaCard.dataset.respostaId);
+                    let respostaId = respostaCard.dataset.respostaId;
+                    if (respostaId) {
+                        respostaId = parseInt(respostaId);
+                    } else {
+                        // Tenta pegar do dataset.resposta se existir
+                        const respostaData = respostaCard.dataset.resposta;
+                        if (respostaData) {
+                            try {
+                                const respostaObj = JSON.parse(respostaData.replace(/&quot;/g, '"'));
+                                respostaId = respostaObj.id;
+                            } catch (e) {
+                                console.error('Erro ao parsear resposta:', e);
+                            }
+                        }
+                    }
 
                     console.log(`Salvando resposta ${respostaId}`);
 
@@ -1355,13 +1478,21 @@
                     console.log("Rascunho do recurso salvo com sucesso:", rascunhoRecurso);
 
                     Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
                         title: 'Salvo!',
                         text: 'Rascunho salvo com sucesso.',
-                        icon: 'success',
-                        timer: 2000, 
                         showConfirmButton: false,
-                        toast: true, 
-                        position: 'top-end'
+                        timer: 2000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        },
+                        customClass: {
+                            popup: 'swal-custom-popup'
+                        }
                     });
                 } else {
                     console.log("Nenhum dado para salvar");
@@ -1370,29 +1501,136 @@
 
             function carregarRascunhoRecurso() {
                 const rascunhoSalvo = localStorage.getItem(`rascunho_recurso_${avaliacaoId}`);
+                const rascunhoSubitensSalvo = localStorage.getItem(`rascunho_subitens_${avaliacaoId}`);
                 const rascunhoGeral = rascunhoSalvo ? JSON.parse(rascunhoSalvo) : {};
+                const rascunhoSubitens = rascunhoSubitensSalvo ? JSON.parse(rascunhoSubitensSalvo) : [];
+                
                 let algumRascunhoCarregado = false;
+                let temRascunhoSubitens = rascunhoSubitens.length > 0;
 
+                // Verifica rascunho de requisitos normais
                 document.querySelectorAll('.recurso-box[data-is-editable="true"]').forEach(box => {
                     const respostaCard = box.closest('.resposta-card');
                     if (!respostaCard) return;
                     const respostaId = respostaCard.dataset.respostaId;
                     const dadosRascunho = rascunhoGeral[respostaId];
 
-                    aplicarEstadoRascunhoAoBox(box, dadosRascunho);
-                    if (dadosRascunho) {
+                    if (dadosRascunho && respostaId && !isNaN(parseInt(respostaId))) {
                         algumRascunhoCarregado = true;
+                    } else if (dadosRascunho && (!respostaId || isNaN(parseInt(respostaId)))) {
+                        console.log('⚠️ Rascunho com ID inválido encontrado, ignorando');
                     }
                 });
 
-                if (algumRascunhoCarregado) {
-                console.log("Rascunho de recurso carregado.");
-                } else if (rascunhoSalvo) { 
-                    console.log("Rascunho antigo encontrado, mas não aplicável aos itens atuais.");
+                if (algumRascunhoCarregado || temRascunhoSubitens) {
+                    console.log("📝 Rascunho de recurso encontrado:", { requisitos: algumRascunhoCarregado, subitens: temRascunhoSubitens });
+                    
+                    // Mostra um aviso para o usuário
+                    Swal.fire({
+                        title: 'Rascunho Encontrado',
+                        html: `
+                            <div style="text-align: left;">
+                                <p>Você tem um rascunho de recurso salvo:</p>
+                                <ul style="margin-top: 10px;">
+                                    ${algumRascunhoCarregado ? '<li>✅ Requisitos normais com rascunho</li>' : ''}
+                                    ${temRascunhoSubitens ? '<li>✅ Subitens do Requisito 31 com rascunho</li>' : ''}
+                                </ul>
+                                <p>Deseja carregá-lo?</p>
+                            </div>
+                        `,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sim, carregar',
+                        cancelButtonText: 'Não, começar do zero',
+                        confirmButtonColor: '#27ae60',
+                        cancelButtonColor: '#dc3545'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Carrega rascunho dos requisitos normais
+                            document.querySelectorAll('.recurso-box[data-is-editable="true"]').forEach(box => {
+                                const respostaCard = box.closest('.resposta-card');
+                                if (!respostaCard) return;
+                                const respostaId = respostaCard.dataset.respostaId;
+                                const dadosRascunho = rascunhoGeral[respostaId];
+                                if (dadosRascunho) {
+                                    aplicarEstadoRascunhoAoBox(box, dadosRascunho);
+                                }
+                            });
+                            
+                            // Carrega rascunho dos subitens (se houver)
+                            if (temRascunhoSubitens) {
+                                // Encontra o container dos subitens e aplica o rascunho
+                                document.querySelectorAll('.subitem-recurso').forEach(subitem => {
+                                    const subRespostaId = parseInt(subitem.dataset.subrespostaId);
+                                    const rascunhoSub = rascunhoSubitens.find(s => s.id === subRespostaId);
+                                    
+                                    if (rascunhoSub) {
+                                        // Aplica o estado do rascunho ao subitem
+                                        const btnSim = subitem.querySelector('.recurso-sim');
+                                        const btnNao = subitem.querySelector('.recurso-nao');
+                                        
+                                        if (btnSim && btnNao) {
+                                            btnSim.classList.remove('active');
+                                            btnNao.classList.remove('active');
+                                            
+                                            if (rascunhoSub.atende) {
+                                                btnSim.classList.add('active');
+                                                btnSim.style.backgroundColor = 'var(--verde-sucesso)';
+                                                btnSim.style.color = 'white';
+                                            } else {
+                                                btnNao.classList.add('active');
+                                                btnNao.style.backgroundColor = 'var(--vermelho-erro)';
+                                                btnNao.style.color = 'white';
+                                            }
+                                        }
+                                        
+                                        // Carrega os links de evidência
+                                        const evidenceList = subitem.querySelector('.evidence-list-recurso');
+                                        if (evidenceList && rascunhoSub.evidencias) {
+                                            evidenceList.innerHTML = '';
+                                            rascunhoSub.evidencias.forEach(url => {
+                                                const newItem = document.createElement('li');
+                                                newItem.className = 'evidence-item';
+                                                newItem.dataset.link = url;
+                                                newItem.innerHTML = `
+                                                    <a href="${url}" target="_blank">${url}</a>
+                                                    <button class="remove-evidence-btn">&times;</button>
+                                                `;
+                                                evidenceList.appendChild(newItem);
+                                            });
+                                        }
+                                        
+                                        // Carrega o comentário
+                                        const comentarioEl = subitem.querySelector('.recurso-comment');
+                                        if (comentarioEl && rascunhoSub.comentario) {
+                                            comentarioEl.value = rascunhoSub.comentario;
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: 'Rascunho carregado!',
+                                showConfirmButton: false,
+                                timer: 2000
+                            });
+                        } else {
+                            // Se não quiser carregar, limpa os rascunhos
+                            localStorage.removeItem(`rascunho_recurso_${avaliacaoId}`);
+                            localStorage.removeItem(`rascunho_subitens_${avaliacaoId}`);
+                            console.log('Rascunhos removidos por opção do usuário');
+                            
+                            // Recarrega a página para resetar tudo
+                            window.location.reload();
+                        }
+                    });
+                    
                 } else {
                     console.log("Nenhum rascunho encontrado.");
                 }
-
 
                 setTimeout(inicializarBotoesRecursoAutomatico, 50);
             }
@@ -2214,7 +2452,15 @@
                                 icon: 'success',
                                 title: 'Link adicionado!',
                                 showConfirmButton: false,
-                                timer: 1500
+                                timer: 1500,
+                                timerProgressBar: true,
+                                didOpen: (toast) => {
+                                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                },
+                                customClass: {
+                                    popup: 'swal-custom-popup'
+                                }
                             });
                         }
                     }
@@ -2693,9 +2939,30 @@
                             
                             Swal.fire({
                                 title: 'Avaliação em Análise',
-                                text: 'Esta avaliação está sendo analisada pela Controladoria Geral do Estado. Não é possível fazer alterações no momento.',
+                                width: '500px',
+                                html: `
+                                    <div style="text-align: left; padding: 10px;">
+                                        <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                            <p style="margin: 0; color: #002776; font-weight: 500;">
+                                                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                                                Esta avaliação está sendo analisada pela Controladoria Geral do Estado.
+                                            </p>
+                                        </div>
+                                        
+                                        <p style="margin: 0; color: #2c3e50;">
+                                            Não é possível fazer alterações no momento.
+                                        </p>
+                                    </div>
+                                `,
                                 icon: 'info',
-                                confirmButtonColor: 'var(--azul-gov-principal)'
+                                iconColor: '#002776',
+                                confirmButtonText: 'Entendi',
+                                confirmButtonColor: '#002776',
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title',
+                                    confirmButton: 'swal-custom-confirm'
+                                }
                             });
                             return;
                         }
@@ -2741,27 +3008,67 @@
                         
                         Swal.fire({
                             title: 'Adicionar Link',
-                            input: 'url',
-                            inputLabel: 'URL do Link de Comprovação',
-                            inputPlaceholder: 'https://exemplo.com',
+                            width: '550px',
+                            html: `
+                                <div style="text-align: left; padding: 5px 0;">
+                                    <div style="margin-bottom: 20px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                            <i class="fas fa-link" style="margin-right: 8px;"></i>
+                                            URL do Link de Comprovação *
+                                        </label>
+                                        <input type="url" id="swal-input1" class="swal2-input" 
+                                            placeholder="https://exemplo.com/documento.pdf"
+                                            style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                        <small style="display: block; margin-top: 5px; color: #7f8c8d; font-size: 0.85em;">
+                                            <i class="fas fa-external-link-alt"></i> 
+                                            O link deve ser público e acessível
+                                        </small>
+                                    </div>
+
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                            <i class="fas fa-tag" style="margin-right: 8px;"></i>
+                                            Descrição (opcional)
+                                        </label>
+                                        <input type="text" id="swal-input2" class="swal2-input" 
+                                            placeholder="Ex: Relatório da Ouvidoria"
+                                            style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                    </div>
+                                </div>
+                            `,
+                            focusConfirm: false,
                             showCancelButton: true,
                             confirmButtonText: 'Adicionar',
                             cancelButtonText: 'Cancelar',
-                            confirmButtonColor: 'var(--azul-gov-principal)',
-                            inputValidator: (value) => {
-                                if (!value) return 'Digite uma URL';
-                                return null;
+                            confirmButtonColor: '#27ae60',
+                            cancelButtonColor: '#dc3545',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm',
+                                cancelButton: 'swal-custom-cancel'
                             },
-                            preConfirm: (value) => {
-                                let finalUrl = value.trim();
-                                if (!/^(https?:\/\/)/i.test(finalUrl)) {
-                                    finalUrl = 'https://' + finalUrl;
+                            preConfirm: () => {
+                                const url = document.getElementById('swal-input1').value.trim();
+                                const descricao = document.getElementById('swal-input2').value.trim();
+                                
+                                if (!url) {
+                                    Swal.showValidationMessage('A URL é obrigatória');
+                                    return false;
                                 }
-                                return finalUrl;
+                                
+                                try {
+                                    new URL(url);
+                                } catch {
+                                    Swal.showValidationMessage('Digite uma URL válida (incluindo http:// ou https://)');
+                                    return false;
+                                }
+                                
+                                return { url, descricao };
                             }
                         }).then((result) => {
                             if (result.isConfirmed && result.value) {
-                                const url = result.value;
+                                const { url, descricao } = result.value;
                                 const newItem = document.createElement('li');
                                 newItem.className = 'evidence-item';
                                 newItem.dataset.link = url;
@@ -2781,7 +3088,15 @@
                                     icon: 'success',
                                     title: 'Link adicionado!',
                                     showConfirmButton: false,
-                                    timer: 1500
+                                    timer: 1500,
+                                    timerProgressBar: true,
+                                    didOpen: (toast) => {
+                                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                    },
+                                    customClass: {
+                                        popup: 'swal-custom-popup'
+                                    }
                                 });
                             }
                         });
@@ -2879,17 +3194,42 @@
                                             icon: 'success',
                                             title: 'Área de recurso aberta!',
                                             showConfirmButton: false,
-                                            timer: 2000
+                                            timer: 2000,
+                                            timerProgressBar: true,
+                                            didOpen: (toast) => {
+                                                toast.addEventListener('mouseenter', Swal.stopTimer);
+                                                toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                            },
+                                            customClass: {
+                                                popup: 'swal-custom-popup'
+                                            }
                                         });
                                     }, 100);
                                 }
                             } else {
                                 console.error(`❌ Card para resposta ${respostaId} não encontrado após fechar modal.`);
                                 Swal.fire({
-                                    icon: 'error',
                                     title: 'Erro',
-                                    text: 'Não foi possível encontrar o card do requisito.',
-                                    confirmButtonColor: 'var(--azul-gov-principal)'
+                                    width: '450px',
+                                    html: `
+                                        <div style="text-align: left; padding: 10px;">
+                                            <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                                                <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                                    Não foi possível encontrar o card do requisito.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    `,
+                                    icon: 'error',
+                                    iconColor: '#dc3545',
+                                    confirmButtonText: 'OK',
+                                    confirmButtonColor: '#002776',
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm'
+                                    }
                                 });
                             }
                         }, 300);
@@ -3038,10 +3378,38 @@
                     console.log(`Recurso enviado - Original: ${resposta?.atendeOriginal ?? 'N/A'}, Recurso: ${recursoAtende}`);
 
                     if (recursoAtende && evidencias.length === 0) {
-                        Swal.fire({ 
-                            icon: 'warning', 
-                            title: 'Evidência Faltando', 
-                            text: `O requisito "${respostaCard.querySelector('strong').textContent}" foi marcado como 'Atende' no recurso, mas nenhuma evidência foi adicionada.` 
+                        Swal.fire({
+                            title: 'Evidência Faltando',
+                            width: '500px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px;">
+                                        <p style="margin: 0; color: #856404; font-weight: 500;">
+                                            <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                            O requisito foi marcado como "Atende" no recurso, mas nenhuma evidência foi adicionada.
+                                        </p>
+                                    </div>
+                                    
+                                    <div style="margin-top: 15px; background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                                        <p style="margin: 0; color: #2c3e50; font-weight: 600;">
+                                            ${respostaCard.querySelector('strong').textContent}
+                                        </p>
+                                    </div>
+                                    
+                                    <p style="margin-top: 15px; color: #7f8c8d; font-size: 0.9em;">
+                                        Adicione pelo menos um link de comprovação antes de enviar o recurso.
+                                    </p>
+                                </div>
+                            `,
+                            icon: 'warning',
+                            iconColor: '#ffc107',
+                            confirmButtonText: 'Entendi',
+                            confirmButtonColor: '#002776',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
                         formValido = false;
                         break;
@@ -3068,10 +3436,32 @@
                     const comentario = subitem.querySelector('.recurso-comment')?.value.trim() || '';
                     
                     if (atende && evidencias.length === 0) {
-                        Swal.fire({ 
-                            icon: 'warning', 
-                            title: 'Evidência Faltando', 
-                            text: `O subitem foi marcado como 'Atende' no recurso, mas nenhuma evidência foi adicionada.` 
+                        Swal.fire({
+                            title: 'Evidência Faltando',
+                            width: '500px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px;">
+                                        <p style="margin: 0; color: #856404; font-weight: 500;">
+                                            <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                            O subitem foi marcado como "Atende" no recurso, mas nenhuma evidência foi adicionada.
+                                        </p>
+                                    </div>
+                                    
+                                    <p style="margin-top: 15px; color: #7f8c8d; font-size: 0.9em;">
+                                        Adicione pelo menos um link de comprovação antes de enviar o recurso.
+                                    </p>
+                                </div>
+                            `,
+                            icon: 'warning',
+                            iconColor: '#ffc107',
+                            confirmButtonText: 'Entendi',
+                            confirmButtonColor: '#002776',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
                         formValido = false;
                         return;
@@ -3095,20 +3485,40 @@
                 if (respostasDoRecurso.length === 0 && subRespostasDoRecurso.length > 0) {
                     Swal.fire({
                         title: 'Confirmar Envio do Recurso?',
+                        width: '550px',
                         html: `
-                            <div style="text-align: left;">
-                                <p><strong>Você está prestes a enviar recurso para ${subRespostasDoRecurso.length} subitens:</strong></p>
-                                <p style="margin-top: 15px; color: #dc3545; font-weight: bold;">
-                                    ⚠️ Após o envio, não será possível editar o recurso.
-                                </p>
+                            <div style="text-align: left; padding: 10px;">
+                                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                    <p style="margin: 0; color: #856404; font-weight: 500;">
+                                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                        Após o envio, não será possível editar o recurso.
+                                    </p>
+                                </div>
+                                
+                                <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                    <p style="margin: 0 0 10px 0; font-weight: 600; color: #002776;">
+                                        <i class="fas fa-list"></i> Resumo:
+                                    </p>
+                                    <p style="margin: 0 0 5px 0;">
+                                        <strong>${subRespostasDoRecurso.length}</strong> subitens serão enviados para recurso.
+                                    </p>
+                                </div>
                             </div>
                         `,
                         icon: 'warning',
+                        iconColor: '#ffc107',
                         showCancelButton: true,
                         confirmButtonText: 'Sim, Enviar!',
                         cancelButtonText: 'Cancelar',
-                        confirmButtonColor: 'var(--azul-gov-principal)',
-                        cancelButtonColor: 'var(--vermelho-erro)'
+                        confirmButtonColor: '#27ae60',
+                        cancelButtonColor: '#dc3545',
+                        reverseButtons: true,
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm',
+                            cancelButton: 'swal-custom-cancel'
+                        }
                     }).then(async (result) => {
                         if (result.isConfirmed) {
                             try {
@@ -3143,7 +3553,12 @@
                                     title: 'Recurso Enviado!',
                                     text: 'Seu recurso foi enviado com sucesso.',
                                     icon: 'success',
-                                    confirmButtonColor: 'var(--azul-gov-principal)'
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title'
+                                    }
                                 });
 
                                 localStorage.removeItem(`rascunho_subitens_${avaliacaoId}`);
@@ -3151,7 +3566,17 @@
 
                             } catch (error) {
                                 console.error('Erro:', error);
-                                Swal.fire('Erro!', error.message, 'error');
+                                Swal.fire({
+                                    title: 'Erro!',
+                                    text: error.message,
+                                    icon: 'error',
+                                    confirmButtonColor: '#dc3545',
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm'
+                                    }
+                                });
                             }
                         }
                     });
@@ -3161,21 +3586,42 @@
                 if (respostasDoRecurso.length === 0 && subRespostasDoRecurso.length === 0) {
                     Swal.fire({
                         title: 'Confirmar Envio do Recurso?',
+                        width: '550px',
                         html: `
-                            <div style="text-align: left;">
-                                <p><strong>Você está prestes a enviar um recurso confirmando que concorda com todas as análises da SCGE.</strong></p>
-                                <p>Esta ação confirmará que você aceita todos os resultados da validação sem fazer alterações.</p>
-                                <p style="margin-top: 15px; color: #28a745; font-weight: bold;">
-                                    ✅ Todos os requisitos serão mantidos conforme a análise da Controladoria.
+                            <div style="text-align: left; padding: 10px;">
+                                <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                    <p style="margin: 0; color: #002776; font-weight: 500;">
+                                        <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                                        Você está prestes a confirmar que concorda com todas as análises da SCGE.
+                                    </p>
+                                </div>
+                                
+                                <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                    <p style="margin: 0; display: flex; align-items: center; gap: 10px;">
+                                        <i class="fas fa-check-circle" style="color: #28a745; font-size: 1.2em;"></i>
+                                        <span>Todos os requisitos serão mantidos conforme a análise da Controladoria.</span>
+                                    </p>
+                                </div>
+                                
+                                <p style="margin-top: 15px; color: #7f8c8d; font-size: 0.9em;">
+                                    Esta ação é definitiva e não pode ser desfeita.
                                 </p>
                             </div>
                         `,
                         icon: 'info',
+                        iconColor: '#002776',
                         showCancelButton: true,
                         confirmButtonText: 'Sim, Confirmar!',
                         cancelButtonText: 'Cancelar',
-                        cancelButtonColor: 'var(--vermelho-erro)',
-                        confirmButtonColor: 'var(--azul-gov-principal)',
+                        confirmButtonColor: '#27ae60',
+                        cancelButtonColor: '#dc3545',
+                        reverseButtons: true,
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm',
+                            cancelButton: 'swal-custom-cancel'
+                        }
                     }).then(async (result) => {
                         if (result.isConfirmed) {
                             try {
@@ -3219,12 +3665,30 @@
 
                                 await Swal.fire({
                                     title: 'Confirmação Enviada!',
+                                    width: '500px',
                                     html: `
-                                        <p>Você confirmou que concorda com todas as análises da SCGE.</p>
-                                        <p><strong>Status:</strong> Avaliação em análise final</p>
+                                        <div style="text-align: left; padding: 10px;">
+                                            <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                                <p style="margin: 0; color: #155724; font-weight: 500;">
+                                                    <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                                                    Você confirmou que concorda com todas as análises da SCGE.
+                                                </p>
+                                            </div>
+                                            
+                                            <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e1e5e9;">
+                                                <p style="margin: 0;">
+                                                    <strong>Status:</strong> Avaliação em análise final
+                                                </p>
+                                            </div>
+                                        </div>
                                     `,
                                     icon: 'success',
-                                    confirmButtonColor: 'var(--azul-gov-principal)'
+                                    timer: 3000,
+                                    showConfirmButton: false,
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title'
+                                    }
                                 });
                                 
                                 localStorage.removeItem(`rascunho_recurso_${avaliacaoId}`);
@@ -3233,10 +3697,15 @@
                             } catch (error) {
                                 console.error('Erro ao enviar confirmação:', error);
                                 Swal.fire({
-                                    title: 'Erro!', 
-                                    text: error.message, 
+                                    title: 'Erro!',
+                                    text: error.message,
                                     icon: 'error',
-                                    confirmButtonColor: 'var(--vermelho-erro)'
+                                    confirmButtonColor: '#dc3545',
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm'
+                                    }
                                 });
                             }
                         }
@@ -3246,22 +3715,49 @@
 
                 Swal.fire({
                     title: 'Confirmar Envio do Recurso?',
+                    width: '550px',
                     html: `
-                        <div style="text-align: left;">
-                            <p><strong>Você está prestes a enviar recurso para:</strong></p>
-                            ${respostasDoRecurso.length > 0 ? `<p>📌 ${respostasDoRecurso.length} requisito(s)</p>` : ''}
-                            ${subRespostasDoRecurso.length > 0 ? `<p>🔗 ${subRespostasDoRecurso.length} subitem(ns)</p>` : ''}
-                            <p style="margin-top: 15px; color: #dc3545; font-weight: bold;">
-                                ⚠️ Após o envio, não será possível editar o recurso.
-                            </p>
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="margin: 0; color: #856404; font-weight: 500;">
+                                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                    Após o envio, não será possível editar o recurso.
+                                </p>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #002776;">
+                                    <i class="fas fa-list"></i> Resumo do Recurso:
+                                </p>
+                                ${respostasDoRecurso.length > 0 ? `
+                                    <p style="margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-check-circle" style="color: #27ae60;"></i>
+                                        <strong>${respostasDoRecurso.length}</strong> requisito(s)
+                                    </p>
+                                ` : ''}
+                                ${subRespostasDoRecurso.length > 0 ? `
+                                    <p style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-link" style="color: #27ae60;"></i>
+                                        <strong>${subRespostasDoRecurso.length}</strong> subitem(ns)
+                                    </p>
+                                ` : ''}
+                            </div>
                         </div>
                     `,
                     icon: 'warning',
+                    iconColor: '#ffc107',
                     showCancelButton: true,
                     confirmButtonText: 'Sim, Enviar!',
                     cancelButtonText: 'Cancelar',
-                    confirmButtonColor: 'var(--azul-gov-principal)',
-                    cancelButtonColor: 'var(--vermelho-erro)'
+                    confirmButtonColor: '#27ae60',
+                    cancelButtonColor: '#dc3545',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm',
+                        cancelButton: 'swal-custom-cancel'
+                    }
                 }).then(async (result) => {
                     if (result.isConfirmed) {
                         try {
@@ -3319,13 +3815,30 @@
 
                             await Swal.fire({
                                 title: 'Recurso Enviado!',
+                                width: '550px',
                                 html: `
-                                    <p>A SCGE foi notificada e em breve você terá a análise do recurso.</p>
-                                    <p><strong>Requisitos com recurso:</strong> ${respostasDoRecurso.length}</p>
-                                    <p><strong>Subitens com recurso:</strong> ${subRespostasDoRecurso.length}</p>
+                                    <div style="text-align: left; padding: 10px;">
+                                        <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                            <p style="margin: 0; color: #155724; font-weight: 500;">
+                                                <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                                                Recurso enviado com sucesso!
+                                            </p>
+                                        </div>
+                                        
+                                        <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                            <p style="margin: 0 0 10px 0; color: #2c3e50;">A SCGE foi notificada e em breve você terá a análise do recurso.</p>
+                                            <p style="margin: 5px 0;"><strong>Requisitos com recurso:</strong> ${respostasDoRecurso.length}</p>
+                                            <p style="margin: 5px 0;"><strong>Subitens com recurso:</strong> ${subRespostasDoRecurso.length}</p>
+                                        </div>
+                                    </div>
                                 `,
                                 icon: 'success',
-                                confirmButtonColor: 'var(--azul-gov-principal)'
+                                timer: 3000,
+                                showConfirmButton: false,
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title'
+                                }
                             });
                             
                             localStorage.removeItem(`rascunho_recurso_${avaliacaoId}`);
@@ -3335,10 +3848,15 @@
                         } catch (error) {
                             console.error('Erro ao enviar recurso:', error);
                             Swal.fire({
-                                title: 'Erro!', 
-                                text: error.message, 
+                                title: 'Erro!',
+                                text: error.message,
                                 icon: 'error',
-                                confirmButtonColor: 'var(--vermelho-erro)'
+                                confirmButtonColor: '#dc3545',
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title',
+                                    confirmButton: 'swal-custom-confirm'
+                                }
                             });
                         }
                     }
@@ -3360,10 +3878,31 @@
                                 console.log('Prazo expirou! Recarregando página...');
                                 Swal.fire({
                                     title: 'Prazo Expirado!',
-                                    text: 'O prazo para recurso expirou. A página será atualizada.',
+                                    width: '500px',
+                                    html: `
+                                        <div style="text-align: left; padding: 10px;">
+                                            <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                                <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                                    O prazo para recurso expirou.
+                                                </p>
+                                            </div>
+                                            
+                                            <p style="margin: 0; color: #2c3e50;">
+                                                A página será atualizada.
+                                            </p>
+                                        </div>
+                                    `,
                                     icon: 'warning',
-                                    confirmButtonColor: 'var(--azul-gov-principal)',
-                                    allowOutsideClick: false
+                                    iconColor: '#dc3545',
+                                    confirmButtonText: 'OK',
+                                    confirmButtonColor: '#002776',
+                                    allowOutsideClick: false,
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm'
+                                    }
                                 }).then(() => {
                                     location.reload();
                                 });
@@ -3374,29 +3913,62 @@
                                 warned5min = true; 
                                 warned10min = true;
                                 Swal.fire({
-                                    toast: true, position: 'top-end', icon: 'error',
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'error', 
                                     title: 'ALERTA DE PRAZO!',
-                                    text: 'Resta apenas 1 minuto para enviar o recurso.',
-                                    showConfirmButton: false, timer: 5000, timerProgressBar: true
+                                    text: 'Resta apenas 1 minuto para enviar o recurso.', 
+                                    showConfirmButton: false,
+                                    timer: 5000,
+                                    timerProgressBar: true,
+                                    didOpen: (toast) => {
+                                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                    },
+                                    customClass: {
+                                        popup: 'swal-custom-popup'
+                                    }
                                 });
                             }
                             else if (segundos <= 300 && !warned5min) {
                                 warned5min = true;
                                 warned10min = true; 
                                 Swal.fire({
-                                    toast: true, position: 'top-end', icon: 'warning',
-                                    title: 'Aviso de Prazo',
-                                    text: 'Restam apenas 5 minutos para enviar o recurso.',
-                                    showConfirmButton: false, timer: 5000, timerProgressBar: true
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'warning', 
+                                    title: 'ALERTA DE PRAZO!',
+                                    text: 'Resta apenas 5 minutos para enviar o recurso.', 
+                                    showConfirmButton: false,
+                                    timer: 5000,
+                                    timerProgressBar: true,
+                                    didOpen: (toast) => {
+                                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                    },
+                                    customClass: {
+                                        popup: 'swal-custom-popup'
+                                    }
                                 });
                             }
                             else if (segundos <= 600 && !warned10min) {
                                 warned10min = true;
                                 Swal.fire({
-                                    toast: true, position: 'top-end', icon: 'info',
-                                    title: 'Aviso de Prazo',
-                                    text: 'Restam 10 minutos para enviar o recurso.',
-                                    showConfirmButton: false, timer: 5000, timerProgressBar: true
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'info', 
+                                    title: 'ALERTA DE PRAZO!',
+                                    text: 'Restam apenas 10 minutos para enviar o recurso.', 
+                                    showConfirmButton: false,
+                                    timer: 5000,
+                                    timerProgressBar: true,
+                                    didOpen: (toast) => {
+                                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                    },
+                                    customClass: {
+                                        popup: 'swal-custom-popup'
+                                    }
                                 });
                             }
 
@@ -3478,15 +4050,22 @@
                     localStorage.setItem(`rascunho_subitens_${avaliacaoId}`, JSON.stringify(rascunhoSubitens));
                     console.log('Rascunho de subitens salvo:', rascunhoSubitens);
                     
-                    // Opcional: mostrar toast de confirmação
                     Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
                         title: 'Salvo!',
                         text: 'Rascunho salvo com sucesso.',
-                        icon: 'success',
-                        timer: 1500,
                         showConfirmButton: false,
-                        toast: true,
-                        position: 'top-end'
+                        timer: 1500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        },
+                        customClass: {
+                            popup: 'swal-custom-popup'
+                        }
                     });
                 }
             }
@@ -3593,6 +4172,9 @@
                 if(avaliacaoCompleta.status === 'AGUARDANDO_RECURSO' && !prazoExpirado) {
                     recursoActionsContainer.innerHTML = `
                         <div style="display: flex; gap: 20px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 30px 0;">
+                            <button id="visualizar-nota-btn" class="btn" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); min-width: 250px;">
+                                <i class="fas fa-eye"></i> Visualizar Nota (sem enviar)
+                            </button>
                             <button id="csv-recurso-btn" class="btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); min-width: 250px;">
                                 <i class="fas fa-download"></i> Baixar CSV para Análise
                             </button>
@@ -3603,15 +4185,16 @@
                         <div style="text-align: center; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--azul-gov-claro);">
                             <p style="margin: 0; font-size: 0.95em; color: #495057;">
                                 <i class="fas fa-info-circle" style="color: var(--azul-gov-claro);"></i>
-                                <strong>Dica:</strong> Se você concorda com todas as análises da SCGE, clique no botão para confirmar.
+                                <strong>Dica:</strong> Use o botão "Visualizar Nota" para ver o cálculo antes de enviar.
                             </p>
                         </div>
                     `;
 
-                    
+                    document.getElementById('visualizar-nota-btn').addEventListener('click', function() {
+                        visualizarNotaPosRecurso(avaliacaoId, authToken, avaliacaoCompleta);
+                    });
                     document.getElementById('enviar-recurso-btn').addEventListener('click', enviarRecurso);
                     document.getElementById('csv-recurso-btn').addEventListener('click', gerarCSVRecurso);
-
                 } else if (avaliacaoCompleta.status === 'AGUARDANDO_RECURSO' && prazoExpirado) {
                     recursoActionsContainer.innerHTML = `
                         <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; margin-top: 20px;">
@@ -3643,6 +4226,183 @@
         
             
         });
+
+        // FUNÇÃO PARA VISUALIZAR NOTA SEM ENVIAR RECURSO (COM CÁLCULO CORRETO DOS SUBITENS)
+        function visualizarNotaPosRecurso(avaliacaoId, authToken, avaliacaoCompleta) {
+            console.log('🎯 ===== VISUALIZAÇÃO DA NOTA PÓS-RECURSO (SEM ENVIAR) =====');
+            console.log('📌 Avaliação ID:', avaliacaoId);
+            
+            // Pega os dados do rascunho atual
+            const rascunhoRecurso = localStorage.getItem(`rascunho_recurso_${avaliacaoId}`);
+            const rascunhoSubitens = localStorage.getItem(`rascunho_subitens_${avaliacaoId}`);
+            
+            console.log('📦 Rascunho de requisitos:', rascunhoRecurso ? JSON.parse(rascunhoRecurso) : 'Nenhum');
+            console.log('📦 Rascunho de subitens:', rascunhoSubitens ? JSON.parse(rascunhoSubitens) : 'Nenhum');
+            
+            // Faz uma cópia da avaliação para simular
+            const avaliacaoSimulada = JSON.parse(JSON.stringify(avaliacaoCompleta));
+            
+            let pontuacaoPosRecurso = 0;
+            let pontuacaoTotal = 0;
+            
+            console.log('\n📋 ===== ANALISANDO CADA REQUISITO =====');
+            
+            avaliacaoSimulada.respostas.forEach((resposta, index) => {
+                // Verifica se é requisito composto (R31)
+                if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                    console.log(`\n🔹 REQUISITO ${index + 1} - COMPOSTO (R31):`);
+                    console.log(`   📝 ${resposta.requisito?.texto?.substring(0, 60)}...`);
+                    
+                    const pontuacaoBase = resposta.requisito?.pontuacao || 8;
+                    pontuacaoTotal += pontuacaoBase;
+                    
+                    // Contar aprovações considerando os rascunhos de recurso
+                    let aprovados = 0;
+                    
+                    resposta.subRespostas.forEach((sub, subIndex) => {
+                        // Verifica se este subitem tem rascunho de recurso
+                        let subAtende = sub.statusValidacao === 'aprovado';
+                        
+                        if (rascunhoSubitens) {
+                            const subitensRascunho = JSON.parse(rascunhoSubitens);
+                            const rascunhoSub = subitensRascunho.find(s => s.id === sub.id);
+                            
+                            if (rascunhoSub) {
+                                // Se tem rascunho, usa a decisão do rascunho
+                                subAtende = rascunhoSub.atende;
+                                console.log(`   📌 Subitem ${subIndex + 1}: RASCUNHO = ${subAtende ? 'Atende' : 'Não atende'} (original: ${sub.statusValidacao})`);
+                            } else {
+                                // Se não tem rascunho, mantém a validação original
+                                console.log(`   📌 Subitem ${subIndex + 1}: ${subAtende ? 'Aprovado' : 'Rejeitado'} (sem rascunho)`);
+                            }
+                        } else {
+                            console.log(`   📌 Subitem ${subIndex + 1}: ${subAtende ? 'Aprovado' : 'Rejeitado'}`);
+                        }
+                        
+                        if (subAtende) aprovados++;
+                    });
+                    
+                    // Calcula a pontuação proporcional baseada na quantidade de aprovados
+                    let pontuacaoRequisito = 0;
+                    let percentual = 0;
+                    
+                    if (aprovados >= 12) {
+                        pontuacaoRequisito = 8.0; // 100%
+                        percentual = 100;
+                    } else if (aprovados >= 8) {
+                        pontuacaoRequisito = 5.6; // 70%
+                        percentual = 70;
+                    } else if (aprovados >= 4) {
+                        pontuacaoRequisito = 4.0; // 50%
+                        percentual = 50;
+                    } else if (aprovados >= 1) {
+                        pontuacaoRequisito = 2.4; // 30%
+                        percentual = 30;
+                    } else {
+                        pontuacaoRequisito = 0;
+                        percentual = 0;
+                    }
+                    
+                    console.log(`   📊 Total de aprovados: ${aprovados}/13`);
+                    console.log(`   📊 Percentual: ${percentual}%`);
+                    console.log(`   ⭐ Pontuação calculada: ${pontuacaoRequisito.toFixed(1)}/${pontuacaoBase}`);
+                    
+                    pontuacaoPosRecurso += pontuacaoRequisito;
+                    
+                } else {
+                    // Dentro do else dos requisitos normais, antes de verificar o rascunho:
+                    console.log(`   🔍 Buscando rascunho para ID: ${resposta.id}`);
+                    console.log(`   📦 Rascunho disponível:`, rascunhoRecurso ? Object.keys(JSON.parse(rascunhoRecurso)) : 'nenhum');
+                    // Requisitos normais
+                    const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
+                    pontuacaoTotal += pontuacaoRequisito;
+                    
+                    let pontuacaoRequisitoPosRecurso = 0;
+                    
+                    // Verifica se este requisito tem rascunho de recurso
+                    const temRascunhoRecurso = rascunhoRecurso ? 
+                        JSON.parse(rascunhoRecurso)[resposta.id] : null;
+                    
+                    console.log(`\n🔹 REQUISITO ${index + 1}:`);
+                    console.log(`   📝 ${resposta.requisito?.texto?.substring(0, 60)}...`);
+                    console.log(`   ⭐ Pontuação base: ${pontuacaoRequisito}`);
+                    console.log(`   👤 Resposta original: ${resposta.atende ? 'Atende' : 'Não atende'}`);
+                    console.log(`   ✅ Validação SCGE: ${resposta.statusValidacao || 'pendente'}`);
+                    
+                    // Verifica se o usuário clicou em "Editar Decisão" (tem rascunho)
+                    if (temRascunhoRecurso) {
+                        console.log(`   🔄 TEM RASCUNHO DE RECURSO!`);
+                        console.log(`   📝 Resposta no recurso: ${temRascunhoRecurso.sim ? 'Atende' : 'Não atende'}`);
+                        
+                        // A NOTA É BASEADA NA RESPOSTA DO RECURSO, NÃO NA VALIDAÇÃO ORIGINAL
+                        if (temRascunhoRecurso.sim === true) {
+                            pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
+                            console.log(`   ✅ ADICIONA ${pontuacaoRequisito} pontos (recurso = Atende)`);
+                        } else {
+                            pontuacaoRequisitoPosRecurso = 0;
+                            console.log(`   ❌ NÃO adiciona pontos (recurso = Não atende)`);
+                        }
+                    } else {
+                        // Sem recurso, usa a validação original da SCGE
+                        if (resposta.statusValidacao === 'aprovado') {
+                            pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
+                            console.log(`   ✅ ADICIONA ${pontuacaoRequisito} pontos (aprovado sem recurso)`);
+                        } else {
+                            pontuacaoRequisitoPosRecurso = 0;
+                            console.log(`   ❌ NÃO adiciona pontos (não aprovado, sem recurso)`);
+                        }
+                    }
+                    
+                    pontuacaoPosRecurso += pontuacaoRequisitoPosRecurso;
+                }
+            });
+            
+            const notaCalculada = pontuacaoPosRecurso.toFixed(2);
+            
+            console.log('\n📊 ===== RESUMO DA VISUALIZAÇÃO =====');
+            console.log(`🎯 Pontuação Total Disponível: ${pontuacaoTotal}`);
+            console.log(`🎯 Pontuação Pós-Recurso (simulada): ${pontuacaoPosRecurso.toFixed(2)}/${pontuacaoTotal}`);
+            console.log(`🎯 Nota Final (arredondada): ${notaCalculada}/${pontuacaoTotal}`);
+            
+            // Mostra um alerta bonitinho com a nota
+            Swal.fire({
+                title: 'Prévia da Nota Pós-Recurso',
+                width: '500px',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <p style="margin: 0; color: #002776; font-weight: 500;">
+                                <i class="fas fa-calculator" style="margin-right: 8px;"></i>
+                                Simulação baseada no rascunho atual
+                            </p>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; border: 1px solid #e1e5e9;">
+                            <p style="margin: 0 0 10px 0; font-size: 1.1em;">
+                                <strong>Nota calculada:</strong>
+                            </p>
+                            <p style="margin: 0; font-size: 2em; font-weight: 800; color: #002776; text-align: center;">
+                                ${notaCalculada} / ${pontuacaoTotal}
+                            </p>
+                        </div>
+                        
+                        <p style="margin-top: 15px; color: #7f8c8d; font-size: 0.9em;">
+                            <i class="fas fa-info-circle"></i> 
+                            Esta é apenas uma simulação. A nota real será calculada após o envio.
+                        </p>
+                    </div>
+                `,
+                icon: 'info',
+                iconColor: '#002776',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#002776',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm'
+                }
+            });
+        }
     </script>
     <script src="/global.js"></script>
 </body>
