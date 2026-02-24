@@ -1825,175 +1825,55 @@ app.post('/api/avaliacoes/:id/recurso', authenticateToken, async (req, res) => {
     }
 });
 
-// ROTA ATUALIZADA PARA FINALIZAR AVALIAÇÃO COM LOGS E EMAIL DE NOTIFICAÇÃO
 app.post('/api/avaliacoes/:id/finalizar', authenticateToken, authenticateAdmin, async (req, res) => {
     try {
         const { id: avaliacaoId } = req.params;
+        
+        const { 
+            notaAutoavaliacao, 
+            notaPrimeiraAnalise, 
+            notaPosRecurso, 
+            notaFinal 
+        } = req.body;
 
-        console.log(`\n--- [FINALIZAR LOG] Iniciando finalização da avaliação ID: ${avaliacaoId} ---`);
+        console.log(`\n--- [FINALIZAR] Recebendo notas da tela para ID: ${avaliacaoId} ---`);
+        console.log(`Dados: Auto=${notaAutoavaliacao}, 1ª=${notaPrimeiraAnalise}, Recurso=${notaPosRecurso}, Final=${notaFinal}`);
 
-        const avaliacao = await prisma.avaliacao.findUnique({
-            where: { id: parseInt(avaliacaoId) },
-            include: {
-                respostas: {
-                    include: {
-                        requisito: true,
-                        evidencias: true,
-                        subRespostas: true
-                    },
-                    orderBy: { requisitoId: 'asc' }
-                },
-                secretaria: true
-            },
-        });
-
-        if (!avaliacao) {
-            console.error(`[FINALIZAR LOG] Erro: Avaliação ${avaliacaoId} não encontrada.`);
-            return res.status(404).json({ error: 'Avaliação não encontrada.' });
+        if (notaFinal === undefined) {
+            return res.status(400).json({ error: 'Os valores das notas não foram enviados corretamente.' });
         }
-
-        console.log(`[FINALIZAR LOG] Avaliação ${avaliacaoId} encontrada para ${avaliacao.secretaria.sigla}. Calculando notas...`);
-
-        let pontuacaoAutoavaliacao = 0;
-        let pontuacaoPrimeiraAnalise = 0;
-        let pontuacaoPosRecurso = 0;
-        let pontuacaoFinal = 0;
-        let pontuacaoTotal = 0;
-
-        if (avaliacao.pontuacaoPosRecurso !== null && avaliacao.pontuacaoPosRecurso !== undefined) {
-            console.log(`📊 Usando nota pós-recurso já salva do recurso: ${avaliacao.pontuacaoPosRecurso}`);
-            pontuacaoPosRecurso = avaliacao.pontuacaoPosRecurso;
-        } 
-        else {
-            console.log('🔄 Calculando nota pós-recurso com lógica avançada...');
-            pontuacaoPosRecurso = 0;
-        }
-
-        // Dentro da rota de finalizar, substitua o loop de cálculo
-        for (const resposta of avaliacao.respostas) { 
-          const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
-          pontuacaoTotal += pontuacaoRequisito;
-          const analiseFinal = resposta.analiseFinal || {};
-
-          if (resposta.subRespostas && resposta.subRespostas.length > 0) {
-            const subAprovados = resposta.subRespostas.filter(s => {
-                const statusFinal = s.statusValidacaoPosRecurso || s.statusValidacao;
-                return statusFinal === 'aprovado';
-            }).length;
-            
-            // Calcular pontuação por faixa (12=100%, 8=70%, 4=50%, 1=30%)
-            let pontuacaoProporcional = 0;
-            if (subAprovados >= 12) {
-                pontuacaoProporcional = pontuacaoRequisito;
-            } else if (subAprovados >= 8) {
-                pontuacaoProporcional = pontuacaoRequisito * 0.7;
-            } else if (subAprovados >= 4) {
-                pontuacaoProporcional = pontuacaoRequisito * 0.5;
-            } else if (subAprovados >= 1) {
-                pontuacaoProporcional = pontuacaoRequisito * 0.3;
-            } else {
-                pontuacaoProporcional = 0;
-            }
-            
-            if (resposta.atendeOriginal === true) {
-                pontuacaoAutoavaliacao += pontuacaoRequisito; 
-            }
-            
-            pontuacaoFinal += pontuacaoProporcional;
-            
-            console.log(`  📊 Requisito composto: ${subAprovados}/${resposta.subRespostas.length} aprovados → ${pontuacaoProporcional.toFixed(1)}/${pontuacaoRequisito} pts`);
-
-            
-            if (resposta.atendeOriginal === true) {
-              pontuacaoAutoavaliacao += pontuacaoRequisito;
-            }
-            
-            pontuacaoFinal += Math.round(pontuacaoProporcional);
-            
-            console.log(`  📊 Requisito composto: ${subAprovados}/${resposta.subRespostas.length} aprovados → ${Math.round(pontuacaoProporcional)}/${pontuacaoRequisito} pts`);
-            
-          } else {
-            if (resposta.atendeOriginal === true) {
-              pontuacaoAutoavaliacao += pontuacaoRequisito;
-            }
-
-            if (resposta.statusValidacao === 'aprovado') {
-              pontuacaoPrimeiraAnalise += pontuacaoRequisito;
-            }
-
-            if (avaliacao.pontuacaoPosRecurso === null || avaliacao.pontuacaoPosRecurso === undefined) {
-              let pontuacaoRequisitoPosRecurso = 0;
-              const teveRecurso = resposta.recursoAtende !== null ||
-                                  resposta.comentarioRecurso ||
-                                  (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
-
-              if (teveRecurso) {
-                const statusFinalConsiderado = analiseFinal.statusValidacaoPosRecurso || resposta.statusValidacao;
-                if (statusFinalConsiderado === 'aprovado') {
-                  pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
-                }
-              } else {
-                if (resposta.statusValidacao === 'aprovado') {
-                  pontuacaoRequisitoPosRecurso = pontuacaoRequisito;
-                }
-              }
-              pontuacaoPosRecurso += pontuacaoRequisitoPosRecurso;
-            }
-
-            const statusFinalConsiderado = analiseFinal.statusValidacaoPosRecurso || resposta.statusValidacao;
-            if (statusFinalConsiderado === 'aprovado') {
-              pontuacaoFinal += pontuacaoRequisito;
-            }
-          }
-        } 
-
-        if (avaliacao.pontuacaoPosRecurso === null || avaliacao.pontuacaoPosRecurso === undefined) {
-            pontuacaoPosRecurso = Math.round(pontuacaoPosRecurso);
-        }
-
-        console.log(`\n[FINALIZAR LOG] Totais calculados FINAIS: Auto=${pontuacaoAutoavaliacao}, 1ª Análise=${pontuacaoPrimeiraAnalise}, Pós-Recurso=${pontuacaoPosRecurso}, Final=${pontuacaoFinal}, Total Possível=${pontuacaoTotal}`);
 
         const avaliacaoFinalizada = await prisma.avaliacao.update({
             where: { id: parseInt(avaliacaoId) },
             data: {
                 status: 'FINALIZADA',
-                pontuacaoFinal: parseFloat(pontuacaoFinal.toFixed(1)),  
-                pontuacaoAutoavaliacao: parseFloat(pontuacaoAutoavaliacao.toFixed(1)),
-                pontuacaoPrimeiraAnalise: parseFloat(pontuacaoPrimeiraAnalise.toFixed(1)),
-                pontuacaoPosRecurso: parseFloat(pontuacaoPosRecurso.toFixed(1)),
-                pontuacaoTotal: pontuacaoTotal,
+                pontuacaoAutoavaliacao: parseFloat(notaAutoavaliacao),
+                pontuacaoPrimeiraAnalise: parseFloat(notaPrimeiraAnalise),
+                pontuacaoPosRecurso: parseFloat(notaPosRecurso),
+                pontuacaoFinal: parseFloat(notaFinal),
+                pontuacaoTotal: 124, 
                 dataFinalizacao: new Date()
             },
-            include: {
-                secretaria: true 
-            }
+            include: { secretaria: true }
         });
 
-        console.log(`[FINALIZAR LOG] ✅ Avaliação ${avaliacaoId} marcada como FINALIZADA e notas salvas no banco.`);
+        console.log(`✅ Banco de Dados atualizado com sucesso.`);
 
         try {
             await enviarEmailNotaFinal(avaliacaoFinalizada);
-            console.log(`[FINALIZAR LOG] ✅ Email de notificação final enviado para ${avaliacaoFinalizada.emailResponsavel}.`);
-        } catch (emailError) {
-            console.warn(`[FINALIZAR LOG] ⚠️ ATENÇÃO: Avaliação finalizada com sucesso, MAS falha ao enviar email de notificação final: ${emailError.message}`);
+        } catch (e) {
+            console.warn('⚠️ Falha ao enviar e-mail, mas os dados foram salvos.');
         }
 
         res.json({
             success: true,
-            message: 'Avaliação finalizada e notas publicadas com sucesso.',
-            avaliacao: avaliacaoFinalizada,
-            notas: {
-                autoavaliacao: Math.round(pontuacaoAutoavaliacao),
-                primeiraAnalise: Math.round(pontuacaoPrimeiraAnalise),
-                posRecurso: pontuacaoPosRecurso, 
-                final: Math.round(pontuacaoFinal),
-                total: pontuacaoTotal
-            }
+            message: 'Avaliação finalizada com sucesso.',
+            avaliacao: avaliacaoFinalizada
         });
 
     } catch (error) {
-        console.error(`[FINALIZAR LOG] ❌ Erro crítico ao finalizar avaliação ${avaliacaoId}:`, error);
-        res.status(500).json({ error: 'Ocorreu um erro interno ao tentar finalizar a avaliação.', details: error.message });
+        console.error(`❌ Erro ao finalizar:`, error);
+        res.status(500).json({ error: 'Erro interno ao salvar as notas.' });
     }
 });
 
