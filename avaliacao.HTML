@@ -686,21 +686,20 @@
                     const total = subRespostas.length;
                     const pontuacaoBase = resposta.requisito?.pontuacao || 8;
                     
-                    // 🔥 NOVO CÁLCULO BASEADO NA QUANTIDADE DE APROVADOS
                     let pontuacaoProporcional = 0;
                     let percentual = 0;
                     
                     if (aprovados >= 12) {
-                        pontuacaoProporcional = 8.0; // 100%
+                        pontuacaoProporcional = 8.0; 
                         percentual = 100;
                     } else if (aprovados >= 8) {
-                        pontuacaoProporcional = 5.6; // 70%
+                        pontuacaoProporcional = 5.6; 
                         percentual = 70;
                     } else if (aprovados >= 4) {
-                        pontuacaoProporcional = 4.0; // 50%
+                        pontuacaoProporcional = 4.0; 
                         percentual = 50;
                     } else if (aprovados >= 1) {
-                        pontuacaoProporcional = 2.4; // 30%
+                        pontuacaoProporcional = 2.4;
                         percentual = 30;
                     } else {
                         pontuacaoProporcional = 0;
@@ -725,6 +724,19 @@
                         statusTexto = `${aprovados}/${total} itens (${pontuacaoProporcional.toFixed(1)}/${pontuacaoBase} pts - ${percentual}%)`;
                         cardClass = 'pendente';
                     }
+
+                    let comentarioSecretariaHTML = '';
+                    if (resposta.comentarioSecretaria && resposta.comentarioSecretaria.trim() !== '') {
+                        comentarioSecretariaHTML = `
+                            <div class="comment-section" style="margin-bottom: 20px; background: #f8f9fa; border-radius: 8px; padding: 15px; border-left: 4px solid var(--azul-gov-principal);">
+                                <h4 style="color: var(--azul-gov-principal); margin: 0 0 8px 0; font-size: 0.95em; display: flex; align-items: center; gap: 5px;">
+                                    <i class="fas fa-user-edit"></i>
+                                    Comentário da Secretaria:
+                                </h4>
+                                <p style="margin: 0; font-style: italic; color: var(--cinza-texto); white-space: pre-wrap; word-break: break-word;">"${resposta.comentarioSecretaria}"</p>
+                            </div>
+                        `;
+                    }
                     
                     return `
                         <div class="resposta-card ${cardClass}" data-resposta-id="${resposta.id}" data-tipo="composto">
@@ -745,6 +757,8 @@
                                 ${percentual}%
                             </div>
                             </div>
+
+                            ${comentarioSecretariaHTML}
                             
                             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">
                             <thead>
@@ -1443,9 +1457,8 @@
                 if (target.matches('.btn-add-link-analista')) {
                     const respostaId = parseInt(target.dataset.respostaId);
                     const displayArea = document.getElementById(`link-analista-display-${respostaId}`);
-                    const addButton = target;
 
-                    const { value: url } = await Swal.fire({
+                    const { value: linkData } = await Swal.fire({
                         title: 'Adicionar Link de Referência',
                         width: '550px',
                         html: `
@@ -1454,29 +1467,17 @@
                                     <i class="fas fa-info-circle" style="color: #002776; margin-right: 5px;"></i>
                                     Adicione um link que servirá como referência para sua análise.
                                 </p>
-                                
                                 <div style="margin-bottom: 20px;">
                                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
-                                        <i class="fas fa-link" style="margin-right: 8px;"></i>
-                                        URL do Link *
+                                        <i class="fas fa-link" style="margin-right: 8px;"></i>URL do Link *
                                     </label>
-                                    <input type="url" id="swal-input1" class="swal2-input" 
-                                        placeholder="https://exemplo.com/documento.pdf"
-                                        style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
-                                    <small style="display: block; margin-top: 5px; color: #7f8c8d; font-size: 0.85em;">
-                                        <i class="fas fa-external-link-alt"></i> 
-                                        O link deve ser público e acessível
-                                    </small>
+                                    <input type="url" id="swal-input1" class="swal2-input" placeholder="https://exemplo.com/documento.pdf" style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
                                 </div>
-
                                 <div style="margin-bottom: 15px;">
                                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
-                                        <i class="fas fa-tag" style="margin-right: 8px;"></i>
-                                        Descrição (opcional)
+                                        <i class="fas fa-tag" style="margin-right: 8px;"></i>Descrição (opcional)
                                     </label>
-                                    <input type="text" id="swal-input2" class="swal2-input" 
-                                        placeholder="Ex: Relatório de gestão 2024"
-                                        style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                    <input type="text" id="swal-input2" class="swal2-input" placeholder="Ex: Relatório de gestão 2024" style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
                                 </div>
                             </div>
                         `,
@@ -1486,47 +1487,37 @@
                         cancelButtonText: 'Cancelar',
                         confirmButtonColor: '#27ae60',
                         cancelButtonColor: '#7f8c8d',
-                        customClass: {
-                            popup: 'swal-custom-popup',
-                            title: 'swal-custom-title',
-                            confirmButton: 'swal-custom-confirm',
-                            cancelButton: 'swal-custom-cancel'
-                        },
-                        inputValidator: (value) => {
-                            return null;
-                        },
+                        customClass: { popup: 'swal-custom-popup', title: 'swal-custom-title' },
                         preConfirm: () => {
-                            const url = document.getElementById('swal-input1').value.trim();
-                            const descricao = document.getElementById('swal-input2').value.trim();
-                            
-                            if (!url) {
-                                Swal.showValidationMessage('A URL é obrigatória');
-                                return false;
-                            }
-                            
-                            try {
-                                new URL(url);
-                            } catch {
-                                Swal.showValidationMessage('Digite uma URL válida (incluindo http:// ou https://)');
-                                return false;
-                            }
-                            
-                            return { url, descricao };
+                            const urlVal = document.getElementById('swal-input1').value.trim();
+                            const descVal = document.getElementById('swal-input2').value.trim();
+                            if (!urlVal) { Swal.showValidationMessage('A URL é obrigatória'); return false; }
+                            try { new URL(urlVal); } catch { Swal.showValidationMessage('Digite uma URL válida'); return false; }
+                            return { url: urlVal, descricao: descVal };
                         }
                     });
 
-                    if (url && displayArea) {
+                    if (linkData && linkData.url && displayArea) {
+                        const { url, descricao } = linkData; // Extraímos os dois valores aqui
+
                         const noLinksMessage = displayArea.querySelector('span');
-                        if (noLinksMessage) {
-                            noLinksMessage.remove();
-                        }
+                        if (noLinksMessage) noLinksMessage.remove();
 
                         const newLinkItem = document.createElement('div');
                         newLinkItem.className = 'evidence-item';
                         newLinkItem.setAttribute('data-link', url);
+                        
+                        // --- AQUI ESTÁ A LÓGICA IGUAL AO FORMULÁRIO ---
                         newLinkItem.innerHTML = `
-                            <a href="${url}" target="_blank" title="${url}">${url}</a>
-                            <button class="remove-evidence-btn remove-link-analista-btn" data-resposta-id="${respostaId}" data-link="${url}" title="Remover Link">&times;</button>
+                            <div style="flex: 1; overflow: hidden;">
+                                <a href="${url}" target="_blank" title="${url}" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    ${descricao ? `<i class="fas fa-tag" style="margin-right: 5px;"></i>${descricao}` : url}
+                                </a>
+                            </div>
+                            <button class="remove-evidence-btn remove-link-analista-btn" 
+                                    data-resposta-id="${respostaId}" 
+                                    data-link="${url}" 
+                                    title="Remover Link">&times;</button>
                         `;
 
                         displayArea.appendChild(newLinkItem);
@@ -1539,20 +1530,8 @@
                         await salvarAnaliseAutomatica(respostaId);
                         
                         Swal.fire({
-                            toast: true,
-                            position: 'top-end',
-                            icon: 'success',
-                            title: 'Link adicionado!',
-                            showConfirmButton: false,
-                            timer: 2000,
-                            timerProgressBar: true,
-                            didOpen: (toast) => {
-                                toast.addEventListener('mouseenter', Swal.stopTimer);
-                                toast.addEventListener('mouseleave', Swal.resumeTimer);
-                            },
-                            customClass: {
-                                popup: 'swal-custom-popup'
-                            }
+                            toast: true, position: 'top-end', icon: 'success',
+                            title: 'Link adicionado!', showConfirmButton: false, timer: 1500
                         });
                     }
                 }  
