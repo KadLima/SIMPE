@@ -154,7 +154,6 @@
             border-radius: 8px;
         }
 
-        /* --- PLACAR DE 4 NOTAS --- */
         .score-container-quatro-notas {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -167,6 +166,10 @@
             background-color: transparent;
             padding: 10px 0;
             box-shadow: none;
+        }
+
+        .score-container-quatro-notas::after {
+            display: none;
         }
 
         .score-container-quatro-notas::after {
@@ -626,6 +629,82 @@
                 top: 70px;
                 padding: 5px 0;
             }
+        }
+
+        /* Personalização do SweetAlert */
+        .swal-custom-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border-top: 5px solid #002776 !important;
+            padding: 1.5em !important;
+        }
+
+        .swal-custom-title {
+            color: #002776 !important;
+            font-weight: 700 !important;
+            font-size: 1.5em !important;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .swal-custom-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: #FFD700;
+        }
+
+        .swal-custom-html {
+            margin: 0 !important;
+            padding: 10px 0 !important;
+        }
+
+        .swal-custom-confirm {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-cancel {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-confirm:hover,
+        .swal-custom-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+        }
+
+        .swal-custom-container {
+            padding: 2rem !important;
+        }
+
+        .swal2-input {
+            width: 100% !important;
+            padding: 12px 16px !important;
+            margin: 5px 0 0 0 !important;
+            border: 2px solid #e1e5e9 !important;
+            border-radius: 10px !important;
+            font-size: 0.95em !important;
+            transition: all 0.3s !important;
+            box-sizing: border-box !important;
+        }
+
+        .swal2-input:focus {
+            border-color: #002776 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1) !important;
         }
     </style>
 </head>
@@ -1159,13 +1238,35 @@
                             if (modalHasChanges) {
                                 Swal.fire({
                                     title: 'Descartar Alterações?',
-                                    text: 'Você tem alterações não salvas na análise final. Deseja descartá-las e fechar a edição?',
+                                    width: '500px',
+                                    html: `
+                                        <div style="text-align: left; padding: 10px;">
+                                            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                                <p style="margin: 0; color: #856404; font-weight: 500;">
+                                                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                                    Você tem alterações não salvas na análise final.
+                                                </p>
+                                            </div>
+                                            
+                                            <p style="margin: 0; color: #2c3e50;">
+                                                Deseja descartá-las e fechar a edição?
+                                            </p>
+                                        </div>
+                                    `,
                                     icon: 'warning',
+                                    iconColor: '#ffc107',
                                     showCancelButton: true,
                                     confirmButtonText: 'Sim, descartar',
                                     cancelButtonText: 'Continuar editando',
-                                    confirmButtonColor: 'var(--vermelho-destaque)', 
-                                    cancelButtonColor: 'var(--azul-gov-principal)'
+                                    confirmButtonColor: '#dc3545',
+                                    cancelButtonColor: '#002776',
+                                    reverseButtons: true,
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm',
+                                        cancelButton: 'swal-custom-cancel'
+                                    }
                                 }).then((result) => {
                                     if (result.isConfirmed) {
                                         validationInterface.style.display = 'none'; 
@@ -1209,13 +1310,35 @@
                             if (modalHasChanges) {
                                 Swal.fire({
                                     title: 'Cancelar Edição?',
-                                    text: 'Todas as alterações não salvas na análise final serão perdidas.',
+                                    width: '500px',
+                                    html: `
+                                        <div style="text-align: left; padding: 10px;">
+                                            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                                <p style="margin: 0; color: #856404; font-weight: 500;">
+                                                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                                    Todas as alterações não salvas serão perdidas.
+                                                </p>
+                                            </div>
+                                            
+                                            <p style="margin: 0; color: #2c3e50;">
+                                                Deseja cancelar a edição?
+                                            </p>
+                                        </div>
+                                    `,
                                     icon: 'warning',
+                                    iconColor: '#ffc107',
                                     showCancelButton: true,
                                     confirmButtonText: 'Sim, cancelar',
                                     cancelButtonText: 'Continuar editando',
-                                    confirmButtonColor: 'var(--vermelho-destaque)',
-                                    cancelButtonColor: 'var(--azul-gov-principal)'
+                                    confirmButtonColor: '#dc3545',
+                                    cancelButtonColor: '#002776',
+                                    reverseButtons: true,
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm',
+                                        cancelButton: 'swal-custom-cancel'
+                                    }
                                 }).then((result) => {
                                     if (result.isConfirmed) {
                                         validationInterface.style.display = 'none'; 
@@ -1267,10 +1390,30 @@
                                 
                                 Swal.fire({
                                     title: 'Mudança de Decisão',
-                                    text: 'Os links de referência serão resetados para garantir consistência com a nova decisão.',
+                                    width: '500px',
+                                    html: `
+                                        <div style="text-align: left; padding: 10px;">
+                                            <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                                <p style="margin: 0; color: #002776; font-weight: 500;">
+                                                    <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                                                    Os links de referência serão resetados para garantir consistência.
+                                                </p>
+                                            </div>
+                                            
+                                            <p style="margin: 0; color: #2c3e50;">
+                                                Esta ação é necessária devido à mudança na decisão.
+                                            </p>
+                                        </div>
+                                    `,
                                     icon: 'info',
+                                    iconColor: '#002776',
                                     confirmButtonText: 'Entendido',
-                                    confirmButtonColor: 'var(--azul-gov-principal)'
+                                    confirmButtonColor: '#002776',
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm'
+                                    }
                                 }).then(() => {
                                     linksDisplay.innerHTML = '<span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>';
                                 });
@@ -1314,25 +1457,69 @@
                 if (btnAddLink) {
                     btnAddLink.onclick = async () => {
                         const { value: url } = await Swal.fire({
-                            title: 'Adicionar Link de Referência da Análise Final',
-                            input: 'url',
-                            inputLabel: 'URL do Link',
-                            inputPlaceholder: 'https://exemplo.com',
+                            title: 'Adicionar Link de Referência',
+                            width: '550px',
+                            html: `
+                                <div style="text-align: left; padding: 5px 0;">
+                                    <p style="color: #7f8c8d; font-size: 0.95em; margin-bottom: 20px; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 8px; border-left: 4px solid #002776;">
+                                        <i class="fas fa-info-circle" style="color: #002776; margin-right: 5px;"></i>
+                                        Adicione um link que servirá como referência para a análise final.
+                                    </p>
+                                    
+                                    <div style="margin-bottom: 20px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                            <i class="fas fa-link" style="margin-right: 8px;"></i>
+                                            URL do Link *
+                                        </label>
+                                        <input type="url" id="swal-input1" class="swal2-input" 
+                                            placeholder="https://exemplo.com/documento.pdf"
+                                            style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                        <small style="display: block; margin-top: 5px; color: #7f8c8d; font-size: 0.85em;">
+                                            <i class="fas fa-external-link-alt"></i> 
+                                            O link deve ser público e acessível
+                                        </small>
+                                    </div>
+
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
+                                            <i class="fas fa-tag" style="margin-right: 8px;"></i>
+                                            Descrição (opcional)
+                                        </label>
+                                        <input type="text" id="swal-input2" class="swal2-input" 
+                                            placeholder="Ex: Relatório da análise final"
+                                            style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
+                                    </div>
+                                </div>
+                            `,
+                            focusConfirm: false,
                             showCancelButton: true,
                             confirmButtonText: 'Adicionar Link',
                             cancelButtonText: 'Cancelar',
-                            confirmButtonColor: 'var(--azul-gov-principal)',
-                            inputValidator: (value) => {
-                                if (!value) { return 'Você precisa digitar um endereço web!'; }
-                                if (!value.includes('.')) { return 'Insira um endereço válido (ex: www.exemplo.com)'; }
-                                return null;
+                            confirmButtonColor: '#27ae60',
+                            cancelButtonColor: '#dc3545',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm',
+                                cancelButton: 'swal-custom-cancel'
                             },
-                            preConfirm: (value) => {
-                                let finalUrl = value.trim();
-                                if (!/^(https?:\/\/|\/\/)/i.test(finalUrl)) {
-                                    finalUrl = 'https://' + finalUrl;
+                            preConfirm: () => {
+                                const url = document.getElementById('swal-input1').value.trim();
+                                const descricao = document.getElementById('swal-input2').value.trim();
+                                
+                                if (!url) {
+                                    Swal.showValidationMessage('A URL é obrigatória');
+                                    return false;
                                 }
-                                return finalUrl;
+                                
+                                try {
+                                    new URL(url);
+                                } catch {
+                                    Swal.showValidationMessage('Digite uma URL válida (incluindo http:// ou https://)');
+                                    return false;
+                                }
+                                
+                                return { url, descricao };
                             }
                         });
 
@@ -1368,13 +1555,21 @@
                                 };
                             }
 
-                            Swal.fire({ 
-                                toast: true, 
-                                position: 'top-end', 
-                                icon: 'success', 
-                                title: 'Link adicionado!', 
-                                showConfirmButton: false, 
-                                timer: 1500 
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: 'Link adicionado!',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                timerProgressBar: true,
+                                didOpen: (toast) => {
+                                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                },
+                                customClass: {
+                                    popup: 'swal-custom-popup'
+                                }
                             });
                         }
                     };
@@ -1485,12 +1680,20 @@
                     recalcularEExibirPontuacoes(); 
 
                     Swal.fire({
-                        toast: true, 
-                        position: 'top-end', 
+                        toast: true,
+                        position: 'top-end',
                         icon: 'success',
-                        title: 'Análise Final Salva!', 
-                        showConfirmButton: false, 
-                        timer: 1500
+                        title: 'Análise Final Salva!',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        },
+                        customClass: {
+                            popup: 'swal-custom-popup'
+                        }
                     }).then(() => {
                         window.location.reload();
                     });
@@ -1511,9 +1714,26 @@
 
                     Swal.fire({
                         title: 'Erro!',
-                        text: error.message || 'Não foi possível salvar a análise final.',
+                        width: '450px',
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                                    <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                        ${error.message || 'Não foi possível salvar a análise final.'}
+                                    </p>
+                                </div>
+                            </div>
+                        `,
                         icon: 'error',
-                        confirmButtonColor: 'var(--vermelho-destaque)'
+                        iconColor: '#dc3545',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#002776',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
                     });
                 }
             }
@@ -1523,13 +1743,35 @@
                 if (isModalEditing && modalHasChanges) {
                     Swal.fire({
                         title: 'Sair sem salvar?',
-                        text: 'Você tem alterações não salvas na análise final. Deseja fechar mesmo assim?',
+                        width: '500px',
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                    <p style="margin: 0; color: #856404; font-weight: 500;">
+                                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                        Você tem alterações não salvas na análise final.
+                                    </p>
+                                </div>
+                                
+                                <p style="margin: 0; color: #2c3e50;">
+                                    Deseja fechar mesmo assim?
+                                </p>
+                            </div>
+                        `,
                         icon: 'warning',
+                        iconColor: '#ffc107',
                         showCancelButton: true,
                         confirmButtonText: 'Sim, fechar',
                         cancelButtonText: 'Continuar editando',
-                        confirmButtonColor: 'var(--vermelho-destaque)', 
-                        cancelButtonColor: 'var(--azul-gov-principal)'
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#002776',
+                        reverseButtons: true,
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm',
+                            cancelButton: 'swal-custom-cancel'
+                        }
                     }).then((result) => {
                         if (result.isConfirmed) {
                             modalOverlay.style.display = 'none'; 
@@ -1842,30 +2084,56 @@
                                         if (respostaId) {
                                             atualizarInterfaceCardR31(parseInt(respostaId));
                                         } else {
-                                            // Se não temos o respostaId diretamente, busca pelo índice
                                             const rId = avaliacaoCompleta.respostas[respostaIndex].id;
                                             atualizarInterfaceCardR31(rId);
                                         }
                                         
-                                        // 3. Feedback visual rápido
-                                        Swal.fire({ 
-                                            toast: true, 
-                                            position: 'top-end', 
-                                            icon: 'success', 
-                                            title: 'Nota Atualizada!', 
-                                            showConfirmButton: false, 
-                                            timer: 1000 
+                                        Swal.fire({
+                                            toast: true,
+                                            position: 'top-end',
+                                            icon: 'success',
+                                            title: 'Nota Atualizada!',
+                                            showConfirmButton: false,
+                                            timer: 1000,
+                                            timerProgressBar: true,
+                                            didOpen: (toast) => {
+                                                toast.addEventListener('mouseenter', Swal.stopTimer);
+                                                toast.addEventListener('mouseleave', Swal.resumeTimer);
+                                            },
+                                            customClass: {
+                                                popup: 'swal-custom-popup'
+                                            }
                                         });
                                     }
                                 }
                             } else {
                                 const errorText = await response.text();
                                 console.error('❌ Erro no servidor:', errorText);
-                                Swal.fire('Erro!', 'Não foi possível salvar a validação.', 'error');
+                                Swal.fire({
+                                    title: 'Erro!',
+                                    text: 'Não foi possível salvar a validação.',
+                                    icon: 'error',
+                                    confirmButtonColor: '#dc3545',
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm'
+                                    }
+                                });
                             }
                         } catch (error) {
                             console.error('❌ Erro na requisição:', error);
-                            Swal.fire('Erro!', 'Falha na comunicação com o servidor.', 'error');
+                            Swal.fire({
+                                title: 'Erro!',
+                                text: 'Falha na comunicação com o servidor.',
+                                icon: 'error',
+                                confirmButtonColor: '#dc3545',
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title',
+                                    confirmButton: 'swal-custom-confirm'
+                                }
+                            });
                         } finally {
                             selectElement.disabled = false;
                         }
@@ -2241,25 +2509,74 @@
 
                         Swal.fire({
                             title: 'Análises Pendentes',
-                            html: `Não é possível finalizar a avaliação pois a análise final dos seguintes requisitos ainda está pendente:
-                                <ul style="text-align: left; margin-top: 15px; max-height: 200px; overflow-y: auto;">${listaHtml}</ul>
-                                Por favor, revise e salve a análise final para cada um deles.`,
+                            width: '600px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                        <p style="margin: 0; color: #856404; font-weight: 500;">
+                                            <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                            Não é possível finalizar a avaliação pois existem análises pendentes.
+                                        </p>
+                                    </div>
+                                    
+                                    <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                        <p style="margin: 0 0 10px 0; font-weight: 600; color: #002776;">
+                                            <i class="fas fa-list"></i> Requisitos pendentes:
+                                        </p>
+                                        <ul style="margin: 0; padding-left: 20px; max-height: 200px; overflow-y: auto;">
+                                            ${listaHtml}
+                                        </ul>
+                                    </div>
+                                    
+                                    <p style="margin-top: 15px; color: #7f8c8d; font-size: 0.9em;">
+                                        Por favor, revise e salve a análise final para cada um deles.
+                                    </p>
+                                </div>
+                            `,
                             icon: 'warning',
+                            iconColor: '#ffc107',
                             confirmButtonText: 'Entendido',
-                            confirmButtonColor: 'var(--azul-gov-principal)'
+                            confirmButtonColor: '#002776',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
                         return; 
                     }
 
                     Swal.fire({
                         title: 'Encerrar Avaliação?',
-                        text: "A nota final será calculada e publicada para a secretaria. Esta ação é definitiva.",
+                        width: '500px',
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                    <p style="margin: 0; color: #002776; font-weight: 500;">
+                                        <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                                        A nota final será calculada e publicada para a secretaria.
+                                    </p>
+                                </div>
+                                
+                                <p style="margin: 0; color: #2c3e50;">
+                                    <strong>Esta ação é definitiva e não pode ser desfeita.</strong>
+                                </p>
+                            </div>
+                        `,
                         icon: 'warning',
+                        iconColor: '#002776',
                         showCancelButton: true,
                         confirmButtonText: 'Sim, Encerrar e Publicar!',
                         cancelButtonText: 'Cancelar',
-                        confirmButtonColor: 'var(--azul-gov-principal)',
-                        cancelButtonColor: '#6c757d'
+                        confirmButtonColor: '#27ae60',
+                        cancelButtonColor: '#7f8c8d',
+                        reverseButtons: true,
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm',
+                            cancelButton: 'swal-custom-cancel'
+                        }
                     }).then(async (result) => {
                         if (result.isConfirmed) {
                             finalizarBtn.disabled = true;
@@ -2295,7 +2612,12 @@
                                     title: 'Sucesso!',
                                     text: 'A avaliação foi finalizada e a nota publicada com sucesso.',
                                     icon: 'success',
-                                    confirmButtonColor: 'var(--azul-gov-principal)'
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title'
+                                    }
                                 });
 
                                 window.location.href = `/nota-final/${avaliacaoId}`; 
@@ -2306,7 +2628,12 @@
                                     title: 'Erro!',
                                     text: error.message || 'Erro desconhecido ao finalizar a avaliação.',
                                     icon: 'error',
-                                    confirmButtonColor: 'var(--vermelho-destaque)'
+                                    confirmButtonColor: '#dc3545',
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm'
+                                    }
                                 });
                                 finalizarBtn.disabled = false; 
                                 finalizarBtn.textContent = 'Encerrar e Publicar Nota Final';
@@ -2491,8 +2818,20 @@
                     atualizarBadgeStatusAberto(card, payload.analiseFinal.statusValidacaoPosRecurso);
 
                     Swal.fire({
-                        toast: true, position: 'top-end', icon: 'success',
-                        title: 'Salvo!', showConfirmButton: false, timer: 1000
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Salvo!',
+                        showConfirmButton: false,
+                        timer: 1000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        },
+                        customClass: {
+                            popup: 'swal-custom-popup'
+                        }
                     });
 
                 } catch (error) {
@@ -2504,8 +2843,20 @@
                     }
 
                     Swal.fire({
-                        toast: true, position: 'top-end', icon: 'error',
-                        title: 'Erro ao salvar!', showConfirmButton: false, timer: 1500
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Erro ao salvar!',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        },
+                        customClass: {
+                            popup: 'swal-custom-popup'
+                        }
                     });
                 }
             }
