@@ -1436,7 +1436,6 @@
                     if (respostaId) {
                         respostaId = parseInt(respostaId);
                     } else {
-                        // Tenta pegar do dataset.resposta se existir
                         const respostaData = respostaCard.dataset.resposta;
                         if (respostaData) {
                             try {
@@ -1517,28 +1516,54 @@
                 if (algumRascunhoCarregado || temRascunhoSubitens) {
                     console.log("📝 Rascunho de recurso encontrado:", { requisitos: algumRascunhoCarregado, subitens: temRascunhoSubitens });
                     
-                    // Mostra um aviso para o usuário
                     Swal.fire({
                         title: 'Rascunho Encontrado',
+                        width: '550px',
                         html: `
-                            <div style="text-align: left;">
-                                <p>Você tem um rascunho de recurso salvo:</p>
-                                <ul style="margin-top: 10px;">
-                                    ${algumRascunhoCarregado ? '<li>✅ Requisitos normais com rascunho</li>' : ''}
-                                    ${temRascunhoSubitens ? '<li>✅ Subitens do Requisito 31 com rascunho</li>' : ''}
-                                </ul>
-                                <p>Deseja carregá-lo?</p>
+                            <div style="text-align: left; padding: 5px 0;">
+                                <div style="background: #e8f4fd; border-radius: 10px; padding: 20px; margin-bottom: 15px;">
+                                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                                        <i class="fas fa-file-alt" style="color: #002776; font-size: 2.2em;"></i>
+                                        <div>
+                                            <h4 style="color: #002776; margin: 0; font-size: 1.1em;">Progresso Recuperado</h4>
+                                            <p style="color: #2c3e50; margin: 5px 0 0 0; font-size: 0.95em;">Identificamos dados de recurso salvos anteriormente para esta avaliação.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="background: white; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                        <p style="margin: 0 0 8px 0; font-weight: 600; color: #2c3e50; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px;">Itens no rascunho:</p>
+                                        <ul style="margin: 0; padding-left: 0; list-style: none;">
+                                            ${algumRascunhoCarregado ? `
+                                                <li style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px; color: #27ae60; font-size: 0.95em;">
+                                                    <i class="fas fa-check-circle"></i> Requisitos (R01-R30/R32-R35)
+                                                </li>` : ''}
+                                            ${temRascunhoSubitens ? `
+                                                <li style="display: flex; align-items: center; gap: 8px; color: #27ae60; font-size: 0.95em;">
+                                                    <i class="fas fa-check-circle"></i> Subitens do Requisito 31
+                                                </li>` : ''}
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <p style="color: #495057; margin: 0; font-weight: 500; text-align: center;">Deseja carregar este rascunho e continuar de onde parou?</p>
                             </div>
                         `,
                         icon: 'question',
+                        iconColor: '#002776',
                         showCancelButton: true,
-                        confirmButtonText: 'Sim, carregar',
-                        cancelButtonText: 'Não, começar do zero',
+                        confirmButtonText: '<i class="fas fa-file-import"></i> Sim, carregar',
+                        cancelButtonText: '<i class="fas fa-trash-alt"></i> Não, começar do zero',
                         confirmButtonColor: '#27ae60',
-                        cancelButtonColor: '#dc3545'
+                        cancelButtonColor: '#dc3545',
+                        reverseButtons: true, 
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm',
+                            cancelButton: 'swal-custom-cancel'
+                        }
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // Carrega rascunho dos requisitos normais
                             document.querySelectorAll('.recurso-box[data-is-editable="true"]').forEach(box => {
                                 const respostaCard = box.closest('.resposta-card');
                                 if (!respostaCard) return;
@@ -1549,15 +1574,12 @@
                                 }
                             });
                             
-                            // Carrega rascunho dos subitens (se houver)
                             if (temRascunhoSubitens) {
-                                // Encontra o container dos subitens e aplica o rascunho
                                 document.querySelectorAll('.subitem-recurso').forEach(subitem => {
                                     const subRespostaId = parseInt(subitem.dataset.subrespostaId);
                                     const rascunhoSub = rascunhoSubitens.find(s => s.id === subRespostaId);
                                     
                                     if (rascunhoSub) {
-                                        // Aplica o estado do rascunho ao subitem
                                         const btnSim = subitem.querySelector('.recurso-sim');
                                         const btnNao = subitem.querySelector('.recurso-nao');
                                         
@@ -1576,23 +1598,33 @@
                                             }
                                         }
                                         
-                                        // Carrega os links de evidência
                                         const evidenceList = subitem.querySelector('.evidence-list-recurso');
                                         if (evidenceList && rascunhoSub.evidencias) {
                                             evidenceList.innerHTML = '';
-                                            rascunhoSub.evidencias.forEach(url => {
+                                            rascunhoSub.evidencias.forEach(ev => {
+                                                const url = typeof ev === 'string' ? ev : ev.url;
+                                                const descricao = ev.descricao || null;
+                                                
                                                 const newItem = document.createElement('li');
                                                 newItem.className = 'evidence-item';
                                                 newItem.dataset.link = url;
+                                                if (descricao) {
+                                                    newItem.dataset.descricao = descricao;
+                                                }
+                                                
                                                 newItem.innerHTML = `
-                                                    <a href="${url}" target="_blank">${url}</a>
+                                                    <div style="flex: 1; overflow: hidden;">
+                                                        <a href="${url}" target="_blank" style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                            ${descricao ? `<i class="fas fa-tag" style="margin-right: 5px; color: #002776;"></i><strong style="color: #002776;">${descricao}</strong>` : url}
+                                                        </a>
+                                                    </div>
                                                     <button class="remove-evidence-btn">&times;</button>
                                                 `;
+                                                
                                                 evidenceList.appendChild(newItem);
                                             });
                                         }
                                         
-                                        // Carrega o comentário
                                         const comentarioEl = subitem.querySelector('.recurso-comment');
                                         if (comentarioEl && rascunhoSub.comentario) {
                                             comentarioEl.value = rascunhoSub.comentario;
@@ -1885,10 +1917,10 @@
                         
                         let pontuacaoAdminRequisito = 0;
                         
-                        if (aprovadosSCGE >= 12) pontuacaoAdminRequisito = pontuacaoRequisito; // 100%
-                        else if (aprovadosSCGE >= 8) pontuacaoAdminRequisito = pontuacaoRequisito * 0.7; // 70%
-                        else if (aprovadosSCGE >= 4) pontuacaoAdminRequisito = pontuacaoRequisito * 0.5; // 50%
-                        else if (aprovadosSCGE >= 1) pontuacaoAdminRequisito = pontuacaoRequisito * 0.3; // 30%
+                        if (aprovadosSCGE >= 12) pontuacaoAdminRequisito = pontuacaoRequisito;
+                        else if (aprovadosSCGE >= 8) pontuacaoAdminRequisito = pontuacaoRequisito * 0.7; 
+                        else if (aprovadosSCGE >= 4) pontuacaoAdminRequisito = pontuacaoRequisito * 0.5; 
+                        else if (aprovadosSCGE >= 1) pontuacaoAdminRequisito = pontuacaoRequisito * 0.3; 
                         else pontuacaoAdminRequisito = 0;
                         
                         pontuacaoAdmin += pontuacaoAdminRequisito;
@@ -2050,7 +2082,7 @@
                 }
             }
 
-            // Função para renderizar checkboxes de seleção para subitens rejeitados (igual ao formulario.html)
+            // Função para renderizar checkboxes de seleção para subitens rejeitados 
             function renderizarSelecaoSubitensRejeitados(resposta) {
                 console.log('=== RENDERIZANDO CHECKBOXES PARA SUBITENS REJEITADOS ===');
                 
@@ -2384,80 +2416,101 @@
                 });
             }
 
-            // Função para adicionar link de recurso 
             function adicionarLinkRecurso(subRespostaId) {
                 Swal.fire({
                     title: 'Adicionar Link de Comprovação',
                     html: `
                         <div style="text-align: left;">
-                            <p>Digite a URL do link que comprova o atendimento a este subitem:</p>
-                            <p style="font-size: 0.9em; color: #666;">
-                                <i class="fas fa-info-circle"></i> Exemplo: https://www.site.gov.br/pagina
-                            </p>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">URL do Link *</label>
+                                <input type="url" id="swal-input1" class="swal2-input" placeholder="https://exemplo.com">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Descrição (opcional)</label>
+                                <input type="text" id="swal-input2" class="swal2-input" placeholder="Ex: Relatório anual">
+                            </div>
                         </div>
                     `,
-                    input: 'url',
-                    inputPlaceholder: 'https://...',
+                    focusConfirm: false,
                     showCancelButton: true,
                     confirmButtonText: 'Adicionar',
                     cancelButtonText: 'Cancelar',
-                    confirmButtonColor: 'var(--azul-gov-principal)',
-                    cancelButtonColor: 'var(--vermelho-erro)',
-                    inputValidator: (value) => {
-                        if (!value) return 'Digite uma URL';
-                        return null;
-                    },
-                    preConfirm: (value) => {
-                        let finalUrl = value.trim();
-                        if (!/^(https?:\/\/)/i.test(finalUrl)) {
-                            finalUrl = 'https://' + finalUrl;
+                    preConfirm: () => {
+                        const url = document.getElementById('swal-input1').value.trim();
+                        const descricao = document.getElementById('swal-input2').value.trim();
+                        
+                        if (!url) {
+                            Swal.showValidationMessage('A URL é obrigatória');
+                            return false;
                         }
-                        return finalUrl;
+                        
+                        try {
+                            let finalUrl = url;
+                            if (!/^(https?:\/\/)/i.test(finalUrl)) {
+                                finalUrl = 'https://' + finalUrl;
+                            }
+                            new URL(finalUrl);
+                            return { url: finalUrl, descricao };
+                        } catch {
+                            Swal.showValidationMessage('Digite uma URL válida');
+                            return false;
+                        }
                     }
                 }).then((result) => {
                     if (result.isConfirmed && result.value) {
-                        const url = result.value;
+                        const { url, descricao } = result.value;
                         const evidenceList = document.getElementById(`recurso-evidence-${subRespostaId}`);
                         
                         if (evidenceList) {
                             const newItem = document.createElement('li');
                             newItem.className = 'evidence-item';
                             newItem.dataset.link = url;
-                            newItem.innerHTML = `
-                                <a href="${url}" target="_blank" title="${url}">${url.substring(0, 50)}${url.length > 50 ? '...' : ''}</a>
-                                <button class="remove-evidence-btn" title="Remover">&times;</button>
-                            `;
-                            evidenceList.appendChild(newItem);
                             
+                            // Guarda a descrição no dataset
+                            if (descricao) {
+                                newItem.dataset.descricao = descricao;
+                            }
+                            
+                            // Cria o HTML com a descrição (se existir)
+                            if (descricao) {
+                                newItem.innerHTML = `
+                                    <div style="flex:1; display: flex; align-items: center; gap: 5px;">
+                                        <i class="fas fa-tag" style="color: #002776;"></i>
+                                        <strong style="color: #002776;">${descricao}</strong>
+                                        <span style="color: #666; font-size: 0.85em;">(${url})</span>
+                                    </div>
+                                    <button class="remove-evidence-btn">&times;</button>
+                                `;
+                            } else {
+                                newItem.innerHTML = `
+                                    <a href="${url}" target="_blank" style="flex:1;">${url}</a>
+                                    <button class="remove-evidence-btn">&times;</button>
+                                `;
+                            }
+                            
+                            evidenceList.appendChild(newItem);
+
+                            // Listener para remover
                             newItem.querySelector('.remove-evidence-btn').addEventListener('click', function() {
                                 this.closest('.evidence-item').remove();
                                 salvarRascunhoSubitens();
                             });
                             
+                            // Salva o rascunho
                             salvarRascunhoSubitens();
                             
                             Swal.fire({
-                                toast: true,
-                                position: 'top-end',
+                                toast: true, 
+                                position: 'top-end', 
                                 icon: 'success',
-                                title: 'Link adicionado!',
-                                showConfirmButton: false,
-                                timer: 1500,
-                                timerProgressBar: true,
-                                didOpen: (toast) => {
-                                    toast.addEventListener('mouseenter', Swal.stopTimer);
-                                    toast.addEventListener('mouseleave', Swal.resumeTimer);
-                                },
-                                customClass: {
-                                    popup: 'swal-custom-popup'
-                                }
+                                title: 'Link adicionado!', 
+                                showConfirmButton: false, 
+                                timer: 1500
                             });
                         }
                     }
                 });
             }
-
-
 
             function renderizarCardsDeResposta() {
                 if (!avaliacaoCompleta || !Array.isArray(avaliacaoCompleta.respostas)) {
@@ -4017,37 +4070,6 @@
 
             function salvarRascunhoSubitens() {
                 const rascunhoSubitens = [];
-            
-                document.querySelectorAll('.subitem-recurso').forEach(subitem => {
-                    const subRespostaId = subitem.dataset.subrespostaId;
-                    const btnSim = subitem.querySelector('.recurso-sim');
-                    const atende = btnSim && btnSim.classList.contains('active');
-                    
-                    const evidencias = [];
-                    subitem.querySelectorAll('.evidence-list-recurso .evidence-item').forEach(item => {
-                    if (item.dataset.link) evidencias.push(item.dataset.link);
-                    });
-                    
-                    const comentario = subitem.querySelector('.recurso-comment')?.value || '';
-                    
-                    rascunhoSubitens.push({
-                    id: subRespostaId,
-                    atende: atende,
-                    linkComprovante: evidencias[0] || null,
-                    comentario: comentario
-                    });
-                });
-                
-                if (rascunhoSubitens.length > 0) {
-                    localStorage.setItem(`rascunho_subitens_${avaliacaoId}`, JSON.stringify(rascunhoSubitens));
-                }
-            }
-
-            // Função para salvar rascunho dos subitens
-            function salvarRascunhoSubitens() {
-                console.log('=== SALVANDO RASCUNHO SUBITENS ===');
-                
-                const rascunhoSubitens = [];
                 
                 document.querySelectorAll('.subitem-recurso').forEach(subitem => {
                     const subRespostaId = subitem.dataset.subrespostaId;
@@ -4057,7 +4079,10 @@
                     const evidencias = [];
                     subitem.querySelectorAll('.evidence-list-recurso .evidence-item').forEach(item => {
                         if (item.dataset.link) {
-                            evidencias.push(item.dataset.link);
+                            evidencias.push({
+                                url: item.dataset.link,
+                                descricao: item.dataset.descricao || null
+                            });
                         }
                     });
                     
@@ -4066,7 +4091,7 @@
                     rascunhoSubitens.push({
                         id: parseInt(subRespostaId),
                         atende: atende,
-                        linkComprovante: evidencias[0] || null,
+                        linkComprovante: evidencias[0]?.url || null,
                         evidencias: evidencias,
                         comentario: comentario
                     });
@@ -4074,25 +4099,6 @@
                 
                 if (rascunhoSubitens.length > 0) {
                     localStorage.setItem(`rascunho_subitens_${avaliacaoId}`, JSON.stringify(rascunhoSubitens));
-                    console.log('Rascunho de subitens salvo:', rascunhoSubitens);
-                    
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'success',
-                        title: 'Salvo!',
-                        text: 'Rascunho salvo com sucesso.',
-                        showConfirmButton: false,
-                        timer: 1500,
-                        timerProgressBar: true,
-                        didOpen: (toast) => {
-                            toast.addEventListener('mouseenter', Swal.stopTimer);
-                            toast.addEventListener('mouseleave', Swal.resumeTimer);
-                        },
-                        customClass: {
-                            popup: 'swal-custom-popup'
-                        }
-                    });
                 }
             }
 
