@@ -1843,6 +1843,27 @@ app.post('/api/avaliacoes/:id/finalizar', authenticateToken, authenticateAdmin, 
             return res.status(400).json({ error: 'Os valores das notas não foram enviados corretamente.' });
         }
 
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { id: parseInt(avaliacaoId) }
+        });
+
+        if (!avaliacao) {
+            return res.status(404).json({ error: 'Avaliação não encontrada.' });
+        }
+
+        const requisitos = await prisma.requisito.findMany({
+            where: { 
+                OR: [
+                    { secretariaId: null }, 
+                    { secretariaId: avaliacao.secretariaId } 
+                ]
+            }
+        });
+
+        const pontuacaoTotalCalculada = requisitos.reduce((total, req) => total + (req.pontuacao || 0), 0);
+
+        console.log(`📊 Pontuação total calculada: ${pontuacaoTotalCalculada}`);
+
         const avaliacaoFinalizada = await prisma.avaliacao.update({
             where: { id: parseInt(avaliacaoId) },
             data: {
@@ -1851,13 +1872,13 @@ app.post('/api/avaliacoes/:id/finalizar', authenticateToken, authenticateAdmin, 
                 pontuacaoPrimeiraAnalise: parseFloat(notaPrimeiraAnalise),
                 pontuacaoPosRecurso: parseFloat(notaPosRecurso),
                 pontuacaoFinal: parseFloat(notaFinal),
-                pontuacaoTotal: 124, 
+                pontuacaoTotal: pontuacaoTotalCalculada,
                 dataFinalizacao: new Date()
             },
             include: { secretaria: true }
         });
 
-        console.log(`✅ Banco de Dados atualizado com sucesso.`);
+        console.log(`✅ Banco de Dados atualizado com sucesso. Pontuação total: ${pontuacaoTotalCalculada}`);
 
         try {
             await enviarEmailNotaFinal(avaliacaoFinalizada);
