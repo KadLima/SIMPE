@@ -386,6 +386,9 @@
                 <button id="manage-global-reqs-btn" class="btn btn-primary">
                     <i class="fas fa-globe"></i> Gerenciar Requisitos Globais
                 </button>
+                <button id="export-all-btn" class="btn btn-success">
+                    <i class="fas fa-database"></i> Exportar Avaliações (CSV)
+                </button>
             </div>
         </div>
     </main>
@@ -699,12 +702,329 @@
             }
         }
 
+        // Função para exportar todas as avaliações com dados completos (formato otimizado)
+        async function exportarTodasAvaliacoes() {
+            try {
+                Swal.fire({
+                    title: 'Exportando avaliações...',
+                    width: '550px',
+                    html: `
+                        <div style="text-align: center; padding: 20px;">
+                            <i class="fas fa-spinner fa-pulse" style="font-size: 3.5em; color: #002776; margin-bottom: 20px;"></i>
+                            <p style="color: #2c3e50; font-size: 1.1em;">Buscando dados detalhados de todas as avaliações...</p>
+                            <p style="color: #7f8c8d; margin-top: 10px;">Isso pode levar alguns segundos.</p>
+                        </div>
+                    `,
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title'
+                    }
+                });
+
+                const response = await fetch('/api/avaliacoes?status=', {
+                    headers: { 
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Falha ao carregar avaliações');
+                }
+
+                const avaliacoes = await response.json();
+
+                if (avaliacoes.length === 0) {
+                    Swal.close();
+                    Swal.fire({
+                        title: 'Nenhuma avaliação',
+                        text: 'Não há avaliações para exportar.',
+                        icon: 'info',
+                        confirmButtonColor: '#002776',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
+                    return;
+                }
+
+                Swal.getHtmlContainer().innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <i class="fas fa-spinner fa-pulse" style="font-size: 3.5em; color: #002776; margin-bottom: 20px;"></i>
+                        <p style="color: #2c3e50; font-size: 1.1em;">Processando ${avaliacoes.length} avaliações...</p>
+                        <p style="color: #7f8c8d; margin-top: 10px;">Montando CSV com todas as respostas e subitens.</p>
+                    </div>
+                `;
+
+                const escapeCSV = (field) => {
+                    const str = String(field === null || field === undefined ? '' : field);
+                    const sanitized = str.replace(/;/g, ',');
+                    if (sanitized.includes('"') || sanitized.includes('\n') || sanitized.includes('\r') || sanitized.includes(',')) {
+                        return `"${sanitized.replace(/"/g, '""')}"`;
+                    }
+                    return sanitized;
+                };
+
+                const rows = [];
+                let totalRequisitos = 0;
+
+                for (const av of avaliacoes) {
+                    try {
+                        const detalhesResponse = await fetch(`/api/avaliacoes/${av.id}`, {
+                            headers: { 
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (!detalhesResponse.ok) continue;
+
+                        const avaliacaoCompleta = await detalhesResponse.json();
+                        
+                        const dataEnvio = new Date(av.createdAt).toLocaleDateString('pt-BR');
+                        const dataFinalizacao = av.dataFinalizacao ? new Date(av.dataFinalizacao).toLocaleDateString('pt-BR') : '';
+                        
+                        const statusTexto = {
+                            'PENDENTE_SECRETARIA': 'Enviado',
+                            'EM_ANALISE_SCGE': 'Em Análise',
+                            'AGUARDANDO_RECURSO': 'Devolvido',
+                            'EM_ANALISE_DE_RECURSO': 'Recurso',
+                            'FINALIZADA': 'Finalizada'
+                        }[av.status] || av.status;
+
+                        const headerRow = [
+                            '=== INÍCIO AVALIAÇÃO ===',
+                            `ID: ${av.id}`,
+                            `Órgão: ${av.secretaria?.nome || ''}`,
+                            `Sigla: ${av.secretaria?.sigla || ''}`,
+                            `Status: ${statusTexto}`,
+                            `URL: ${av.urlSecretaria}`,
+                            `Responsável: ${av.nomeResponsavel || ''}`,
+                            `Email: ${av.emailResponsavel || ''}`,
+                            `Envio: ${dataEnvio}`,
+                            `Finalização: ${dataFinalizacao}`,
+                            `Autoavaliação: ${av.pontuacaoAutoavaliacao || ''}`,
+                            `1ª Análise: ${av.pontuacaoPrimeiraAnalise || ''}`,
+                            `Pós-Recurso: ${av.pontuacaoPosRecurso || ''}`,
+                            `Nota Final: ${av.pontuacaoFinal || ''}`,
+                            `Total: ${av.pontuacaoTotal || ''}`,
+                            `Ciclo: ${av.ciclo || '2025'}`
+                        ].join(';');
+                        
+                        rows.push(headerRow);
+
+                        const requisitosHeader = [
+                            'Tipo',
+                            'Requisito ID',
+                            'Requisito Texto',
+                            'Pontuação',
+                            'Resposta Original',
+                            'Comentário Original',
+                            'Links Originais',
+                            '1ª Análise (Resultado)',
+                            '1ª Análise (Comentário)',
+                            'Links Analista',
+                            'Teve Recurso?',
+                            'Resposta no Recurso',
+                            'Comentário no Recurso',
+                            'Links do Recurso',
+                            'Análise Final (Resultado)',
+                            'Análise Final (Comentário)',
+                            'Links Análise Final'
+                        ].join(';');
+                        
+                        rows.push(requisitosHeader);
+
+                        if (avaliacaoCompleta.respostas && Array.isArray(avaliacaoCompleta.respostas)) {
+                            for (const resposta of avaliacaoCompleta.respostas) {
+                                totalRequisitos++;
+
+                                const evidenciasOriginais = [];
+                                if (resposta.linkComprovante) evidenciasOriginais.push(resposta.linkComprovante);
+                                if (resposta.evidencias) {
+                                    resposta.evidencias
+                                        .filter(e => e.tipo === 'original')
+                                        .forEach(e => evidenciasOriginais.push(e.url));
+                                }
+
+                                const linksAnalista = resposta.linksAnalista ? 
+                                    resposta.linksAnalista.map(l => l.url).join(' | ') : '';
+
+                                const evidenciasRecurso = [];
+                                if (resposta.linkComprovanteRecurso) evidenciasRecurso.push(resposta.linkComprovanteRecurso);
+                                if (resposta.evidencias) {
+                                    resposta.evidencias
+                                        .filter(e => e.tipo === 'recurso')
+                                        .forEach(e => evidenciasRecurso.push(e.url));
+                                }
+
+                                const linksAnaliseFinal = resposta.linksAnaliseFinal ? 
+                                    resposta.linksAnaliseFinal.map(l => l.url).join(' | ') : '';
+
+                                const teveRecurso = resposta.recursoAtende !== null || 
+                                                resposta.comentarioRecurso ||
+                                                evidenciasRecurso.length > 0;
+
+                                const analiseFinal = resposta.analiseFinal || {};
+                                const statusFinal = analiseFinal.statusValidacaoPosRecurso || resposta.statusValidacao || 'pendente';
+                                const resultadoFinal = statusFinal === 'aprovado' ? 'Atende' : 
+                                                    statusFinal === 'rejeitado' ? 'Não Atende' : 'Pendente';
+
+                                if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                                    const rowPai = [
+                                        escapeCSV('Requisito Pai (R31)'),
+                                        escapeCSV(resposta.requisito?.id || ''),
+                                        escapeCSV(resposta.requisito?.texto || ''),
+                                        escapeCSV(resposta.requisito?.pontuacao || ''),
+                                        '', '', '', '', '', '', '', '', '', '', '', '', ''
+                                    ];
+                                    rows.push(rowPai.join(';'));
+
+                                    for (const sub of resposta.subRespostas) {
+                                        const row = [
+                                            escapeCSV('Subitem'),
+                                            escapeCSV(''),
+                                            escapeCSV(sub.subRequisito?.texto || ''),
+                                            escapeCSV(''),
+                                            escapeCSV(sub.atende ? 'Atende' : 'Não Atende'),
+                                            escapeCSV(sub.comentarioSecretaria || ''),
+                                            escapeCSV(sub.linkComprovante || ''),
+                                            escapeCSV(sub.statusValidacao === 'aprovado' ? 'Aprovado' : 
+                                                    (sub.statusValidacao === 'rejeitado' ? 'Rejeitado' : 'Pendente')),
+                                            escapeCSV(sub.comentarioAdmin || ''),
+                                            escapeCSV(''),
+                                            escapeCSV(sub.teveRecurso ? 'Sim' : 'Não'),
+                                            escapeCSV(sub.atende ? 'Atende' : 'Não Atende'),
+                                            escapeCSV(sub.comentarioRecurso || ''),
+                                            escapeCSV(sub.linkComprovanteRecurso || ''),
+                                            escapeCSV(sub.statusValidacaoPosRecurso === 'aprovado' ? 'Atende' : 
+                                                    (sub.statusValidacaoPosRecurso === 'rejeitado' ? 'Não Atende' : 'Pendente')),
+                                            escapeCSV(sub.comentarioAnaliseFinal || ''),
+                                            escapeCSV('')
+                                        ];
+                                        rows.push(row.join(';'));
+                                    }
+                                } else {
+                                    const row = [
+                                        escapeCSV('Requisito'),
+                                        escapeCSV(resposta.requisito?.id || ''),
+                                        escapeCSV(resposta.requisito?.texto || ''),
+                                        escapeCSV(resposta.requisito?.pontuacao || ''),
+                                        escapeCSV(resposta.atendeOriginal ? 'Atende' : 'Não Atende'),
+                                        escapeCSV(resposta.comentarioSecretaria || ''),
+                                        escapeCSV(evidenciasOriginais.join(' | ')),
+                                        escapeCSV(resposta.statusValidacao === 'aprovado' ? 'Aprovado' : 
+                                                (resposta.statusValidacao === 'rejeitado' ? 'Rejeitado' : 'Pendente')),
+                                        escapeCSV(resposta.comentarioAdmin || ''),
+                                        escapeCSV(linksAnalista),
+                                        escapeCSV(teveRecurso ? 'Sim' : 'Não'),
+                                        escapeCSV(teveRecurso ? (resposta.atende ? 'Atende' : 'Não Atende') : ''),
+                                        escapeCSV(resposta.comentarioRecurso || ''),
+                                        escapeCSV(evidenciasRecurso.join(' | ')),
+                                        escapeCSV(resultadoFinal),
+                                        escapeCSV(resposta.comentarioAnaliseFinal || ''),
+                                        escapeCSV(linksAnaliseFinal)
+                                    ];
+                                    rows.push(row.join(';'));
+                                }
+                            }
+                        }
+
+                        rows.push('');
+
+                    } catch (e) {
+                        console.error(`Erro ao processar avaliação ${av.id}:`, e);
+                        continue;
+                    }
+                }
+
+                const csvContent = rows.join('\n');
+                const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                
+                const dataAtual = new Date().toISOString().slice(0,10);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `backup_completo_avaliacoes_${dataAtual}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                Swal.close();
+                
+                Swal.fire({
+                    title: 'Exportação concluída!',
+                    width: '550px',
+                    html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="margin: 0; color: #155724; font-weight: 500;">
+                                    <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                                    ${avaliacoes.length} avaliações exportadas com sucesso!
+                                </p>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; border: 1px solid #e1e5e9;">
+                                <p style="margin: 0 0 5px 0;"><strong>Total de avaliações:</strong> ${avaliacoes.length}</p>
+                                <p style="margin: 0 0 5px 0;"><strong>Total de requisitos/subitens:</strong> ${totalRequisitos}</p>
+                                <p style="margin: 0;"><strong>Arquivo:</strong> backup_completo_avaliacoes_${dataAtual}.csv</p>
+                            </div>
+                            
+                            <p style="margin-top: 15px; color: #7f8c8d; font-size: 0.9em;">
+                                <i class="fas fa-info-circle"></i> 
+                                Cada avaliação tem seus dados uma única vez, seguidos dos requisitos em linhas separadas.
+                            </p>
+                        </div>
+                    `,
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#002776',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
+                });
+
+            } catch (error) {
+                console.error('Erro ao exportar avaliações:', error);
+                Swal.close();
+                Swal.fire({
+                    title: 'Erro!',
+                    width: '450px',
+                    html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                                <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                    ${error.message || 'Não foi possível exportar as avaliações.'}
+                                </p>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'error',
+                    iconColor: '#dc3545',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#002776',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
+                });
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const avaliacoesList = document.getElementById('avaliacoes-list');
             const statusFilter = document.getElementById('statusFilter');
             const authToken = localStorage.getItem('authToken');
             
-            // Elementos dos Modais Antigos
             const createUserBtn = document.getElementById('create-user-btn');
             const createUserModal = document.getElementById('create-user-modal');
             const closeUserModalBtn = document.getElementById('close-user-modal');
@@ -712,6 +1032,10 @@
             const createUserForm = document.getElementById('create-user-form');
             const secretariaSelect = document.getElementById('user-secretaria');
             const addSecretariaBtn = document.getElementById('add-secretaria-btn');
+            const exportAllBtn = document.getElementById('export-all-btn');
+            if (exportAllBtn) {
+                exportAllBtn.addEventListener('click', exportarTodasAvaliacoes);
+            }
 
             const createSecretariaModal = document.getElementById('create-secretaria-modal');
             const closeSecretariaModalBtn = document.getElementById('close-secretaria-modal');
@@ -1049,7 +1373,6 @@
                 if (event.target === viewUsersModal) closeUsersModal();
             });
 
-            // Fechar modais com ESC
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') {
                     if (viewUsersModal.style.display === 'flex') closeUsersModal();
@@ -1231,7 +1554,7 @@
                     if (userData.user && userData.user.role === 'ADMIN') {
                         createUserBtn.style.display = 'inline-flex';
                         viewUsersBtn.style.display = 'inline-flex'; 
-                        manageReqsBtn.style.display = 'inline-flex'; // Mostra o novo botão
+                        manageReqsBtn.style.display = 'inline-flex'; 
 
                         await popularSelectSecretarias();
                         
