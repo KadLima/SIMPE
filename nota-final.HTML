@@ -773,6 +773,82 @@
             word-break: break-all;
         }
 
+        /* Personalização do SweetAlert */
+        .swal-custom-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border-top: 5px solid #002776 !important;
+            padding: 1.5em !important;
+        }
+
+        .swal-custom-title {
+            color: #002776 !important;
+            font-weight: 700 !important;
+            font-size: 1.5em !important;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .swal-custom-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: #FFD700;
+        }
+
+        .swal-custom-html {
+            margin: 0 !important;
+            padding: 10px 0 !important;
+        }
+
+        .swal-custom-confirm {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-cancel {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-confirm:hover,
+        .swal-custom-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+        }
+
+        .swal-custom-container {
+            padding: 2rem !important;
+        }
+
+        .swal2-input {
+            width: 100% !important;
+            padding: 12px 16px !important;
+            margin: 5px 0 0 0 !important;
+            border: 2px solid #e1e5e9 !important;
+            border-radius: 10px !important;
+            font-size: 0.95em !important;
+            transition: all 0.3s !important;
+            box-sizing: border-box !important;
+        }
+
+        .swal2-input:focus {
+            border-color: #002776 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1) !important;
+        }
+
         /* --- RESPONSIVIDADE --- */
         @media (max-width: 768px) {
             .main-nav { 
@@ -1029,7 +1105,31 @@
             let emailResponsavel = '';
 
             if (!authToken) {
-                Swal.fire('Erro de Autenticação', 'Faça login novamente.', 'error');
+                Swal.fire({
+                    title: 'Erro de Autenticação',
+                    width: '450px',
+                    html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                                <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                    <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                    Faça login novamente.
+                                </p>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'error',
+                    iconColor: '#dc3545',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#002776',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
+                }).then(() => {
+                    window.location.href = '/login';
+                });
                 window.location.href = '/login';
                 return;
             }
@@ -1054,7 +1154,7 @@
                 } else {
                     menuHTML = `
                         <li><a href="/" class="${window.location.pathname === '/' ? 'active' : ''}">Início</a></li>
-                        <li><a href="/minhas-avaliacoes" class="${window.location.pathname === '/minhas-avaliacoes' ? 'active' : ''}">Minha Área</a></li>
+                        <li><a href="/dashboard" class="${window.location.pathname === '/dashboard' ? 'active' : ''}">Minha Área</a></li>
                         <li><a href="/formulario" class="${window.location.pathname === '/formulario' ? 'active' : ''}">Autoavaliação</a></li>
                         <li><a href="#" id="logout-btn">Sair</a></li>
                     `;
@@ -1078,17 +1178,46 @@
                     });
                 }
 
-                // Configurar botões de ação existentes
+                // Configurar botões de ação
                 const imprimirBtn = document.getElementById('imprimir-btn');
                 const pdfBtn = document.getElementById('pdf-btn');
                 const emailBtn = document.getElementById('email-btn');
                 const csvBtn = document.getElementById('csv-btn');
 
-                // Configurar modal
+                if (imprimirBtn) {
+                    imprimirBtn.addEventListener('click', () => {
+                        window.print();
+                    });
+                }
+
+                if (pdfBtn) {
+                    pdfBtn.addEventListener('click', gerarPDF);
+                }
+
+                if (emailBtn) {
+                    emailBtn.addEventListener('click', enviarPorEmail);
+                }
+
+                if (csvBtn) {
+                    csvBtn.addEventListener('click', () => {
+                        if (avaliacaoData) {
+                            gerarCSV(avaliacaoData);
+                        } else {
+                            Swal.fire('Erro', 'Dados da avaliação não carregados.', 'error');
+                        }
+                    });
+                }
+
                 modalCloseBtn.addEventListener('click', fecharModal);
                 modalOverlay.addEventListener('click', (event) => {
                     if (event.target === modalOverlay) fecharModal();
                 });
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && modalOverlay.style.display === 'flex') {
+                        fecharModal();
+                    }
+                });
+
                 document.addEventListener('keydown', (event) => {
                     if (event.key === 'Escape' && modalOverlay.style.display === 'flex') {
                         fecharModal();
@@ -1230,28 +1359,54 @@
 
                 const { value: email } = await Swal.fire({
                     title: 'Enviar Relatório por Email',
+                    width: '550px',
                     html: `
-                        <p>Deseja enviar o relatório para o seguinte email?</p>
-                        <p><strong>${emailResponsavel}</strong></p>
-                        <p>Você pode editar o email abaixo se necessário:</p>
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="margin: 0; color: #002776; font-weight: 500;">
+                                    <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                                    O relatório será enviado em PDF para o email abaixo.
+                                </p>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776;">
+                                    <i class="fas fa-envelope" style="margin-right: 8px;"></i>
+                                    Email do destinatário
+                                </label>
+                                <input type="email" id="swal-input1" class="swal2-input" 
+                                    value="${emailResponsavel}"
+                                    style="width: 100%; padding: 12px 16px;">
+                                <small style="display: block; margin-top: 5px; color: #7f8c8d;">
+                                    <i class="fas fa-info-circle"></i> Você pode editar o email se necessário
+                                </small>
+                            </div>
+                        </div>
                     `,
-                    input: 'email',
-                    inputLabel: 'Email do destinatário',
-                    inputValue: emailResponsavel,
-                    inputPlaceholder: 'Digite o email...',
+                    focusConfirm: false,
                     showCancelButton: true,
                     confirmButtonText: 'Enviar Relatório',
                     cancelButtonText: 'Cancelar',
-                    confirmButtonColor: 'var(--verde-sucesso)',
-                    cancelButtonColor: 'var(--vermelho-destaque)',
-                    inputValidator: (value) => {
-                        if (!value) {
-                            return 'Por favor, digite um email válido!';
+                    confirmButtonColor: '#27ae60',
+                    cancelButtonColor: '#dc3545',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm',
+                        cancelButton: 'swal-custom-cancel'
+                    },
+                    preConfirm: () => {
+                        const email = document.getElementById('swal-input1').value.trim();
+                        if (!email) {
+                            Swal.showValidationMessage('Por favor, digite um email válido!');
+                            return false;
                         }
                         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        if (!emailRegex.test(value)) {
-                            return 'Por favor, digite um email válido!';
+                        if (!emailRegex.test(email)) {
+                            Swal.showValidationMessage('Por favor, digite um email válido!');
+                            return false;
                         }
+                        return email;
                     }
                 });
 
@@ -1259,9 +1414,19 @@
                     try {
                         Swal.fire({
                             title: 'Enviando email...',
-                            text: 'Aguarde enquanto o relatório é gerado e enviado.',
+                            width: '450px',
+                            html: `
+                                <div style="text-align: center; padding: 20px;">
+                                    <i class="fas fa-spinner fa-pulse" style="font-size: 3em; color: #002776; margin-bottom: 20px;"></i>
+                                    <p style="color: #2c3e50;">Aguarde enquanto o relatório é gerado e enviado.</p>
+                                </div>
+                            `,
                             allowOutsideClick: false,
-                            didOpen: () => { Swal.showLoading(); }
+                            showConfirmButton: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title'
+                            }
                         });
 
                         const pdfBlob = await gerarPDFBlob(); 
@@ -1283,19 +1448,58 @@
                         }
 
                         Swal.fire({
-                            icon: 'success',
                             title: 'Email enviado com sucesso!',
-                            text: `O relatório foi enviado para ${email}`,
-                            confirmButtonColor: 'var(--azul-gov-principal)'
+                            width: '500px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                        <p style="margin: 0; color: #155724; font-weight: 500;">
+                                            <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                                            O relatório foi enviado com sucesso!
+                                        </p>
+                                    </div>
+                                    
+                                    <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; border: 1px solid #e1e5e9;">
+                                        <p style="margin: 0;">
+                                            <strong>Destinatário:</strong> ${email}
+                                        </p>
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'success',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#002776',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
 
                     } catch (error) {
                         console.error('Erro ao enviar email:', error);
                         Swal.fire({
-                            icon: 'error',
                             title: 'Erro ao enviar email',
-                            text: error.message || 'Não foi possível enviar o relatório por email.',
-                            confirmButtonColor: 'var(--vermelho-destaque)'
+                            width: '450px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                                        <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                            <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                            ${error.message || 'Não foi possível enviar o relatório por email.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'error',
+                            iconColor: '#dc3545',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#002776',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
                     }
                 }
@@ -1365,15 +1569,13 @@
 
                 if(actionButtons) actionButtons.style.display = 'none';
 
-                console.log(`[PDF Save] Forçando expansão de ${allDossieContent.length} cards...`);
                 allDossieContent.forEach(content => {
                     content.style.display = 'block';
-                    content.style.maxHeight = 'unset';
+                    content.style.maxHeight = 'none';
                     content.style.overflow = 'visible';
                     content.style.padding = '15px 20px 20px 20px';
                     content.style.borderTop = '1px solid #eee';
                     content.style.marginTop = '15px';
-
                 });
 
                 const opt = {
@@ -1384,23 +1586,31 @@
                         scale: 2, 
                         useCORS: true, 
                         scrollY: 0, 
-                        logging: true 
+                        logging: false 
                     },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-                    pagebreak: { mode: ['css', 'legacy'], before: '.dossie-section' }
+                    pagebreak: { mode: ['css', 'legacy'] }
                 };
 
                 Swal.fire({
                     title: 'Gerando PDF...',
-                    text: 'Aguarde enquanto o relatório é preparado.',
+                    width: '450px',
+                    html: `
+                        <div style="text-align: center; padding: 20px;">
+                            <i class="fas fa-file-pdf fa-pulse" style="font-size: 3em; color: #002776; margin-bottom: 20px;"></i>
+                            <p style="color: #2c3e50;">Aguarde enquanto o relatório é preparado.</p>
+                        </div>
+                    `,
                     allowOutsideClick: false,
-                    didOpen: () => { Swal.showLoading(); }
+                    showConfirmButton: false,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title'
+                    }
                 });
 
                 const reverterEstilos = () => {
-                    console.log("[PDF Save] Revertendo estilos da página...");
                     if(actionButtons) actionButtons.style.display = 'flex';
-                    
                     allDossieContent.forEach(content => {
                         content.style.display = '';
                         content.style.maxHeight = '';
@@ -1408,142 +1618,298 @@
                         content.style.padding = '';
                         content.style.borderTop = '';
                         content.style.marginTop = '';
-
                     });
                 };
 
-                html2pdf().set(opt).from(element).save().then(() => {
-                    reverterEstilos(); 
-                    Swal.close();
-                    Swal.fire({
-                        title: 'Sucesso!',
-                        text: 'PDF gerado com sucesso.',
-                        icon: 'success',
-                        confirmButtonColor: 'var(--azul-gov-principal)' 
+                html2pdf().set(opt).from(element).save()
+                    .then(() => {
+                        reverterEstilos();
+                        Swal.close();
+                        Swal.fire({
+                            title: 'PDF gerado com sucesso!',
+                            width: '450px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 8px;">
+                                        <p style="margin: 0; color: #155724; font-weight: 500;">
+                                            <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                                            O PDF foi gerado e salvo com sucesso.
+                                        </p>
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title'
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        reverterEstilos();
+                        console.error('Erro ao gerar PDF:', error);
+                        Swal.fire({
+                            title: 'Erro',
+                            width: '450px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                                        <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                            <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                            Não foi possível gerar o PDF.
+                                        </p>
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'error',
+                            iconColor: '#dc3545',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#002776',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
+                        });
                     });
-                }).catch(error => {
-                    reverterEstilos(); 
-                    console.error('Erro ao gerar PDF:', error);
-                    Swal.fire('Erro', 'Não foi possível gerar o PDF.', 'error');
-                    confirmButtonColor: 'var(--vermelho-destaque)'
-                });
             }
 
             function gerarCSV(avaliacao) {
                 if (!avaliacao || !Array.isArray(avaliacao.respostas)) {
                     console.error("Dados da avaliação inválidos para gerar CSV.");
-                    Swal.fire('Erro', 'Não foi possível gerar o CSV. Dados da avaliação ausentes.', 'error');
+                    Swal.fire({
+                        title: 'Erro',
+                        width: '450px',
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                                    <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                        Não foi possível gerar o CSV. Dados da avaliação ausentes.
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                        icon: 'error',
+                        iconColor: '#dc3545',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#002776',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
                     return;
                 }
 
-                console.log("Iniciando geração do CSV simplificado...");
+                console.log("Iniciando geração do CSV para recurso...");
 
                 const headers = [
                     "Requisito",
-                    "Pontuação",
-                    "Resposta Original",
-                    "Seu Comentário Original",
-                    "Suas Evidências Originais",
-                    "Sua Resposta no Recurso", 
-                    "Seu Comentário no Recurso",
-                    "Suas Evidências no Recurso",
-                    "Resultado Análise Final SCGE"
-                ];
+                    "Pontuacao",
+                    "Sua Resposta Original", 
+                    "Seu Comentario Original",
+                    "Suas Evidencias Originais",
+                    "1ª Validação SCGE",
+                    "Sua Resposta no Recurso",
+                    "Seu Comentario no Recurso",
+                    "Suas Evidencias no Recurso",
+                    "Análise Final SCGE"
+                ].join(';');
 
-                const rows = avaliacao.respostas.map(resposta => {
-                    const req = resposta.requisito || {}; 
-                    const analiseFinal = resposta.analiseFinal || {};
+                const rows = [];
 
-                    const requisito = req.texto || '';
-
-                    const pontuacao = req.pontuacao || 0;
-
-                    const respostaOriginal = resposta.atendeOriginal === true ? 'Atende' : 
-                                        resposta.atendeOriginal === false ? 'Não Atende' : 'N/A';
-
-                    const comentarioOriginal = resposta.comentarioSecretaria || '';
-
-                    const evidenciasOriginais = Array.isArray(resposta.evidencias) ? 
-                        resposta.evidencias.filter(e => e.tipo === 'original').map(e => e.url) : [];
+                avaliacao.respostas.forEach(resposta => {
+                    const req = resposta.requisito || {};
                     
-                    if (resposta.linkComprovante) {
-                        evidenciasOriginais.unshift(resposta.linkComprovante);
-                    }
-                    
-                    const evidenciasOriginaisTexto = evidenciasOriginais.length > 0 ? 
-                        evidenciasOriginais.join('; ') : '';
-
-                    const teveRecurso = resposta.recursoAtende !== null || 
-                                    resposta.comentarioRecurso || 
-                                    (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
-                    
-                    const respostaRecurso = teveRecurso ? 
-                                        (resposta.atende === true ? 'Atende' : 'Não Atende') : 'Não houve recurso';
-
-                    const comentarioRecurso = teveRecurso ? (resposta.comentarioRecurso || '') : 'Não houve recurso';
-
-                    let evidenciasRecurso = '';
-                    if (teveRecurso) {
-                        const evidenciasRecursoArray = Array.isArray(resposta.evidencias) ? 
-                            resposta.evidencias.filter(e => e.tipo === 'recurso').map(e => e.url) : [];
-                        
-                        if (resposta.linkComprovanteRecurso) {
-                            evidenciasRecursoArray.unshift(resposta.linkComprovanteRecurso);
-                        }
-                        
-                        evidenciasRecurso = evidenciasRecursoArray.length > 0 ? 
-                            evidenciasRecursoArray.join('; ') : '';
-                    } else {
-                        evidenciasRecurso = ''; 
-                    }
-
-                    const statusFinalConsiderado = analiseFinal.statusValidacaoPosRecurso || resposta.statusValidacao || 'pendente';
-                    const resultadoFinal = statusFinalConsiderado === 'aprovado' ? 'Atende' : 
-                                        statusFinalConsiderado === 'rejeitado' ? 'Não Atende' : 'Pendente';
-
                     const escapeCSV = (field) => {
                         const str = String(field === null || field === undefined ? '' : field);
-                        if (str.includes('"') || str.includes(';') || str.includes('\n') || str.includes('\r')) {
-                            return `"${str.replace(/"/g, '""')}"`;
+                        const sanitized = str.replace(/;/g, ',');
+                        if (sanitized.includes('"') || sanitized.includes('\n') || sanitized.includes('\r') || sanitized.includes(',')) {
+                            return `"${sanitized.replace(/"/g, '""')}"`;
                         }
-                        return str;
+                        return sanitized;
                     };
 
-                    return [
-                        escapeCSV(requisito),
-                        escapeCSV(pontuacao),
-                        escapeCSV(respostaOriginal),
-                        escapeCSV(comentarioOriginal),
-                        escapeCSV(evidenciasOriginaisTexto),
-                        escapeCSV(respostaRecurso),
-                        escapeCSV(comentarioRecurso),
-                        escapeCSV(evidenciasRecurso),
-                        escapeCSV(resultadoFinal)
-                    ].join(';');
+                    if (resposta.subRespostas && resposta.subRespostas.length > 0) {
+                        rows.push([
+                            escapeCSV(`=== ${req.texto} (SUBITENS) ===`),
+                            req.pontuacao || 0,
+                            '', '', '', '', '', '', '', ''
+                        ].join(';'));
+                        
+                        resposta.subRespostas.forEach((sub, index) => {
+                            const evidenciasSub = sub.linkComprovante ? [sub.linkComprovante] : [];
+                            
+                            let analiseSCGE = '';
+                            if (sub.statusValidacao === 'aprovado') {
+                                analiseSCGE = 'Atende';
+                            } else if (sub.statusValidacao === 'rejeitado') {
+                                analiseSCGE = 'Não Atende';
+                            } else {
+                                analiseSCGE = 'Pendente';
+                            }
+                            
+                            const teveRecursoSub = sub.comentarioRecurso || 
+                                                sub.linkComprovanteRecurso ||
+                                                sub.statusValidacaoPosRecurso ||
+                                                sub.teveRecurso === true;
+                            
+                            const respostaRecursoSub = teveRecursoSub ? (sub.atende ? 'Atende' : 'Não Atende') : 'Não houve recurso';
+                            const comentarioRecursoSub = teveRecursoSub ? (sub.comentarioRecurso || '') : 'Não houve recurso';
+                            
+                            let evidenciasRecursoSub = '';
+                            if (teveRecursoSub && sub.evidencias) {
+                                const evidenciasRecursoArray = sub.evidencias.filter(e => e.tipo === 'recurso').map(e => e.url);
+                                if (sub.linkComprovanteRecurso) {
+                                    evidenciasRecursoArray.unshift(sub.linkComprovanteRecurso);
+                                }
+                                evidenciasRecursoSub = evidenciasRecursoArray.length > 0 ? evidenciasRecursoArray.join(' | ') : '';
+                            }
+                            
+                            const statusFinalSub = sub.statusValidacaoPosRecurso || sub.statusValidacao || 'pendente';
+                            const analiseFinalSub = statusFinalSub === 'aprovado' ? 'Atende' : 
+                                                statusFinalSub === 'rejeitado' ? 'Não Atende' : 'Pendente';
+                            
+                            rows.push([
+                                escapeCSV(`  ${index + 1}. ${sub.subRequisito.texto}`),
+                                '', 
+                                sub.atende ? 'Atende' : 'Não Atende',
+                                escapeCSV(sub.comentarioSecretaria || ''),
+                                escapeCSV(evidenciasSub.join(' | ')),
+                                analiseSCGE,
+                                escapeCSV(respostaRecursoSub),
+                                escapeCSV(comentarioRecursoSub),
+                                escapeCSV(evidenciasRecursoSub),
+                                escapeCSV(analiseFinalSub)
+                            ].join(';'));
+                        });
+                        
+                    } else {
+                        const requisito = req.texto || '';                  
+                        const pontuacao = req.pontuacao || 0;
+                        const respostaOriginal = resposta.atendeOriginal === true ? 'Atende' : 
+                                                resposta.atendeOriginal === false ? 'Não Atende' : 'N/A';
+                        
+                        const comentarioOriginal = resposta.comentarioSecretaria || '';
+                        
+                        const evidenciasOriginais = Array.isArray(resposta.evidencias) ? 
+                            resposta.evidencias
+                                .filter(e => e.tipo === 'original')
+                                .map(e => e.url)
+                                .join(' | ') : '';
+                        
+                        let analiseSCGE = '';
+                        if (resposta.statusValidacao === 'aprovado') {
+                            analiseSCGE = 'Atende';
+                        } else if (resposta.statusValidacao === 'rejeitado') {
+                            analiseSCGE = 'Não Atende';
+                        } else {
+                            analiseSCGE = 'Pendente';
+                        }
+
+                        const teveRecurso = resposta.recursoAtende !== null || 
+                                        resposta.comentarioRecurso ||
+                                        (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
+                        
+                        const respostaRecurso = teveRecurso ? (resposta.atende ? 'Atende' : 'Não Atende') : 'Não houve recurso';
+                        const comentarioRecurso = teveRecurso ? (resposta.comentarioRecurso || '') : 'Não houve recurso';
+                        
+                        let evidenciasRecurso = '';
+                        if (teveRecurso) {
+                            const evidenciasRecursoArray = Array.isArray(resposta.evidencias) ? 
+                                resposta.evidencias.filter(e => e.tipo === 'recurso').map(e => e.url) : [];
+                            
+                            if (resposta.linkComprovanteRecurso) {
+                                evidenciasRecursoArray.unshift(resposta.linkComprovanteRecurso);
+                            }
+                            
+                            evidenciasRecurso = evidenciasRecursoArray.length > 0 ? evidenciasRecursoArray.join(' | ') : '';
+                        }
+
+                        const analiseFinal = resposta.analiseFinal || {};
+                        const statusFinalConsiderado = analiseFinal.statusValidacaoPosRecurso || resposta.statusValidacao || 'pendente';
+                        const analiseFinalTexto = statusFinalConsiderado === 'aprovado' ? 'Atende' : 
+                                                statusFinalConsiderado === 'rejeitado' ? 'Não Atende' : 'Pendente';
+
+                        rows.push([
+                            escapeCSV(requisito),
+                            escapeCSV(pontuacao),
+                            escapeCSV(respostaOriginal),
+                            escapeCSV(comentarioOriginal),
+                            escapeCSV(evidenciasOriginais),
+                            escapeCSV(analiseSCGE),
+                            escapeCSV(respostaRecurso),
+                            escapeCSV(comentarioRecurso),
+                            escapeCSV(evidenciasRecurso),
+                            escapeCSV(analiseFinalTexto)
+                        ].join(';'));
+                    }
                 });
 
-                const csvContent = [headers.join(';'), ...rows].join('\n');
+                const csvContent = [headers, ...rows].join('\n');
 
                 const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
 
                 const link = document.createElement("a");
-                if (link.download !== undefined) { 
+                if (link.download !== undefined) {
                     const url = URL.createObjectURL(blob);
-                    const nomeArquivo = `relatorio_simplificado_${avaliacao.secretaria?.sigla || avaliacao.id}_${new Date().toISOString().slice(0,10)}.csv`;
+                    const nomeArquivo = `relatorio_completo_${avaliacao.secretaria?.sigla || avaliacaoId}_${new Date().toISOString().slice(0,10)}.csv`;
                     link.setAttribute("href", url);
                     link.setAttribute("download", nomeArquivo);
                     link.style.visibility = 'hidden';
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
-                    console.log("Download CSV simplificado iniciado.");
+                    console.log("Download CSV completo iniciado.");
+                    
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'CSV baixado com sucesso!',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        },
+                        customClass: {
+                            popup: 'swal-custom-popup'
+                        }
+                    });
                 } else {
-                    Swal.fire('Erro', 'Seu navegador não suporta a funcionalidade de download direto.', 'error');
+                    Swal.fire({
+                        title: 'Erro',
+                        width: '450px',
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                                    <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                        Seu navegador não suporta a funcionalidade de download direto.
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                        icon: 'error',
+                        iconColor: '#dc3545',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#002776',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
                 }
             }
 
             function calcularPontuacoes(avaliacao) {
-                // Se já tem as pontuações calculadas no banco, usa elas
                 if (avaliacao.pontuacaoAutoavaliacao !== null && avaliacao.pontuacaoAutoavaliacao !== undefined) {
                     console.log('[NOTA-FINAL] Usando notas salvas do banco.');
                     return {
@@ -2100,7 +2466,29 @@
                     if (scorePanelElement) {
                         scorePanelElement.style.display = 'none';
                     }
-                    Swal.fire('Erro', error.message, 'error');
+                    Swal.fire({
+                        title: 'Erro',
+                        width: '450px',
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px;">
+                                    <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                        ${error.message}
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                        icon: 'error',
+                        iconColor: '#dc3545',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#002776',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
                 }
             }
 
