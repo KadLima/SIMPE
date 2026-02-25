@@ -3299,23 +3299,19 @@
                 try {
                     console.log('🧮 ===== CALCULANDO NOTA PÓS-RECURSO (ENVIO) =====');
                     
-                    // Pega os dados do rascunho atual
                     const rascunhoRecurso = localStorage.getItem(`rascunho_recurso_${avaliacaoId}`);
                     const rascunhoSubitens = localStorage.getItem(`rascunho_subitens_${avaliacaoId}`);
                     
-                    // Faz uma cópia da avaliação para simular
                     const avaliacaoSimulada = JSON.parse(JSON.stringify(avaliacaoCompleta));
                     
                     let pontuacaoPosRecurso = 0;
                     let pontuacaoTotal = 0;
                     
                     avaliacaoSimulada.respostas.forEach(resposta => {
-                        // Verifica se é requisito composto (R31)
                         if (resposta.subRespostas && resposta.subRespostas.length > 0) {
                             const pontuacaoBase = resposta.requisito?.pontuacao || 8;
                             pontuacaoTotal += pontuacaoBase;
                             
-                            // Contar aprovações considerando os rascunhos de recurso
                             let aprovados = 0;
                             
                             resposta.subRespostas.forEach(sub => {
@@ -3351,11 +3347,9 @@
                             pontuacaoPosRecurso += pontuacaoRequisito;
                             
                         } else {
-                            // Requisitos normais
                             const pontuacaoRequisito = resposta.requisito?.pontuacao || 0;
                             pontuacaoTotal += pontuacaoRequisito;
                             
-                            // Verifica se este requisito tem rascunho de recurso
                             const temRascunhoRecurso = rascunhoRecurso ? 
                                 JSON.parse(rascunhoRecurso)[resposta.id] : null;
                             
@@ -3374,7 +3368,6 @@
                     const notaCalculada = parseFloat(pontuacaoPosRecurso.toFixed(2));
                     console.log(`🎯 Nota pós-recurso calculada: ${notaCalculada}/${pontuacaoTotal}`);
 
-                    // Envia para o backend
                     const saveResponse = await fetch(`/api/avaliacoes/${avaliacaoId}/nota-pos-recurso`, {
                         method: 'PATCH',
                         headers: {
