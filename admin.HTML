@@ -2309,7 +2309,96 @@
             }
         }
 
-        window.excluirRequisitoExtra = (id) => window.excluirRequisitoGlobal(id);
+        window.excluirRequisitoExtra = async function(id) {
+            const secretariaId = document.getElementById('req-secretaria-select').value;
+            
+            const result = await Swal.fire({ 
+                title: 'Desativar Requisito Específico?',
+                width: '500px',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <p style="margin: 0; color: #856404; font-weight: 500;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                Isso irá desativar este requisito.
+                            </p>
+                        </div>
+                        
+                        <p style="margin: 0 0 10px 0; color: #2c3e50;">
+                            <strong>Importante:</strong>
+                        </p>
+                        <ul style="margin: 0 0 15px 20px; color: #2c3e50;">
+                            <li>✅ Avaliações já realizadas com este requisito continuarão existindo</li>
+                            <li>❌ Novas avaliações não verão mais este requisito</li>
+                        </ul>
+                    </div>
+                `,
+                icon: 'warning',
+                iconColor: '#ffc107',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, desativar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm',
+                    cancelButton: 'swal-custom-cancel'
+                }
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/requisitos/${id}`, { 
+                        method: 'DELETE', 
+                        headers: { 'Authorization': `Bearer ${authToken}` } 
+                    });
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        
+                        let mensagem = 'Requisito desativado com sucesso!';
+                        if (data.softDeleted) {
+                            mensagem = 'Requisito desativado. Avaliações existentes manterão o registro.';
+                        }
+                        
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Sucesso!',
+                            text: mensagem,
+                            timer: 2000,
+                            showConfirmButton: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title'
+                            }
+                        });
+                        
+                        // Recarregar a lista
+                        if (secretariaId) {
+                            await window.loadRequisitosExtras(secretariaId);
+                        }
+                    } else {
+                        const error = await res.json();
+                        throw new Error(error.error || 'Erro ao desativar requisito');
+                    }
+                } catch (e) { 
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro!',
+                        text: e.message || 'Falha ao desativar o requisito.',
+                        confirmButtonColor: '#dc3545',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
+                }
+            }
+        };
 
         window.fecharModalGlobal = () => document.getElementById('manage-global-modal').style.display = 'none';
 
