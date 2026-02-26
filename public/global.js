@@ -71,7 +71,7 @@ async function setupDynamicLinks() {
                 <li><a href="/dashboard">Minha Área</a></li>
             `;
             
-            if (user.role === 'ADMIN') {
+            if (user.role === 'ADMIN' || user.role === 'GESTOR') {
                 menuHTML += `
                 <li><a href="/admin">Área Administrativa</a></li>
                 <li><a href="/scanner">Scanner de Links</a></li>`;
@@ -145,7 +145,7 @@ function setupFooterLink(isLoggedIn, user) {
     const adminFooterLink = document.getElementById('admin-footer-link');
     if (!adminFooterLink) return;
 
-    if (isLoggedIn && user && user.role === 'ADMIN') {
+    if (isLoggedIn && user && (user.role === 'ADMIN' || user.role === 'GESTOR')) {
         adminFooterLink.style.display = 'inline';
         adminFooterLink.href = '/admin';
     } else {

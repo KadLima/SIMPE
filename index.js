@@ -116,16 +116,31 @@ function authenticateToken(req, res, next) {
     });
 }
 
-function authenticateAdmin(req, res, next) {
-    console.log("\n--- Verificando permissão de Admin ---");
-    console.log("Conteúdo do crachá (req.user):", req.user); 
+// Para ADMIN apenas (criação de usuários, secretarias, exclusões)
+function authenticateOnlyAdmin(req, res, next) {
+    console.log("\n--- Verificando permissão de ADMIN apenas ---");
+    console.log("Conteúdo do crachá (req.user):", req.user);
 
     if (req.user && req.user.role === 'ADMIN') {
-        console.log("Resultado: Permissão CONCEDIDA.");
-        next(); 
+        console.log("Resultado: ADMIN confirmado. Permissão CONCEDIDA.");
+        next();
     } else {
-        console.log("Resultado: Permissão NEGADA.");
-        return res.status(403).send('Forbidden: Requer privilégios de administrador.');
+        console.log("Resultado: Usuário não é ADMIN. Permissão NEGADA.");
+        return res.status(403).json({ error: 'Acesso negado. Requer privilégios de administrador.' });
+    }
+}
+
+// Para ADMIN ou GESTOR (análise de avaliações)
+function authenticateAdminOrGestor(req, res, next) {
+    console.log("\n--- Verificando permissão de ADMIN ou GESTOR ---");
+    console.log("Conteúdo do crachá (req.user):", req.user);
+
+    if (req.user && (req.user.role === 'ADMIN' || req.user.role === 'GESTOR')) {
+        console.log("Resultado: Permissão CONCEDIDA.");
+        next();
+    } else {
+        console.log("Resultado: PermissÃO NEGADA.");
+        return res.status(403).json({ error: 'Acesso negado. Requer privilégios de administrador ou gestor.' });
     }
 }
 
@@ -757,17 +772,21 @@ app.post('/api/criar-senha', passwordRecoveryLimiter, async (req, res) => {
 });
 
 // ROTA PARA ADMIN CRIAR NOVOS USUÁRIOS
-app.post('/api/users', authenticateToken, authenticateAdmin, async (req, res) => {
+app.post('/api/users', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
   const { email, password, role, secretariaId } = req.body;
 
   console.log(`[ADMIN] Recebida solicitação para criar usuário: ${email}, Role: ${role}, SecID: ${secretariaId}`);
+
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Apenas administradores podem criar usuários.' });
+  }
 
   if (!email || !password || !role || !secretariaId) {
     return res.status(400).json({ error: 'Todos os campos (email, senha, papel, secretaria) são obrigatórios.' });
   }
   
-  if (role !== 'ADMIN' && role !== 'USER') {
-      return res.status(400).json({ error: 'Papel (role) inválido. Deve ser ADMIN ou USER.' });
+   if (role !== 'ADMIN' && role !== 'GESTOR' && role !== 'USER') {
+      return res.status(400).json({ error: 'Papel (role) inválido. Deve ser ADMIN, GESTOR ou USER.' });
   }
 
   try {
@@ -807,8 +826,12 @@ app.post('/api/users', authenticateToken, authenticateAdmin, async (req, res) =>
 });
 
 // ROTA PARA LISTAR TODOS OS USUÁRIOS (APENAS ADMIN)
-app.get('/api/users', authenticateToken, authenticateAdmin, async (req, res) => {
-    try {
+app.get('/api/users', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Apenas administradores podem ver a lista de usuários.' });
+  }
+    
+      try {
         const users = await prisma.user.findMany({
             select: {
                 id: true,
@@ -839,13 +862,17 @@ app.get('/api/users', authenticateToken, authenticateAdmin, async (req, res) => 
 });
 
 // ROTA PARA EXCLUIR USUÁRIO 
-app.delete('/api/users/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+app.delete('/api/users/:id', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { id } = req.params;
 
     try {
         const user = await prisma.user.findUnique({
             where: { id: parseInt(id) }
         });
+
+        if (req.user.role !== 'ADMIN') {
+            return res.status(403).json({ error: 'Apenas administradores podem excluir usuários.' });
+        }
 
         if (!user) {
             return res.status(404).json({ error: 'Usuário não encontrado.' });
@@ -880,7 +907,7 @@ app.delete('/api/users/:id', authenticateToken, authenticateAdmin, async (req, r
 });
 
 // ROTA PARA ADMIN CRIAR NOVAS SECRETARIAS
-app.post('/api/secretarias', authenticateToken, authenticateAdmin, async (req, res) => {
+app.post('/api/secretarias', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
   const { nome, sigla, url } = req.body;
 
   console.log(`[ADMIN] Recebida solicitação para criar secretaria: ${sigla} - ${nome}`);
@@ -975,7 +1002,7 @@ app.get('/api/my-avaliacoes', authenticateToken, async (req, res) => {
 });
 
 // ROTA PARA ADMIN BUSCAR AVALIAÇÃO COM SUBITENS
-app.get('/api/admin/avaliacao-completa/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+app.get('/api/admin/avaliacao-completa/:id', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -1072,8 +1099,61 @@ app.get('/api/my-nota-final/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// ROTA PARA GESTOR/ADMIN VER NOTA FINAL DE QUALQUER SECRETARIA
+app.get('/api/gestor/nota-final/:id', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
+    try {
+        const { id: avaliacaoId } = req.params;
+
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { id: parseInt(avaliacaoId) },
+            include: {
+                secretaria: true,
+                respostas: {
+                    include: {
+                        requisito: true,
+                        evidencias: true,
+                        linksAnalista: true,
+                        linksAnaliseFinal: true,
+                        subRespostas: { 
+                            include: {
+                                subRequisito: true,
+                                evidencias: true
+                            },
+                            orderBy: {
+                                subRequisito: {
+                                    ordem: 'asc'
+                                }
+                            }
+                        }
+                    },
+                    orderBy: {
+                        requisito: {
+                            id: 'asc'  
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!avaliacao) {
+            return res.status(404).json({ error: 'Avaliação não encontrada.' });
+        }
+
+        // GESTOR/ADMIN pode ver qualquer avaliação finalizada
+        if (avaliacao.status !== 'FINALIZADA') {
+            return res.status(403).json({ error: 'Avaliação ainda não finalizada.' });
+        }
+
+        res.json(avaliacao);
+
+    } catch (error) {
+        console.error("Erro ao buscar nota final para gestor:", error);
+        res.status(500).json({ error: 'Ocorreu um erro interno ao carregar a nota final.' });
+    }
+});
+
 // ROTA PARA ADMIN VISUALIZAR NOTA FINAL DE QUALQUER SECRETARIA
-app.get('/api/admin/nota-final/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+app.get('/api/admin/nota-final/:id', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
     try {
         const { id: avaliacaoId } = req.params;
 
@@ -1306,7 +1386,7 @@ app.post("/links", async (req, res) => {
 });
 
 // ROTA PARA O ADMIN VALIDAR UMA RESPOSTA ESPECÍFICA
-app.patch('/api/respostas/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+app.patch('/api/respostas/:id', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
     const { id } = req.params;
     const { 
       statusValidacao, comentarioAdmin,
@@ -1375,7 +1455,7 @@ app.patch('/api/respostas/:id', authenticateToken, authenticateAdmin, async (req
     }
 });
 
-app.patch('/api/respostas/:id/analise-final', authenticateToken, authenticateAdmin, async (req, res) => {
+app.patch('/api/respostas/:id/analise-final', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
     try {
         const { id } = req.params;
         const { analiseFinal, atende, comentarioAnaliseFinal, linksAnaliseFinal } = req.body;
@@ -1473,7 +1553,7 @@ app.patch('/api/respostas/:id/analise-final', authenticateToken, authenticateAdm
     }
 });
 
-app.patch('/api/requisitos/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+app.patch('/api/requisitos/:id', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { id } = req.params;
     const { texto, pontuacao, textoAjuda } = req.body;
     try {
@@ -1549,7 +1629,7 @@ app.post('/api/respostas/:id/subitens', authenticateToken, async (req, res) => {
 });
 
 // ROTA PARA VALIDAR SUBITENS (ANALISTA)
-app.patch('/api/subrespostas/:id/validar', authenticateToken, authenticateAdmin, async (req, res) => {
+app.patch('/api/subrespostas/:id/validar', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
   try {
     const { id } = req.params;
     const { statusValidacao, comentario } = req.body;
@@ -1573,7 +1653,7 @@ app.patch('/api/subrespostas/:id/validar', authenticateToken, authenticateAdmin,
 });
 
 // ROTA PARA VALIDAR SUBITENS NO RECURSO (ANÁLISE FINAL)
-app.patch('/api/subrespostas/:id/validar-recurso', authenticateToken, authenticateAdmin, async (req, res) => {
+app.patch('/api/subrespostas/:id/validar-recurso', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
   try {
     const { id } = req.params;
     const { statusValidacaoPosRecurso, comentario } = req.body;
@@ -1666,7 +1746,7 @@ app.get('/api/respostas/:id/subitens', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/avaliacoes/:id/devolver', authenticateToken, authenticateAdmin, async (req, res) => {
+app.post('/api/avaliacoes/:id/devolver', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -1825,7 +1905,7 @@ app.post('/api/avaliacoes/:id/recurso', authenticateToken, async (req, res) => {
     }
 });
 
-app.post('/api/avaliacoes/:id/finalizar', authenticateToken, authenticateAdmin, async (req, res) => {
+app.post('/api/avaliacoes/:id/finalizar', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
     try {
         const { id: avaliacaoId } = req.params;
         
@@ -2702,7 +2782,7 @@ app.post('/api/avaliacoes/:id/notificar-recurso', authenticateToken, async (req,
     }
 });
 
-app.post('/api/avaliacoes/:id/notificar-devolucao-recurso', authenticateToken, authenticateAdmin, async (req, res) => {
+app.post('/api/avaliacoes/:id/notificar-devolucao-recurso', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
     try {
       const { id: avaliacaoId } = req.params;
 
@@ -3249,7 +3329,7 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
 });
 
 // Rota para criar requisitos GLOBAIS (secretariaId = null)
-app.post('/api/requisitos-globais', authenticateToken, authenticateAdmin, async (req, res) => {
+app.post('/api/requisitos-globais', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { texto, pontuacao, textoAjuda } = req.body;
 
     if (!texto || !pontuacao) {
@@ -3329,7 +3409,7 @@ app.post('/stop-crawl/:sessionId', authenticateToken, async (req, res) => {
 });
 
 // Listar todas as avaliações
-app.get('/api/avaliacoes', authenticateToken, authenticateAdmin, async (req, res) => {
+app.get('/api/avaliacoes', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
     try {
         const { status } = req.query; 
         const whereClause = {}; 
@@ -3355,7 +3435,7 @@ app.get('/api/avaliacoes', authenticateToken, authenticateAdmin, async (req, res
 });
 
 // Buscar detalhes de uma avaliação
-app.get('/api/avaliacoes/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+app.get('/api/avaliacoes/:id', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
   const { id } = req.params;
   try {
     const avaliacao = await prisma.avaliacao.findUnique({
@@ -3666,7 +3746,7 @@ async function cleanupZombieScans() {
 }
 
 // ROTA PARA TESTE - FORÇAR EXPIRAÇÃO DO PRAZO
-/*app.post('/api/teste/expirar-recurso/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+/*app.post('/api/teste/expirar-recurso/:id', authenticateToken, authenticateAdminOnly, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -4108,7 +4188,7 @@ async function recalcularStatusRespostaPai(respostaId, isPosRecurso = false) {
   }
 }
 
-app.post('/api/requisitos-extras', authenticateToken, authenticateAdmin, async (req, res) => {
+app.post('/api/requisitos-extras', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { texto, pontuacao, secretariaId, textoAjuda } = req.body;
 
     if (!texto || !pontuacao || !secretariaId) {
@@ -4131,7 +4211,7 @@ app.post('/api/requisitos-extras', authenticateToken, authenticateAdmin, async (
 });
 
 // 2. Listar apenas os requisitos extras de uma secretaria
-app.get('/api/secretarias/:id/requisitos-extras', authenticateToken, authenticateAdmin, async (req, res) => {
+app.get('/api/secretarias/:id/requisitos-extras', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const extras = await prisma.requisito.findMany({
@@ -4147,7 +4227,7 @@ app.get('/api/secretarias/:id/requisitos-extras', authenticateToken, authenticat
     }
 });
 
-app.delete('/api/requisitos/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+app.delete('/api/requisitos/:id', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { id } = req.params;
     const { force } = req.query; 
     const requisitoId = parseInt(id);
@@ -4194,7 +4274,7 @@ app.delete('/api/requisitos/:id', authenticateToken, authenticateAdmin, async (r
     }
 });
 
-app.delete('/api/avaliacoes/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+app.delete('/api/avaliacoes/:id', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await prisma.$transaction([

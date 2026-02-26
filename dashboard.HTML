@@ -462,6 +462,34 @@
             text-decoration: underline;
         }
 
+        /* Personalização do SweetAlert */
+        .swal-custom-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border-top: 5px solid #002776 !important;
+            padding: 1.5em !important;
+        }
+
+        .swal-custom-title {
+            color: #002776 !important;
+            font-weight: 700 !important;
+            font-size: 1.5em !important;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .swal-custom-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: #FFD700;
+        }
+
         /* --- RESPONSIVIDADE --- */
         @media (max-width: 768px) {
             .main-nav {
@@ -594,7 +622,25 @@
                 try {
                     avaliacoesContainer.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Carregando suas avaliações...</div>';
 
-                    const response = await fetch('/api/my-avaliacoes', {
+                    // Verificar o papel do usuário
+                    const userResponse = await fetch('/verify-token', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    
+                    if (!userResponse.ok) throw new Error('Não foi possível verificar seus dados.');
+                    
+                    const userData = await userResponse.json();
+                    const isGestor = userData.user.role === 'GESTOR';
+                    const isAdmin = userData.user.role === 'ADMIN';
+
+                    // Opção com filtro (se houver select de status)
+                    const statusFilter = document.getElementById('statusFilter')?.value || '';
+                    let url = '/api/my-avaliacoes'; // padrão para USER
+                    if (isGestor || isAdmin) {
+                        url = statusFilter ? `/api/avaliacoes?status=${statusFilter}` : '/api/avaliacoes';
+                    }
+
+                    const response = await fetch(url, {
                         headers: { 
                             'Authorization': `Bearer ${authToken}`,
                             'Content-Type': 'application/json'
@@ -609,16 +655,30 @@
                     console.log("Dados recebidos do servidor:", avaliacoes); 
 
                     if (avaliacoes.length === 0) {
-                        avaliacoesContainer.innerHTML = `
+                        let mensagemVazia = `
                             <div class="empty-state">
                                 <h3 style="color: var(--azul-gov-principal); margin-bottom: 15px;">Nenhuma avaliação encontrada</h3>
-                                <p style="margin-bottom: 25px;">Você ainda não iniciou ou enviou nenhuma avaliação.</p>
-                                <a href="/formulario" class="btn">Iniciar Nova Avaliação</a>
-                            </div>
-                        `;
+                                <p style="margin-bottom: 25px;">`;
+                        
+                        if (isGestor) {
+                            mensagemVazia += `Não há avaliações cadastradas no sistema no momento.`;
+                        } else {
+                            mensagemVazia += `Você ainda não iniciou ou enviou nenhuma avaliação.`;
+                        }
+                        
+                        mensagemVazia += `</p>`;
+                        
+                        if (!isGestor && !isAdmin) {
+                            mensagemVazia += `<a href="/formulario" class="btn">Iniciar Nova Avaliação</a>`;
+                        }
+                        
+                        mensagemVazia += `</div>`;
+                        
+                        avaliacoesContainer.innerHTML = mensagemVazia;
                         return;
                     }
 
+                    // Ordenar por data (mais recente primeiro)
                     avaliacoes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
                     avaliacoesContainer.innerHTML = avaliacoes.map(avaliacao => {
@@ -657,9 +717,10 @@
                             <div class="avaliacao-card ${statusClass}">
                                 <div class="card-header">
                                     <div style="flex: 1;">
-                                        <h3>Avaliação - ${avaliacao.secretaria?.sigla || 'Secretaria'}</h3>
+                                        <h3>${avaliacao.secretaria?.nome || 'Secretaria'} (${avaliacao.secretaria?.sigla || 'N/A'})</h3>
                                         <p><strong>URL Avaliada:</strong> ${avaliacao.urlSecretaria}</p>
                                         <p><strong>Enviado em:</strong> ${dataFormatada}</p>
+                                        <p><strong>Responsável:</strong> ${avaliacao.nomeResponsavel || 'Não informado'}</p>
                                         <p><strong>Status:</strong> ${statusDescription}</p>
                                     </div>
                                     <span class="avaliacao-status-badge ${statusClass}">${statusText}</span>
@@ -675,25 +736,31 @@
                         `;
                     }).join('');
 
+                    // Listener para o modal de recurso em análise
                     avaliacoesContainer.addEventListener('click', function(event) {
-                    const linkButton = event.target.closest('.avaliacao-card a.btn');
+                        const linkButton = event.target.closest('.avaliacao-card a.btn');
 
-                    if (linkButton) {
-                        const card = linkButton.closest('.avaliacao-card');
-                        if (card && card.classList.contains('status-EM_ANALISE_DE_RECURSO')) {
-                            event.preventDefault();
+                        if (linkButton) {
+                            const card = linkButton.closest('.avaliacao-card');
+                            if (card && card.classList.contains('status-EM_ANALISE_DE_RECURSO')) {
+                                event.preventDefault();
 
-                            Swal.fire({
-                                icon: 'info',
-                                iconColor: 'var(--azul-gov-principal)',
-                                title: 'Recurso em Análise',
-                                html: `O recurso que você submeteu para esta avaliação está atualmente sendo analisado pela <strong>SCGE</strong>.<br><br>Por favor, aguarde a conclusão da análise. Você será notificado sobre o resultado final.`,
-                                confirmButtonText: 'Entendido',
-                                confirmButtonColor: 'var(--azul-gov-principal)'
-                            });
+                                Swal.fire({
+                                    icon: 'info',
+                                    iconColor: 'var(--azul-gov-principal)',
+                                    title: 'Recurso em Análise',
+                                    html: `O recurso que você submeteu para esta avaliação está atualmente sendo analisado pela <strong>SCGE</strong>.<br><br>Por favor, aguarde a conclusão da análise. Você será notificado sobre o resultado final.`,
+                                    confirmButtonText: 'Entendido',
+                                    confirmButtonColor: 'var(--azul-gov-principal)',
+                                    customClass: {
+                                        popup: 'swal-custom-popup',
+                                        title: 'swal-custom-title',
+                                        confirmButton: 'swal-custom-confirm'
+                                    }
+                                });
+                            }
                         }
-                    }
-                });
+                    });
 
                 } catch (error) {
                     console.error('Erro ao carregar avaliações:', error);

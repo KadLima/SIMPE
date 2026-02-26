@@ -4160,9 +4160,24 @@
 
             try {
                 console.log('=== CARREGANDO DADOS DA AVALIAÇÃO ===');
-                const response = await fetch(`/api/my-avaliacoes/${avaliacaoId}`, {
+    
+                // Verificar o papel do usuário
+                const userResponse = await fetch('/verify-token', {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
+                const userData = await userResponse.json();
+                const isGestor = userData.user.role === 'GESTOR';
+                const isAdmin = userData.user.role === 'ADMIN';
+                
+                // Se for GESTOR ou ADMIN, usar rota admin que não tem restrição de secretaria
+                const apiUrl = (isGestor || isAdmin) 
+                    ? `/api/admin/avaliacao-completa/${avaliacaoId}`
+                    : `/api/my-avaliacoes/${avaliacaoId}`;
+                
+                const response = await fetch(apiUrl, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
                 if (!response.ok) throw new Error('Não foi possível carregar os dados desta avaliação.');
                 avaliacaoCompleta = await response.json();
                 

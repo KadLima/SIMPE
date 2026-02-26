@@ -640,11 +640,22 @@
 
             <div class="form-section">
                 <h2>Passo 1: Identificação</h2>
-                <div class="form-group">
+                <div class="form-group" id="secretaria-fixa-group">
                     <label>Órgão/Entidade</label>
                     <div id="secretaria-display" class="secretaria-display-box">Carregando seus dados...</div>
                     <input type="hidden" id="secretaria-id-hidden">
                 </div>
+                
+                <div class="form-group" id="secretaria-select-group" style="display: none;">
+                    <label for="secretaria-select">Selecione a Secretaria para Avaliar</label>
+                    <select id="secretaria-select" class="form-control">
+                        <option value="">-- Selecione uma secretaria --</option>
+                    </select>
+                    <small style="color: #7f8c8d; display: block; margin-top: 5px;">
+                        <i class="fas fa-info-circle"></i> Como gestor, você pode avaliar qualquer secretaria.
+                    </small>
+                </div>
+                
                 <div class="form-group"><label for="url-manual">URL do Site a ser Avaliado</label><input type="url" id="url-manual" placeholder="https://www.sitedasecretaria.pe.gov.br"></div>
                 <div class="form-group"><label for="responsavel-nome">Nome do Responsável pelo preenchimento</label><input type="text" id="responsavel-nome" placeholder="Digite seu nome completo"></div>
                 <div class="form-group"><label for="responsavel-email">E-mail do Responsável</label><input type="email" id="responsavel-email" placeholder="Digite seu e-mail para contato"></div>
@@ -1001,18 +1012,62 @@
                     if (!userResponse.ok) throw new Error('Não foi possível verificar os dados do usuário.');
                     const userData = await userResponse.json();
                     
+                    const userRole = userData.user.role;
                     const secretariaId = userData.user.secretariaId;
-                    const secResponse = await fetch(`/secretarias/${secretariaId}`);
-                    if (!secResponse.ok) throw new Error('Não foi possível carregar os dados da sua secretaria.');
                     
-                    const secretaria = await secResponse.json();
-                    console.log("7. Dados da secretaria recebidos:", secretaria);
-
-                    const secretariaDisplay = document.getElementById('secretaria-display');
-                    secretariaDisplay.textContent = `${secretaria.nome} (${secretaria.sigla})`;
-                    secretariaHiddenInput.value = secretaria.id;
-                    urlManualInput.value = secretaria.url;
-                    urlManualInput.disabled = false;
+                    const secretariaSelect = document.getElementById('secretaria-select');
+                    const secretariaFixaGroup = document.getElementById('secretaria-fixa-group');
+                    const secretariaSelectGroup = document.getElementById('secretaria-select-group');
+                    
+                    // Se for GESTOR, mostrar select com todas as secretarias
+                    if (userRole === 'GESTOR') {
+                        secretariaFixaGroup.style.display = 'none';
+                        secretariaSelectGroup.style.display = 'block';
+                        
+                        // Carregar todas as secretarias
+                        const secResponse = await fetch('/secretarias');
+                        if (!secResponse.ok) throw new Error('Não foi possível carregar as secretarias.');
+                        
+                        const secretarias = await secResponse.json();
+                        
+                        secretariaSelect.innerHTML = '<option value="">-- Selecione uma secretaria --</option>';
+                        secretarias.sort((a, b) => a.sigla.localeCompare(b.sigla)).forEach(sec => {
+                            const option = document.createElement('option');
+                            option.value = sec.id;
+                            option.textContent = `${sec.sigla} - ${sec.nome}`;
+                            option.dataset.url = sec.url;
+                            secretariaSelect.appendChild(option);
+                        });
+                        
+                        // Quando selecionar uma secretaria, preencher URL
+                        secretariaSelect.addEventListener('change', function() {
+                            const selectedOption = this.options[this.selectedIndex];
+                            if (selectedOption.value) {
+                                secretariaHiddenInput.value = selectedOption.value;
+                                urlManualInput.value = selectedOption.dataset.url || '';
+                                urlManualInput.disabled = false;
+                            } else {
+                                secretariaHiddenInput.value = '';
+                                urlManualInput.value = '';
+                            }
+                        });
+                        
+                    } else {
+                        // Usuário normal (USER ou ADMIN) - comportamento padrão
+                        secretariaFixaGroup.style.display = 'block';
+                        secretariaSelectGroup.style.display = 'none';
+                        
+                        const secResponse = await fetch(`/secretarias/${secretariaId}`);
+                        if (!secResponse.ok) throw new Error('Não foi possível carregar os dados da sua secretaria.');
+                        
+                        const secretaria = await secResponse.json();
+                        
+                        const secretariaDisplay = document.getElementById('secretaria-display');
+                        secretariaDisplay.textContent = `${secretaria.nome} (${secretaria.sigla})`;
+                        secretariaHiddenInput.value = secretaria.id;
+                        urlManualInput.value = secretaria.url;
+                        urlManualInput.disabled = false;
+                    }
                     
                     linksEncontradosAutomaticamente = carregarLinksAutomaticos();
                     await verificarAvaliacaoExistente(secretariaId);
@@ -1268,14 +1323,24 @@
             async function verificarAvaliacaoExistente(secretariaId) {
                 try {
                     const authToken = localStorage.getItem('authToken');
+                    const userResponse = await fetch('/verify-token', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    const userData = await userResponse.json();
+                    
+                    // Gestores podem verificar qualquer secretaria, mas vamos verificar a selecionada
                     const response = await fetch('/api/my-avaliacoes', {
                         headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' }
                     });
 
                     if (response.ok) {
                         const avaliacoes = await response.json();
+                        
+                        // Para gestor, verificar a secretaria selecionada
+                        const secId = secretariaId || secretariaHiddenInput.value;
+                        
                         const avaliacaoAtiva = avaliacoes.find(av => 
-                            av.secretariaId === parseInt(secretariaId) && 
+                            av.secretariaId === parseInt(secId) && 
                             av.status !== 'PENDENTE_SECRETARIA' &&
                             av.status !== 'FINALIZADA'
                         );
@@ -2002,7 +2067,12 @@
                 const urlSecretaria = urlManualInput.value.trim();
                 const nomeResponsavel = nomeResponsavelInput.value.trim();
                 const emailResponsavel = emailResponsavelInput.value.trim();
-                const secretariaDisplay = document.getElementById('secretaria-display').textContent;
+                let secretariaDisplay = document.getElementById('secretaria-display').textContent;
+                if (!secretariaDisplay || secretariaDisplay === 'Carregando seus dados...') {
+                    const secretariaSelect = document.getElementById('secretaria-select');
+                    const selectedOption = secretariaSelect.options[secretariaSelect.selectedIndex];
+                    secretariaDisplay = selectedOption ? selectedOption.textContent : 'Secretaria selecionada';
+                }
 
                 if (!secretariaHiddenInput.value || !nomeResponsavel || !emailResponsavel) {
                     Swal.fire({
@@ -2145,6 +2215,23 @@
                         enviarAvaliacaoBtn.disabled = false;
                         enviarAvaliacaoBtn.textContent = 'Enviar Avaliação';
                         return; 
+                    }
+
+                    // Garantir que temos o secretariaId correto
+                    let secretariaId = secretariaHiddenInput.value;
+                    if (!secretariaId) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: 'Selecione uma secretaria para avaliar.',
+                            confirmButtonColor: '#dc3545',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
+                        });
+                        return;
                     }
                     
                     const payload = {

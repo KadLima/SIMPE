@@ -968,6 +968,7 @@
                 });
             }
 
+            // No index.html - dentro do DOMContentLoaded
             if (authToken) {
                 try {
                     const response = await fetch('/verify-token', {
@@ -982,13 +983,13 @@
                         
                         navLinks.innerHTML = `
                             <li><a href="/dashboard" class="active">Minha Área</a></li>
-                            ${userData.user.role === 'ADMIN' ? 
+                            ${userData.user.role === 'ADMIN' || userData.user.role === 'GESTOR' ? 
                                 '<li><a href="/admin">Área Administrativa</a></li>' : 
                                 ''}
                             <li><a href="#" id="logout-btn">Sair</a></li>
                         `;
 
-                        if (userData.user.role === 'ADMIN') {
+                        if (userData.user.role === 'ADMIN' || userData.user.role === 'GESTOR') {
                             adminFooterLink.style.display = 'inline';
                         }
 
@@ -1007,10 +1008,6 @@
                     `;
                     localStorage.removeItem('authToken');
                 }
-            } else {
-                navLinks.innerHTML = `
-                    <li><a href="/login">Entrar</a></li>
-                `;
             }
 
             document.querySelectorAll('.disabled-link').forEach(link => {

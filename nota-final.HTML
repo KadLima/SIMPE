@@ -2389,11 +2389,16 @@
                     console.log('authToken:', localStorage.getItem('authToken'));
 
                     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                    const isAdmin = userData.role === 'ADMIN';
+                    const userRole = userData.role;
 
-                    const apiUrl = isAdmin 
-                        ? `/api/admin/nota-final/${avaliacaoId}`
-                        : `/api/my-nota-final/${avaliacaoId}`;
+                    let apiUrl;
+                    if (userRole === 'ADMIN') {
+                        apiUrl = `/api/admin/nota-final/${avaliacaoId}`;
+                    } else if (userRole === 'GESTOR') {
+                        apiUrl = `/api/gestor/nota-final/${avaliacaoId}`; 
+                    } else {
+                        apiUrl = `/api/my-nota-final/${avaliacaoId}`; 
+                    }
                     
                     const response = await fetch(apiUrl, {
                         headers: {
