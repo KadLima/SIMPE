@@ -3544,8 +3544,12 @@ app.get('/requisitos', async (req, res) => {
             whereClause.OR.push({ secretariaId: parseInt(secretariaId) });
         }
 
+        // FILTRAR APENAS REQUISITOS ATIVOS
         const requisitos = await prisma.requisito.findMany({
-            where: whereClause,
+            where: {
+                ...whereClause,
+                ativo: true 
+            },
             orderBy: [
                 { secretariaId: { sort: 'asc', nulls: 'first' } },
                 { id: 'asc' }
@@ -4210,13 +4214,13 @@ app.post('/api/requisitos-extras', authenticateToken, authenticateOnlyAdmin, asy
     }
 });
 
-// 2. Listar apenas os requisitos extras de uma secretaria
 app.get('/api/secretarias/:id/requisitos-extras', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const extras = await prisma.requisito.findMany({
             where: { 
-                secretariaId: parseInt(id) 
+                secretariaId: parseInt(id),
+                ativo: true 
             },
             orderBy: { id: 'asc' }
         });
@@ -4227,19 +4231,43 @@ app.get('/api/secretarias/:id/requisitos-extras', authenticateToken, authenticat
     }
 });
 
+// SUBSTITUA a rota DELETE atual por esta:
 app.delete('/api/requisitos/:id', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { id } = req.params;
     const { force } = req.query; 
     const requisitoId = parseInt(id);
 
     try {
-        const requisito = await prisma.requisito.findUnique({ where: { id: requisitoId } });
+        const requisito = await prisma.requisito.findUnique({ 
+            where: { id: requisitoId } 
+        });
         
         if (!requisito) {
             return res.status(404).json({ error: "Requisito não encontrado." });
         }
 
-        // Permite exclusão de globais apenas com force=true
+        // Verificar se o requisito já foi usado em alguma avaliação
+        const respostasVinculadas = await prisma.resposta.count({
+            where: { requisitoId: requisitoId }
+        });
+
+        if (respostasVinculadas > 0) {
+            const requisitoDesativado = await prisma.requisito.update({
+                where: { id: requisitoId },
+                data: { ativo: false }
+            });
+            
+            console.log(`[ADMIN] Requisito ${id} desativado (soft delete) - usado em ${respostasVinculadas} avaliações`);
+            
+            return res.json({ 
+                success: true, 
+                message: "Requisito desativado com sucesso. Avaliações existentes manterão o registro.",
+                softDeleted: true,
+                requisito: requisitoDesativado
+            });
+        }
+
+        // Se não tiver respostas vinculadas, pode excluir fisicamente
         if (requisito.secretariaId === null && force !== 'true') {
             return res.status(403).json({ 
                 error: "Não é permitido excluir requisitos globais.",
@@ -4265,7 +4293,7 @@ app.delete('/api/requisitos/:id', authenticateToken, authenticateOnlyAdmin, asyn
             })
         ]);
         
-        console.log(`[ADMIN] Requisito ${id} e suas dependências foram excluídos.`);
+        console.log(`[ADMIN] Requisito ${id} excluído fisicamente (sem avaliações vinculadas).`);
         res.json({ success: true, message: "Requisito excluído com sucesso." });
 
     } catch (error) {
