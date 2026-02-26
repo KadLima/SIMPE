@@ -47,6 +47,7 @@ model Requisito {
   secretaria    Secretaria?    @relation(fields: [secretariaId], references: [id])
   respostas     Resposta[]
   subRequisitos SubRequisito[]
+  ativo           Boolean    @default(true)
 }
 
 model Avaliacao {
