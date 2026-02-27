@@ -151,9 +151,7 @@ async function main() {
       { texto: "Disponibiliza link de acesso à seção 'Obras' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/despesas/obras/', ordem: 8 },
       { texto: "Disponibiliza link de acesso à seção 'Patrimônio Público' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/gestao-estadual/patrimonio-publico/', ordem: 9 },
       { texto: "Disponibiliza link de acesso à seção 'Recursos Humanos' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/recursos-humanos/', ordem: 10 },
-      { texto: "Disponibiliza link de acesso à seção 'Acesso à Informação' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/acesso-a-informacao/', ordem: 11 },
-      { texto: "Disponibiliza link de acesso à seção 'Dados Abertos' do Portal da Transparência", linkFixo: null, ordem: 12 },
-      { texto: "Disponibiliza link de acesso à seção 'Participação' do Portal da Transparência", linkFixo: null, ordem: 13 }
+      { texto: "Disponibiliza link de acesso à seção 'Acesso à Informação' do Portal da Transparência", linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/acesso-a-informacao/', ordem: 11 }
     ];
 
     for (const sub of subRequisitos) {
