@@ -343,7 +343,11 @@
         }
         .main-footer .footer-portal-link { left: 0.5%; }
         .main-footer .footer-logo-link { right: 0.5%; }
-        .main-footer .footer-portal-link:hover, .main-footer .footer-logo-link:hover { transform: translateY(-50%) scale(1.1); }
+        .main-footer .footer-portal-link:hover,
+        .main-footer .footer-logo-link:hover {
+            transform: translateY(-50%) scale(1.1);
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+        }
         
         .main-footer img { height: 100%; width: auto; display: block; max-height: 70px; mix-blend-mode: lighten; object-fit: contain; filter: brightness(0) invert(1); }
         .main-footer p { color: rgba(255, 255, 255, 0.9); font-weight: 400; margin: 0; }
