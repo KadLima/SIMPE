@@ -135,6 +135,69 @@
             padding: 6px 12px; border-radius: 50px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
         }
 
+        /* Badges de status com cores mais vibrantes */
+        .avaliacao-status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Cores específicas para cada status */
+        .status-PENDENTE_SECRETARIA .status-dot,
+        .avaliacao-status-badge.status-PENDENTE_SECRETARIA {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .status-EM_ANALISE_SCGE .status-dot,
+        .avaliacao-status-badge.status-EM_ANALISE_SCGE {
+            background-color: var(--azul-gov-principal);
+            color: white;
+        }
+
+        .status-AGUARDANDO_RECURSO .status-dot,
+        .avaliacao-status-badge.status-AGUARDANDO_RECURSO {
+            background-color: var(--laranja-alerta);
+            color: white;
+        }
+
+        .status-EM_ANALISE_DE_RECURSO .status-dot,
+        .avaliacao-status-badge.status-EM_ANALISE_DE_RECURSO {
+            background-color: var(--amarelo-gov-detalhe);
+            color: white;
+        }
+
+        .status-FINALIZADA .status-dot,
+        .avaliacao-status-badge.status-FINALIZADA {
+            background-color: var(--verde-sucesso);
+            color: white;
+        }
+
+        /* Versão mais sutil - apenas o dot colorido e texto preto (alternativa) */
+        .avaliacao-status-badge-subtle {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            background-color: #f8f9fa;
+            border: 1px solid #e1e5e9;
+        }
+
+        .avaliacao-status-badge-subtle .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
         /* --- BOTÕES --- */
         .admin-actions {
             display: flex; justify-content: center; margin-top: 30px; padding-top: 30px; 
@@ -691,7 +754,10 @@
                             <p><strong>URL Avaliada:</strong> ${avaliacao.urlSecretaria}</p>
                             <p><strong>Enviado em:</strong> ${dataFormatada}</p>
                             <p><strong>Responsável:</strong> ${avaliacao.nomeResponsavel || 'Não informado'}</p>
-                            <span class="avaliacao-status-badge ${statusClass}">${statusText}</span>
+                            <span class="avaliacao-status-badge ${statusClass}">
+                                <span class="status-dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: currentColor; margin-right: 6px;"></span>
+                                ${statusText}
+                            </span>
                         </div>
                     `;
                 }).join('');
