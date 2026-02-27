@@ -116,7 +116,8 @@
         .avaliacao-card {
             background-color: var(--branco); border-radius: 12px; padding: 25px; 
             box-shadow: var(--sombra-suave); cursor: pointer; transition: var(--transicao-padrao); 
-            border: 1px solid #e1e5e9; border-left: 6px solid var(--azul-gov-principal); overflow: hidden;
+            border: 1px solid #e1e5e9; border-left: 6px solid var(--azul-gov-principal); overflow: hidden; 
+            position: relative;  min-height: 220px; padding-bottom: 60px; height: 375px;      
         }
         .avaliacao-card:hover { transform: translateY(-5px); box-shadow: var(--sombra-media); }
         .avaliacao-card h3 { margin: 0 0 15px 0; font-size: 1.3em; color: var(--azul-gov-principal); font-weight: 700; }
@@ -131,10 +132,6 @@
         .status-EM_ANALISE_DE_RECURSO { border-left-color: var(--amarelo-gov-detalhe); }
         .status-FINALIZADA { border-left-color: var(--verde-sucesso); }
 
-        .avaliacao-status-badge {
-            padding: 6px 12px; border-radius: 50px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-
         /* Badges de status com cores mais vibrantes */
         .avaliacao-status-badge {
             display: inline-flex;
@@ -146,6 +143,15 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: absolute;
+            bottom: 15px;
+            left: 25px;
+            height: 32px;
+            line-height: 20px;
+            max-width: calc(100% - 50px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Cores específicas para cada status */
@@ -195,7 +201,9 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            margin-right: 6px;
+            margin-right: 8px;
+            flex-shrink: 0;
+
         }
 
         /* --- BOTÕES --- */
