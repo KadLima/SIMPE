@@ -855,8 +855,8 @@
             }
 
             function calcularPontuacaoPorFaixa(qtdAprovados, pontuacaoBase) {
-                if (qtdAprovados >= 12) return pontuacaoBase;
-                if (qtdAprovados >= 8) return pontuacaoBase * 0.7;
+                if (qtdAprovados >= 10) return pontuacaoBase;
+                if (qtdAprovados >= 7) return pontuacaoBase * 0.7;
                 if (qtdAprovados >= 4) return pontuacaoBase * 0.5;
                 if (qtdAprovados >= 1) return pontuacaoBase * 0.3;
                 return 0;
@@ -1952,8 +1952,8 @@
                 const pontuacaoBase = resposta.requisito?.pontuacao || 8;
                 
                 let pontuacaoFinal = 0;
-                if (aprovadosFinal >= 12) pontuacaoFinal = pontuacaoBase;
-                else if (aprovadosFinal >= 8) pontuacaoFinal = pontuacaoBase * 0.7;
+                if (aprovadosFinal >= 10) pontuacaoFinal = pontuacaoBase;
+                else if (aprovadosFinal >= 7) pontuacaoFinal = pontuacaoBase * 0.7;
                 else if (aprovadosFinal >= 4) pontuacaoFinal = pontuacaoBase * 0.5;
                 else if (aprovadosFinal >= 1) pontuacaoFinal = pontuacaoBase * 0.3;
                 
@@ -2200,11 +2200,11 @@
                 let statusClass = 'summary-status-pendente';
                 let statusTexto = 'PENDENTE';
                 
-                if (aprovadosFinal >= 12) {
+                if (aprovadosFinal >= 10) {
                     pontuacaoFinal = pontuacaoBase;
                     statusClass = 'summary-status-mantido';
                     statusTexto = `COMPLETO (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
-                } else if (aprovadosFinal >= 8) {
+                } else if (aprovadosFinal >= 7) {
                     pontuacaoFinal = pontuacaoBase * 0.7;
                     statusClass = 'summary-status-alterado-rejeitado';
                     statusTexto = `${aprovadosFinal}/${total} (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
@@ -2239,8 +2239,8 @@
                 const pontuacaoBase = resposta.requisito?.pontuacao || 8;
                 
                 let pontuacaoFinal = 0;
-                if (aprovadosFinal >= 12) pontuacaoFinal = pontuacaoBase;
-                else if (aprovadosFinal >= 8) pontuacaoFinal = pontuacaoBase * 0.7;
+                if (aprovadosFinal >= 10) pontuacaoFinal = pontuacaoBase;
+                else if (aprovadosFinal >= 7) pontuacaoFinal = pontuacaoBase * 0.7;
                 else if (aprovadosFinal >= 4) pontuacaoFinal = pontuacaoBase * 0.5;
                 else if (aprovadosFinal >= 1) pontuacaoFinal = pontuacaoBase * 0.3;
                 

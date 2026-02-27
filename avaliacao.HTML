@@ -527,8 +527,8 @@
                         
                         let pontuacaoAdminRequisito = 0;
                         
-                        if (aprovados >= 12) pontuacaoAdminRequisito = pontuacaoRequisito; // 100%
-                        else if (aprovados >= 8) pontuacaoAdminRequisito = pontuacaoRequisito * 0.7; // 70%
+                        if (aprovados >= 10) pontuacaoAdminRequisito = pontuacaoRequisito; // 100%
+                        else if (aprovados >= 7) pontuacaoAdminRequisito = pontuacaoRequisito * 0.7; // 70%
                         else if (aprovados >= 4) pontuacaoAdminRequisito = pontuacaoRequisito * 0.5; // 50%
                         else if (aprovados >= 1) pontuacaoAdminRequisito = pontuacaoRequisito * 0.3; // 30%
                         else pontuacaoAdminRequisito = 0;
@@ -539,8 +539,8 @@
                         const secretariaAprovados = resposta.subRespostas.filter(s => s.atende === true).length;
                         let pontuacaoSecretariaRequisito = 0;
                         
-                        if (secretariaAprovados >= 12) pontuacaoSecretariaRequisito = pontuacaoRequisito;
-                        else if (secretariaAprovados >= 8) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.7;
+                        if (secretariaAprovados >= 10) pontuacaoSecretariaRequisito = pontuacaoRequisito;
+                        else if (secretariaAprovados >= 7) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.7;
                         else if (secretariaAprovados >= 4) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.5;
                         else if (secretariaAprovados >= 1) pontuacaoSecretariaRequisito = pontuacaoRequisito * 0.3;
                         
@@ -581,10 +581,10 @@
                 let pontuacaoProporcional = 0;
                 let percentual = 0;
                 
-                if (aprovados >= 12) {
+                if (aprovados >= 10) {
                     pontuacaoProporcional = 8.0;
                     percentual = 100;
-                } else if (aprovados >= 8) {
+                } else if (aprovados >= 7) {
                     pontuacaoProporcional = 5.6;
                     percentual = 70;
                 } else if (aprovados >= 4) {
@@ -693,10 +693,10 @@
                     let pontuacaoProporcional = 0;
                     let percentual = 0;
                     
-                    if (aprovados >= 12) {
+                    if (aprovados >= 10) {
                         pontuacaoProporcional = 8.0; 
                         percentual = 100;
-                    } else if (aprovados >= 8) {
+                    } else if (aprovados >= 7) {
                         pontuacaoProporcional = 5.6; 
                         percentual = 70;
                     } else if (aprovados >= 4) {
@@ -1284,7 +1284,7 @@
                                     mensagem += `<li>${item.quantidade} subitem(ns) aguardando validação</li>`;
                                 });
                                 mensagem += `</ul>`;
-                                mensagem += `<p style="font-size:0.9em; color:#666;">Todos os 13 subitens precisam ser validados (Aprovado/Rejeitado) antes de prosseguir.</p>`;
+                                mensagem += `<p style="font-size:0.9em; color:#666;">Todos os 11 subitens precisam ser validados (Aprovado/Rejeitado) antes de prosseguir.</p>`;
                             }
                             
                             Swal.fire({

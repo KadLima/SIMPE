@@ -1799,9 +1799,7 @@
                     { texto: "Obras", linkFixo: 'https://transparencia.pe.gov.br/despesas/obras/' },
                     { texto: "Patrimônio Público", linkFixo: 'https://transparencia.pe.gov.br/gestao-estadual/patrimonio-publico/' },
                     { texto: "Recursos Humanos", linkFixo: 'https://transparencia.pe.gov.br/recursos-humanos/' },
-                    { texto: "Acesso à Informação", linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/acesso-a-informacao/' },
-                    { texto: "Dados Abertos", linkFixo: null },
-                    { texto: "Participação", linkFixo: null }
+                    { texto: "Acesso à Informação", linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/acesso-a-informacao/' }
                 ];
                 
                 const linksEncontradosCount = subItens.filter(item => 
@@ -1809,8 +1807,8 @@
                 ).length;
                 
                 let pontuacaoPercentual = 0;
-                if (linksEncontradosCount >= 12) pontuacaoPercentual = 100;
-                else if (linksEncontradosCount >= 8) pontuacaoPercentual = 70;
+                if (linksEncontradosCount >= 10) pontuacaoPercentual = 100;
+                else if (linksEncontradosCount >= 7) pontuacaoPercentual = 70;
                 else if (linksEncontradosCount >= 4) pontuacaoPercentual = 50;
                 else if (linksEncontradosCount >= 1) pontuacaoPercentual = 30;
                 
@@ -2154,9 +2152,7 @@
                         7: 8,  // Obras
                         8: 9,  // Patrimônio Público
                         9: 10, // Recursos Humanos
-                        10: 11, // Acesso à Informação
-                        11: 12, // Dados Abertos
-                        12: 13  // Participação
+                        10: 11 // Acesso à Informação                       
                     };
 
                     const subitensParaEnviar = [];

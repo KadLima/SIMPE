@@ -661,9 +661,10 @@
         .main-footer .footer-portal-link { left: 0.5%; }
         .main-footer .footer-logo-link { right: 0.5%; }
 
-        .main-footer .footer-portal-link:hover, 
-        .main-footer .footer-logo-link:hover { 
-            transform: translateY(-50%) scale(1.1); 
+        .main-footer .footer-portal-link:hover,
+        .main-footer .footer-logo-link:hover {
+            transform: translateY(-50%) scale(1.1);
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
         }
 
         .main-footer img { 
@@ -1929,8 +1930,8 @@
                 let pontuacaoTotal = 0;
 
                 function calcularPontuacaoPorFaixa(qtdAprovados, pontuacaoBase) {
-                    if (qtdAprovados >= 12) return pontuacaoBase;
-                    if (qtdAprovados >= 8) return pontuacaoBase * 0.7;
+                    if (qtdAprovados >= 10) return pontuacaoBase;
+                    if (qtdAprovados >= 7) return pontuacaoBase * 0.7;
                     if (qtdAprovados >= 4) return pontuacaoBase * 0.5;
                     if (qtdAprovados >= 1) return pontuacaoBase * 0.3;
                     return 0;
