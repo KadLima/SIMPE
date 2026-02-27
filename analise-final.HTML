@@ -292,7 +292,8 @@
         .atende-badge, 
         .summary-status-badge,
         .status-validacao,
-        .recurso-badge { 
+        .recurso-badge,
+        .finalizado-badge { 
             font-weight: 700; 
             padding: 5px 12px; 
             border-radius: 20px; 
@@ -300,6 +301,7 @@
             display: inline-block;
             white-space: nowrap;
             box-shadow: var(--sombra-suave);
+            color: white !important;
         }
 
         .atende-badge { color: var(--branco); }
@@ -308,16 +310,25 @@
         }
         .atende-sim, .status-aprovado, .summary-status-mantido, .summary-status-atende { background-color: var(--verde-sucesso); }
         .atende-nao, .status-rejeitado, .summary-status-nao-atende { background-color: var(--vermelho-destaque); }
-        .status-pendente, .summary-status-pendente { background-color: #ffc107; color: #333; }
+        .status-pendente, .summary-status-pendente { background-color: #ffc107; color: #ffffff; }
         .summary-status-recurso { background-color: var(--roxo-recurso); }
         .summary-status-alterado-aprovado { background-color: var(--azul-gov-principal); }
-        .summary-status-alterado-rejeitado { background-color: var(--amarelo-gov-detalhe); color: #333; }
+        .summary-status-alterado-rejeitado { background-color: var(--amarelo-gov-detalhe); color: #ffffff; }
 
         .recurso-badge {
             background-color: var(--roxo-recurso);
-            color: var(--branco);
+            color: white !important;
             font-size: 0.7em;
             text-transform: uppercase;
+        }
+
+        .finalizado-aprovado,
+        .finalizado-rejeitado {
+            color: white !important;
+        }
+
+        .status-validacao {
+            color: white !important;
         }
 
         /* --- TABELA DE SUBITENS (se precisar) --- */
@@ -577,6 +588,12 @@
             position: relative;
         }
 
+        .main-footer .footer-portal-link:hover,
+        .main-footer .footer-logo-link:hover {
+            transform: translateY(-50%) scale(1.1);
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+        }
+
         .main-footer .footer-portal-link,
         .main-footer .footer-logo-link { 
             position: absolute; 
@@ -705,6 +722,37 @@
             border-color: #002776 !important;
             outline: none !important;
             box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1) !important;
+        }
+
+        .swal2-container {
+            z-index: 99999 !important;
+        }
+
+        .swal-custom-container {
+            z-index: 100000 !important;
+        }
+
+        .modal-overlay {
+            z-index: 2000;
+        }
+
+        .finalizado-badge {
+            background-color: var(--azul-gov-principal);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .finalizado-aprovado {
+            background-color: var(--verde-sucesso);
+        }
+
+        .finalizado-rejeitado {
+            background-color: var(--vermelho-destaque);
         }
     </style>
 </head>
@@ -958,29 +1006,35 @@
                 const analiseFinal = resposta.analiseFinal || {};
                 const statusFinalAtual = analiseFinal.statusValidacaoPosRecurso || resposta.statusValidacao || 'pendente';
 
+                // Verificar se a opção "Atende" está ativa
+                const atendeAtivo = statusFinalAtual === 'aprovado';
+
                 return `
                     <div class="validation-section">
                         <h4>Análise Final (Pós-Recurso)</h4>
 
-                        <div class="link-analista-container">
+                        <!-- Área de links - SEPARADA do comentário -->
+                        <div class="link-analista-container" id="modal-links-container" style="${atendeAtivo ? 'display: block;' : 'display: none; margin-bottom: 20px;'}">
                             <h5>Links de Referência da Análise Final:</h5>
                             <div id="modal-links-analise-final-display" class="link-analista-display" style="margin-bottom: 8px;">
                                 <span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>
                             </div>
                             <button class="btn-add-evidence btn-add-link-analista-final" 
-                                    style="background-color: var(--azul-gov-principal); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em;">
+                                    style="background-color: var(--azul-gov-principal); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; margin-top: 5px;">
                                 + Adicionar Link
                             </button>
                         </div>
                         
-                        <textarea id="modal-analise-final-comment" class="admin-comment" 
-                                placeholder="Adicionar comentário específico para a análise final (não substitui o comentário anterior)...">${analiseFinal.comentario || ''}</textarea>
-                    
+                        <!-- Área de comentário - SEPARADA dos links -->
+                        <div style="margin-top: 20px;">
+                            <h5>Comentário da Análise Final:</h5>
+                            <textarea id="modal-analise-final-comment" class="admin-comment" 
+                                    placeholder="Adicionar comentário específico para a análise final (não substitui o comentário anterior)..."
+                                    style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-family: inherit;">${analiseFinal.comentario || ''}</textarea>
+                        </div>
 
-                        <div class="validation-actions">
-                            <span class="status-validacao status-${determinarStatusRecurso(resposta, statusFinalAtual)}">
-                                ${determinarTextoStatusRecurso(resposta, statusFinalAtual)}
-                            </span>
+                        <div class="validation-actions" style="margin-top: 20px; justify-content: flex-end;">
+                            <!-- BADGE REMOVIDO - apenas os botões permanecem -->
                             <button class="btn-toggle ${statusFinalAtual === 'rejeitado' ? 'active' : ''}"
                                     data-action="nao-atende-final" data-validation-type="normal">Não Atende</button>
                             <button class="btn-toggle ${statusFinalAtual === 'aprovado' ? 'active' : ''}"
@@ -1370,6 +1424,7 @@
                     
                     if (salvarBtnInterno) { salvarBtnInterno.onclick = salvarAnaliseFinal; }
 
+                    // Localize o trecho onde os botões são configurados (por volta da linha 620)
                     botoesValidacaoInternos.forEach(botao => {
                         botao.onclick = (e) => {
                             modalHasChanges = true;
@@ -1384,6 +1439,15 @@
                             
                             const novaDecisao = action.includes('atende') ? 'aprovado' : 'rejeitado';
                             const decisaoMudou = decisaoAtual !== 'pendente' && decisaoAtual !== novaDecisao;
+
+                            const linksContainer = modalBody.querySelector('#modal-links-container');
+                            if (linksContainer) {
+                                if (novaDecisao === 'aprovado') {
+                                    linksContainer.style.display = 'block';
+                                } else {
+                                    linksContainer.style.display = 'none';
+                                }
+                            }
 
                             if (decisaoMudou && linksDisplay) {
                                 console.log(`🔄 Mudança de decisão detectada: ${decisaoAtual} → ${novaDecisao}. Resetando links...`);
@@ -1421,7 +1485,6 @@
 
                             grupoBotoes.forEach(btn => btn.classList.remove('active'));
                             e.target.classList.add('active');
-                            atualizarBadgeStatusModal(validationType, action.includes('atende'));
                         };
                     });
 
@@ -1435,21 +1498,6 @@
                 configurarListenersInternosModal();
             }
 
-
-            function atualizarBadgeStatusModal(validationType, atende) {
-                const statusFinalProvisorio = atende ? 'aprovado' : 'rejeitado';
-                const badge = modalBody.querySelector('.status-validacao'); 
-                const resposta = avaliacaoCompleta.respostas.find(r => r.id === currentModalRespostaId);
-
-                if (badge && resposta) {
-                    const textoStatus = statusFinalProvisorio === 'aprovado' ? 'Aprovado' : 'Rejeitado';
-                    const corStatus = determinarStatusRecurso(resposta, statusFinalProvisorio);
-
-                    badge.textContent = textoStatus; 
-                    badge.className = `status-validacao status-${corStatus}`; 
-                }    
-            }
-
             function configurarLinksAnaliseFinalModal() {
                 const btnAddLink = modalBody.querySelector('.btn-add-link-analista-final');
                 const linksDisplay = modalBody.querySelector('#modal-links-analise-final-display');
@@ -1459,6 +1507,8 @@
                         const { value: url } = await Swal.fire({
                             title: 'Adicionar Link de Referência',
                             width: '550px',
+                            target: document.body,
+                            returnFocus: false,
                             html: `
                                 <div style="text-align: left; padding: 5px 0;">
                                     <p style="color: #7f8c8d; font-size: 0.95em; margin-bottom: 20px; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 8px; border-left: 4px solid #002776;">
@@ -1469,7 +1519,7 @@
                                     <div style="margin-bottom: 20px;">
                                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
                                             <i class="fas fa-link" style="margin-right: 8px;"></i>
-                                            URL do Link *
+                                            URL do Link
                                         </label>
                                         <input type="url" id="swal-input1" class="swal2-input" 
                                             placeholder="https://exemplo.com/documento.pdf"
@@ -1478,16 +1528,6 @@
                                             <i class="fas fa-external-link-alt"></i> 
                                             O link deve ser público e acessível
                                         </small>
-                                    </div>
-
-                                    <div style="margin-bottom: 15px;">
-                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #002776; font-size: 0.95em;">
-                                            <i class="fas fa-tag" style="margin-right: 8px;"></i>
-                                            Descrição (opcional)
-                                        </label>
-                                        <input type="text" id="swal-input2" class="swal2-input" 
-                                            placeholder="Ex: Relatório da análise final"
-                                            style="width: 100%; padding: 12px 16px; margin: 0; box-sizing: border-box;">
                                     </div>
                                 </div>
                             `,
@@ -1501,11 +1541,11 @@
                                 popup: 'swal-custom-popup',
                                 title: 'swal-custom-title',
                                 confirmButton: 'swal-custom-confirm',
-                                cancelButton: 'swal-custom-cancel'
+                                cancelButton: 'swal-custom-cancel',
+                                container: 'swal-custom-container'
                             },
                             preConfirm: () => {
                                 const url = document.getElementById('swal-input1').value.trim();
-                                const descricao = document.getElementById('swal-input2').value.trim();
                                 
                                 if (!url) {
                                     Swal.showValidationMessage('A URL é obrigatória');
@@ -1519,7 +1559,7 @@
                                     return false;
                                 }
                                 
-                                return { url, descricao };
+                                return url; // Retorna apenas a string da URL, não um objeto
                             }
                         });
 
@@ -1576,20 +1616,22 @@
                 }
 
                 // Configurar eventos de remoção para links existentes
-                linksDisplay.querySelectorAll('.remove-link-analista-btn').forEach(btn => {
-                    btn.onclick = (e) => {
-                        e.preventDefault();
-                        const item = e.target.closest('.evidence-item');
-                        if (item) {
-                            item.remove();
-                            modalHasChanges = true;
-                            
-                            if (linksDisplay.querySelectorAll('.evidence-item').length === 0) {
-                                linksDisplay.innerHTML = '<span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>';
+                if (linksDisplay) {
+                    linksDisplay.querySelectorAll('.remove-link-analista-btn').forEach(btn => {
+                        btn.onclick = (e) => {
+                            e.preventDefault();
+                            const item = e.target.closest('.evidence-item');
+                            if (item) {
+                                item.remove();
+                                modalHasChanges = true;
+                                
+                                if (linksDisplay.querySelectorAll('.evidence-item').length === 0) {
+                                    linksDisplay.innerHTML = '<span style="font-size: 0.85em; color: #6c757d;">Nenhum link adicionado.</span>';
+                                }
                             }
-                        }
-                    };
-                });
+                        };
+                    });
+                }
             }
 
             async function salvarAnaliseFinal() {
@@ -2216,11 +2258,27 @@
                     statusTexto = `${aprovadosFinal}/${total} (${pontuacaoFinal.toFixed(1)}/${pontuacaoBase})`;
                 }
 
-                const teveRecurso = resposta.atende !== resposta.atendeOriginal ||
-                                    resposta.comentarioRecurso ||
-                                    (resposta.evidencias?.some(e => e.tipo === 'recurso'));
+                let badgeExtraHTML = '';
                 
-                const badgeRecursoHTML = teveRecurso ? '<span class="recurso-badge">Recurso</span>' : '';
+                const temAnaliseFinalRealizada = resposta.analiseFinal?.statusValidacaoPosRecurso && 
+                                                resposta.analiseFinal?.statusValidacaoPosRecurso !== 'pendente';
+
+                if (temAnaliseFinalRealizada) {
+                    // Se a análise final foi realizada, mostrar badge apropriado
+                    const statusFinalBadge = resposta.analiseFinal.statusValidacaoPosRecurso;
+                    const textoBadge = statusFinalBadge === 'aprovado' ? '✓ Finalizado' : '✗ Finalizado';
+                    
+                    badgeExtraHTML = `<span class="finalizado-badge ${statusFinalBadge === 'aprovado' ? 'finalizado-aprovado' : 'finalizado-rejeitado'}">${textoBadge}</span>`;
+                } else {
+                    // Verificar se HOUVE recurso (mas ainda não analisado)
+                    const teveRecurso = resposta.atende !== resposta.atendeOriginal ||
+                                        resposta.comentarioRecurso ||
+                                        (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
+                    
+                    if (teveRecurso) {
+                        badgeExtraHTML = '<span class="recurso-badge">Aguardando Análise</span>';
+                    }
+                }
 
                 return `
                 <div class="resposta-card" data-resposta-id="${resposta.id}" data-tipo="composto">
@@ -2230,7 +2288,7 @@
                             <span class="summary-status-badge ${statusClass}">
                                 ${statusTexto}
                             </span>
-                            ${badgeRecursoHTML}
+                            ${badgeExtraHTML}
                         </div>
                     </div>
                     
@@ -2356,11 +2414,12 @@
                     let statusClass = '';
                     let tooltipTexto = '';
                     let deveFicarAberto = false;
-                    let badgeRecursoHTML = ''; 
+                    
+                    // NOVO: Badge extra (Aguardando Análise ou Finalizado)
+                    let badgeExtraHTML = '';
 
                     const statusPrimeiraAnalise = resposta.statusValidacao || 'pendente';
                     const statusFinal = analiseFinal.statusValidacaoPosRecurso || statusPrimeiraAnalise;
-
 
                     const secretariaAtende = resposta.atendeOriginal === true; 
                     const scgePrimeiraAnaliseAtende = statusPrimeiraAnalise === 'aprovado';
@@ -2369,15 +2428,26 @@
                     const houveAlteracaoPrimeiraAnalise = secretariaAtende !== scgePrimeiraAnaliseAtende;
                     const temAnaliseFinal = statusFinal !== 'pendente';
 
-                    const teveRecurso = resposta.atende !== resposta.atendeOriginal ||
-                                        resposta.comentarioRecurso ||
-                                        (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
+                    const temAnaliseFinalRealizada = analiseFinal.statusValidacaoPosRecurso && 
+                                                    analiseFinal.statusValidacaoPosRecurso !== 'pendente';
 
-                     if (teveRecurso) {
-                         badgeRecursoHTML = '<span class="recurso-badge">Recurso</span>';
-                     }
+                    if (temAnaliseFinalRealizada) {
+                        const statusFinalBadge = analiseFinal.statusValidacaoPosRecurso;
+                        const textoBadge = statusFinalBadge === 'aprovado' ? '✓ Finalizado' : '✗ Finalizado';
+                        
+                        badgeExtraHTML = `<span class="finalizado-badge ${statusFinalBadge === 'aprovado' ? 'finalizado-aprovado' : 'finalizado-rejeitado'}">${textoBadge}</span>`;
+                    } else {
+                        // Verificar se HOUVE recurso (mas ainda não analisado)
+                        const teveRecurso = resposta.atende !== resposta.atendeOriginal ||
+                                            resposta.comentarioRecurso ||
+                                            (Array.isArray(resposta.evidencias) && resposta.evidencias.some(e => e.tipo === 'recurso'));
+                        
+                        if (teveRecurso) {
+                            badgeExtraHTML = '<span class="recurso-badge">Aguardando Análise</span>';
+                        }
+                    }
 
-
+                    // Resto da lógica de status (igual antes)
                     if (temAnaliseFinal) {
                         if (scgeFinalAtende) {
                             cardClass = 'card-mantido-sim'; 
@@ -2420,18 +2490,11 @@
                             tooltipTexto = 'Resposta mantida como "Não Atende"';
                             deveFicarAberto = false; 
                         }
-                        if (teveRecurso && !temAnaliseFinal) {
-                            statusTexto = 'PENDENTE ANÁLISE FINAL';
-                            tooltipTexto += ' - Houve recurso, aguardando análise final';
-                            statusClass = scgePrimeiraAnaliseAtende ? 'summary-status-mantido' : 'summary-status-nao-atende'; 
-                            deveFicarAberto = true;
-                        }
+                        // Se teve recurso mas não tem análise final, já tratamos no badgeExtra
                     }
 
-
                     const respostaData = JSON.stringify(resposta).replace(/"/g, '&quot;');
-
-                    const classeRecursoIndicador = teveRecurso ? 'card-com-recurso-indicador' : '';
+                    const classeRecursoIndicador = badgeExtraHTML ? 'card-com-recurso-indicador' : '';
 
                     if (deveFicarAberto) {
                         let analiseFinalInterface = construirInterfaceAnaliseFinalAberta(resposta);
@@ -2439,12 +2502,12 @@
                             <div class="resposta-card ${cardClass} ${classeRecursoIndicador}" data-resposta-id="${resposta.id}" data-resposta='${respostaData}' role="article">
                                 <div class="resposta-header">
                                     <strong>${resposta.requisito.texto}</strong>
-                                     <div class="summary-status-container"> 
+                                    <div class="summary-status-container"> 
                                         <span class="tooltip summary-status-badge ${statusClass}" title="${tooltipTexto}">
                                             ${statusTexto}
                                         </span>
-                                        ${badgeRecursoHTML} 
-                                     </div>
+                                        ${badgeExtraHTML} 
+                                    </div>
                                 </div>
                                 <div class="resposta-body">
                                     ${analiseFinalInterface}
@@ -2455,19 +2518,18 @@
                             <div class="resposta-card ${cardClass} ${classeRecursoIndicador}" data-resposta='${respostaData}' role="article">
                                 <div class="summary-header" tabindex="0" role="button" aria-expanded="false">
                                     <strong>${resposta.requisito.texto}</strong>
-                                     <div class="summary-status-container"> 
+                                    <div class="summary-status-container"> 
                                         <span class="tooltip summary-status-badge ${statusClass}" title="${tooltipTexto}">
                                             ${statusTexto}
                                         </span>
-                                         ${badgeRecursoHTML} 
-                                     </div>
+                                        ${badgeExtraHTML} 
+                                    </div>
                                 </div>
                             </div>`;
                     }
                 }).join('');
 
                 configurarListenersSubitens();
-
                 configurarListenersSalvarAutomatico();
             }
 
@@ -2971,26 +3033,62 @@
             const modalBody = document.getElementById('modal-body');
             const modalOverlay = document.getElementById('modal-overlay');
 
+            // Evidências Originais (apenas uma vez!)
             let originalLinksHTML = '';
-            if (sub.linkComprovante || sub.evidenciasOriginal?.length > 0) {
+            const evidenciasOriginal = [];
+            
+            // Adicionar linkComprovante se existir
+            if (sub.linkComprovante) {
+                evidenciasOriginal.push(sub.linkComprovante);
+            }
+            
+            // Adicionar evidenciasOriginal se existirem
+            if (sub.evidenciasOriginal && sub.evidenciasOriginal.length > 0) {
+                sub.evidenciasOriginal.forEach(ev => {
+                    if (ev.url && !evidenciasOriginal.includes(ev.url)) {
+                        evidenciasOriginal.push(ev.url);
+                    }
+                });
+            }
+            
+            if (evidenciasOriginal.length > 0) {
                 originalLinksHTML = `
-                    <div class="evidence-section" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
-                        <h5 style="color: var(--azul-gov-principal); font-size: 0.9em;">Evidências Iniciais:</h5>
+                    <div class="evidence-section" style="margin-top: 10px;">
                         <ul class="evidence-list">
-                            ${sub.linkComprovante ? `<li class="evidence-item"><a href="${sub.linkComprovante}" target="_blank">${sub.linkComprovante}</a></li>` : ''}
-                            ${sub.evidenciasOriginal.map(ev => `<li class="evidence-item"><a href="${ev.url}" target="_blank">${ev.url}</a></li>`).join('')}
+                            ${evidenciasOriginal.map(url => `
+                                <li class="evidence-item">
+                                    <a href="${url}" target="_blank">${url}</a>
+                                </li>
+                            `).join('')}
                         </ul>
                     </div>`;
             }
 
+            // Evidências do Recurso
             let recursoLinksHTML = '';
-            if (sub.linkComprovanteRecurso || sub.evidenciasRecurso?.length > 0) {
+            const evidenciasRecurso = [];
+            
+            if (sub.linkComprovanteRecurso) {
+                evidenciasRecurso.push(sub.linkComprovanteRecurso);
+            }
+            
+            if (sub.evidenciasRecurso && sub.evidenciasRecurso.length > 0) {
+                sub.evidenciasRecurso.forEach(ev => {
+                    if (ev.url && !evidenciasRecurso.includes(ev.url)) {
+                        evidenciasRecurso.push(ev.url);
+                    }
+                });
+            }
+            
+            if (evidenciasRecurso.length > 0) {
                 recursoLinksHTML = `
                     <div class="evidence-section" style="margin-top: 10px;">
-                        <h5 style="color: var(--roxo-recurso); font-size: 0.9em;">Novos Links (Recurso):</h5>
                         <ul class="evidence-list">
-                            ${sub.linkComprovanteRecurso ? `<li class="evidence-item"><a href="${sub.linkComprovanteRecurso}" target="_blank">${sub.linkComprovanteRecurso}</a></li>` : ''}
-                            ${sub.evidenciasRecurso.map(ev => `<li class="evidence-item"><a href="${ev.url}" target="_blank">${ev.url}</a></li>`).join('')}
+                            ${evidenciasRecurso.map(url => `
+                                <li class="evidence-item">
+                                    <a href="${url}" target="_blank">${url}</a>
+                                </li>
+                            `).join('')}
                         </ul>
                     </div>`;
             }
@@ -3023,7 +3121,7 @@
             `;
             
             modalOverlay.style.display = 'flex';
-        }
+        };
     </script>
     <script src="/global.js"></script>
 </body>
