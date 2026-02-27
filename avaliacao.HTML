@@ -430,6 +430,29 @@
             box-shadow: 0 0 0 4px rgba(0, 39, 118, 0.1) !important;
         }
 
+        /* Botão para ver todos os links */
+        .btn-view-links {
+            background: none;
+            border: none;
+            color: var(--azul-gov-principal);
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.9em;
+            padding: 4px 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-view-links:hover {
+            color: var(--azul-gov-claro);
+            text-decoration: none;
+            background-color: rgba(0, 39, 118, 0.05);
+            border-radius: 4px;
+        }
+
+        .btn-view-links i {
+            font-size: 1.1em;
+        }
+
         @media (max-width: 768px) {
             .main-nav { flex-direction: column; height: auto; padding: 20px 0; }
             .report-container { padding: 0; }
@@ -800,10 +823,13 @@
                                         ${sub.atende ? 'Atende' : 'Não atende'}
                                     </span>
                                     </td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #dee2e6;">
-                                    ${sub.linkComprovante ? 
-                                        `<a href="${sub.linkComprovante}" target="_blank" style="word-break: break-all; color: var(--azul-gov-claro);">${sub.linkComprovante.substring(0, 30)}...</a>` : 
-                                        '<span style="color: #999;">—</span>'}
+                                    <td style="padding: 10px; border-bottom: 1px solid #dee2e6; text-align: center;">
+                                        ${sub.linkComprovante ? 
+                                            `<button class="btn-view-links" data-subid="${sub.id}" 
+                                                style="background: none; border: none; color: var(--azul-gov-principal); cursor: pointer; text-decoration: underline; font-size: 0.9em; padding: 4px 8px;">
+                                                Ver links
+                                            </button>` : 
+                                            '<span style="color: #999;">—</span>'}
                                     </td>
                                     <td style="padding: 10px; border-bottom: 1px solid #dee2e6; text-align: center;">
                                     <select class="subitem-validacao" data-subresposta-id="${sub.id}" 
@@ -1080,6 +1106,85 @@
                         },
                         customClass: {
                             popup: 'swal-custom-popup'
+                        }
+                    });
+                }
+
+                // === FUNÇÃO PARA ABRIR MODAL DE LINKS DO SUBITEM ===
+                function abrirModalLinksSubitem(subId) {
+                    // Encontrar o subitem nos dados
+                    let subitem = null;
+                    let requisitoTexto = '';
+                    
+                    for (const resposta of avaliacaoCompleta.respostas) {
+                        if (resposta.subRespostas) {
+                            const encontrado = resposta.subRespostas.find(s => s.id === subId);
+                            if (encontrado) {
+                                subitem = encontrado;
+                                requisitoTexto = resposta.requisito.texto;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!subitem) {
+                        Swal.fire('Erro', 'Subitem não encontrado', 'error');
+                        return;
+                    }
+                    
+                    // Coletar todos os links (linkComprovante + evidências)
+                    const todosLinks = [];
+                    
+                    // Adicionar linkComprovante se existir
+                    if (subitem.linkComprovante) {
+                        todosLinks.push(subitem.linkComprovante);
+                    }
+                    
+                    // Adicionar evidências se existirem
+                    if (subitem.evidencias && subitem.evidencias.length > 0) {
+                        subitem.evidencias.forEach(ev => {
+                            if (ev.url && !todosLinks.includes(ev.url)) {
+                                todosLinks.push(ev.url);
+                            }
+                        });
+                    }
+                    
+                    // Gerar HTML do modal
+                    let linksHTML = '';
+                    if (todosLinks.length > 0) {
+                        linksHTML = todosLinks.map((link, index) => `
+                            <div style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid var(--azul-gov-principal);">
+                                <a href="${link}" target="_blank" style="color: var(--azul-gov-principal); word-break: break-all; text-decoration: none; display: block;">
+                                    <i class="fas fa-external-link-alt" style="margin-right: 8px;"></i>${link}
+                                </a>
+                            </div>
+                        `).join('');
+                    } else {
+                        linksHTML = '<p style="color: #999; text-align: center; padding: 20px;">Nenhum link cadastrado para este subitem.</p>';
+                    }
+                    
+                    Swal.fire({
+                        title: 'Links do Subitem',
+                        html: `
+                            <div style="text-align: left; max-height: 400px; overflow-y: auto; padding: 5px;">
+                                <p style="font-weight: bold; color: var(--azul-gov-principal); margin-bottom: 15px; font-size: 1.1em;">
+                                    ${subitem.subRequisito.texto}
+                                </p>
+                                <div style="border-top: 1px solid #eee; padding-top: 15px;">
+                                    ${linksHTML}
+                                </div>
+                                <p style="font-size: 0.85em; color: #666; margin-top: 15px; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
+                                    Total de ${todosLinks.length} link(s) encontrado(s)
+                                </p>
+                            </div>
+                        `,
+                        width: '600px',
+                        confirmButtonText: 'Fechar',
+                        confirmButtonColor: '#002776',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
                         }
                     });
                 }
@@ -1457,6 +1562,13 @@
 
             respostasContainer.addEventListener('click', async (event) => {
                 const target = event.target;
+
+                if (target.matches('.btn-view-links') || target.closest('.btn-view-links')) {
+                    const button = target.matches('.btn-view-links') ? target : target.closest('.btn-view-links');
+                    const subId = parseInt(button.dataset.subid);
+                    abrirModalLinksSubitem(subId);
+                    return; 
+                }
 
                 if (target.matches('.btn-add-link-analista')) {
                     const respostaId = parseInt(target.dataset.respostaId);
