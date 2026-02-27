@@ -1516,9 +1516,20 @@
         async function handlePasswordRecovery() {
             const { value: email } = await Swal.fire({
                 title: 'Recuperação de Senha',
-                width: '550px', // Reduzi um pouco a largura total
+                width: '550px',
                 html: `
                     <div style="padding: 5px 0;">
+                        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
+                            <p style="margin: 0; color: #856404; font-weight: 500;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                Importante!
+                            </p>
+                            <p style="margin: 5px 0 0 0; color: #856404; font-size: 0.9em;">
+                                O código de verificação será enviado por email. 
+                                <strong>Verifique também sua caixa de spam ou lixo eletrônico</strong> caso não encontre na caixa de entrada.
+                            </p>
+                        </div>
+                        
                         <p style="color: #7f8c8d; font-size: 0.95em; margin-bottom: 15px; text-align: left;">
                             <i class="fas fa-info-circle" style="color: #002776; margin-right: 5px;"></i>
                             Digite seu email cadastrado para receber o código de recuperação.
@@ -1607,9 +1618,20 @@
         async function handleFirstAccess() {
             const { value: email } = await Swal.fire({
                 title: 'Primeiro Acesso',
-                width: '550px', // Reduzi a largura
+                width: '550px',
                 html: `
                     <div style="padding: 5px 0;">
+                        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
+                            <p style="margin: 0; color: #856404; font-weight: 500;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                Importante!
+                            </p>
+                            <p style="margin: 5px 0 0 0; color: #856404; font-size: 0.9em;">
+                                O código de verificação será enviado por email. 
+                                <strong>Verifique também sua caixa de spam ou lixo eletrônico</strong> caso não encontre na caixa de entrada.
+                            </p>
+                        </div>
+                        
                         <p style="color: #7f8c8d; font-size: 0.95em; margin-bottom: 15px; text-align: left;">
                             <i class="fas fa-info-circle" style="color: #002776; margin-right: 5px;"></i>
                             Digite o email cadastrado no sistema para iniciar seu primeiro acesso.
@@ -1714,8 +1736,18 @@
                     await Swal.fire({
                         icon: 'success',
                         title: 'Código reenviado!',
-                        text: 'Enviamos um novo código para seu email.',
-                        timer: 2000,
+                        html: `
+                            <div style="text-align: left;">
+                                <p>Enviamos um novo código para <strong>${email}</strong>.</p>
+                                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                                    <p style="margin: 0; color: #856404; font-size: 0.9em;">
+                                        <i class="fas fa-exclamation-triangle" style="margin-right: 5px;"></i>
+                                        <strong>Importante:</strong> Verifique também sua caixa de spam ou lixo eletrônico.
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                        timer: 3000,
                         showConfirmButton: false,
                         customClass: {
                             popup: 'swal-custom-popup',
@@ -1745,6 +1777,13 @@
             const result = await Swal.fire({
                 title: `Digite o código de 6 dígitos`,
                 html: `
+                    <div style="background: #f8f9fa; border-left: 4px solid #6c757d; padding: 8px; border-radius: 6px; margin-bottom: 15px; text-align: left;">
+                        <p style="margin: 0; color: #666; font-size: 0.85em;">
+                            <i class="fas fa-info-circle" style="color: #6c757d; margin-right: 5px;"></i>
+                            Não recebeu? Verifique sua caixa de spam.
+                        </p>
+                    </div>
+                    
                     <div class="code-inputs">
                         <input type="text" maxlength="1" class="code-input" data-index="0">
                         <input type="text" maxlength="1" class="code-input" data-index="1">
