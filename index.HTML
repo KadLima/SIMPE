@@ -648,6 +648,52 @@
             justify-content: center;
         }
 
+        /* Personalização do SweetAlert */
+        .swal-custom-popup {
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border-top: 5px solid #002776 !important;
+            padding: 1.5em !important;
+        }
+
+        .swal-custom-title {
+            color: #002776 !important;
+            font-weight: 700 !important;
+            font-size: 1.5em !important;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .swal-custom-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: #FFD700;
+        }
+
+        .swal-custom-html {
+            margin: 0 !important;
+            padding: 10px 0 !important;
+        }
+
+        .swal-custom-confirm {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            padding: 12px 24px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            transition: all 0.3s !important;
+        }
+
+        .swal-custom-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+        }
+
         @media (max-width: 768px) {
             .main-nav {
                 flex-direction: column;
@@ -916,8 +962,24 @@
                                 icon: 'info',
                                 iconColor: 'var(--azul-gov-principal)',
                                 title: 'Nenhuma nota final disponível',
-                                text: 'Você ainda não possui avaliações finalizadas com nota disponível.',
-                                confirmButtonColor: 'var(--azul-gov-principal)'
+                                width: '500px',
+                                html: `
+                                    <div style="text-align: left; padding: 10px;">
+                                        <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px;">
+                                            <p style="margin: 0; color: #2c3e50;">
+                                                <i class="fas fa-info-circle" style="color: #002776; margin-right: 8px;"></i>
+                                                Você ainda não possui avaliações finalizadas com nota disponível.
+                                            </p>
+                                        </div>
+                                    </div>
+                                `,
+                                confirmButtonText: 'Entendi',
+                                confirmButtonColor: '#27ae60',
+                                customClass: {
+                                    popup: 'swal-custom-popup',
+                                    title: 'swal-custom-title',
+                                    confirmButton: 'swal-custom-confirm'
+                                }
                             });
                         }
                     } else {
@@ -929,7 +991,12 @@
                         icon: 'error',
                         title: 'Erro',
                         text: 'Não foi possível verificar suas avaliações.',
-                        confirmButtonColor: 'var(--azul-gov-principal)'
+                        confirmButtonColor: '#27ae60',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
                     });
                 }
             }
@@ -959,10 +1026,25 @@
                         e.preventDefault();
                         Swal.fire({
                             icon: 'warning',
-                            iconColor: 'var(--amarelo-gov-detalhe)',
                             title: 'Login necessário',
-                            text: 'Faça login para acessar o formulário de avaliação.',
-                            confirmButtonColor: 'var(--azul-gov-principal)'
+                            width: '500px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px;">
+                                        <p style="margin: 0; color: #856404;">
+                                            <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                            Faça login para acessar o formulário de avaliação.
+                                        </p>
+                                    </div>
+                                </div>
+                            `,
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#27ae60',
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title',
+                                confirmButton: 'swal-custom-confirm'
+                            }
                         });
                     } else {
                         formCardLink.href = '/formulario';
@@ -1019,8 +1101,24 @@
                         icon: 'info',
                         iconColor: 'var(--azul-gov-principal)',
                         title: 'Em breve',
-                        text: 'Esta funcionalidade estará disponível em breve.',
-                        confirmButtonColor: 'var(--azul-gov-principal)'
+                        width: '500px',
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px;">
+                                    <p style="margin: 0; color: #2c3e50;">
+                                        <i class="fas fa-clock" style="color: #002776; margin-right: 8px;"></i>
+                                        Esta funcionalidade estará disponível em breve.
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#27ae60',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
                     });
                 });
             });
