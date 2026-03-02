@@ -1751,31 +1751,47 @@ app.post('/api/avaliacoes/:id/devolver', authenticateToken, authenticateAdminOrG
     const { id } = req.params;
     
     function calcularPrazoRecurso(dataInicio) {
-      let data = new Date(dataInicio);
-      let diasUteis = 0;
-      const diasNecessarios = 5;
-      
-      data.setDate(data.getDate() + 1);
-      data.setHours(0, 0, 1, 0);
-      
-      let diaSemana = data.getDay();
-      if (diaSemana === 0) {
-        data.setDate(data.getDate() + 1); 
-      } else if (diaSemana === 6) { 
-        data.setDate(data.getDate() + 2); 
-      }
-      
-      while (diasUteis < diasNecessarios) {
+        let data = new Date(dataInicio);
+        
         data.setDate(data.getDate() + 1);
-        diaSemana = data.getDay();
-        if (diaSemana !== 0 && diaSemana !== 6) {
-          diasUteis++;
+        
+        let diaSemana = data.getDay();
+        if (diaSemana === 0) { 
+            data.setDate(data.getDate() + 1); 
+        } else if (diaSemana === 6) { 
+            data.setDate(data.getDate() + 2); 
         }
-      }
-      
-      data.setHours(23, 59, 59, 0);
-      
-      return data;
+        
+        let diasUteis = 0;
+        const diasNecessarios = 5;
+        
+        while (diasUteis < diasNecessarios) {
+            diaSemana = data.getDay();
+            if (diaSemana !== 0 && diaSemana !== 6) {
+                diasUteis++;
+            }
+            
+            if (diasUteis < diasNecessarios) {
+                data.setDate(data.getDate() + 1);
+            }
+        }
+        
+        // 🔥 CORREÇÃO CRÍTICA: Criar data para 23:59:59 em Brasília
+        const ano = data.getFullYear();
+        const mes = data.getMonth();
+        const dia = data.getDate();
+        
+        // Criar data com 23:59:59 em Brasília (já considera o fuso)
+        const dataBrasilia = new Date(ano, mes, dia, 23, 59, 59, 999);
+        
+        // Converter para UTC subtraindo 3 horas
+        const offset = 3; // Brasília é UTC-3, então UTC = Brasília + 3
+        const dataUTC = new Date(dataBrasilia.getTime() + (offset * 60 * 60 * 1000));
+        
+        console.log(`📅 Data em Brasília: ${dataBrasilia.toLocaleString('pt-BR')}`);
+        console.log(`📅 Data salva (UTC): ${dataUTC.toISOString()}`);
+        
+        return dataUTC;
     }
 
     const dataRecebimento = new Date(); 
@@ -2784,250 +2800,263 @@ app.post('/api/avaliacoes/:id/notificar-recurso', authenticateToken, async (req,
 
 app.post('/api/avaliacoes/:id/notificar-devolucao-recurso', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
     try {
-      const { id: avaliacaoId } = req.params;
+        const { id: avaliacaoId } = req.params;
 
-      const avaliacao = await prisma.avaliacao.findUnique({
-        where: { id: parseInt(avaliacaoId) },
-        include: {
-          secretaria: true,
-          respostas: {
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { id: parseInt(avaliacaoId) },
             include: {
-              requisito: true
+            secretaria: true,
+            respostas: {
+                include: {
+                requisito: true
+                }
             }
-          }
+            }
+        });
+
+        if (!avaliacao) {
+            return res.status(404).json({ error: 'Avaliação não encontrada.' });
         }
-      });
 
-      if (!avaliacao) {
-        return res.status(404).json({ error: 'Avaliação não encontrada.' });
-      }
+        let pontuacaoAtual = 0; 
+        let pontuacaoTotal = 0;
 
-      let pontuacaoAtual = 0; 
-      let pontuacaoTotal = 0;
+        avaliacao.respostas.forEach(resposta => {
+            const pontuacaoRequisito = resposta.requisito.pontuacao;
+            pontuacaoTotal += pontuacaoRequisito;
 
-      avaliacao.respostas.forEach(resposta => {
-        const pontuacaoRequisito = resposta.requisito.pontuacao;
-        pontuacaoTotal += pontuacaoRequisito;
+            if (resposta.statusValidacao === 'aprovado') {
+                pontuacaoAtual += pontuacaoRequisito;
+            }
+        });
 
-        if (resposta.statusValidacao === 'aprovado') {
-            pontuacaoAtual += pontuacaoRequisito;
+        pontuacaoAtual = Math.round(pontuacaoAtual); 
+
+        function calcularPrazoRecurso(dataInicio) {
+            let data = new Date(dataInicio);
+            
+            data.setDate(data.getDate() + 1);
+            
+            let diaSemana = data.getDay();
+            if (diaSemana === 0) { 
+                data.setDate(data.getDate() + 1); 
+            } else if (diaSemana === 6) { 
+                data.setDate(data.getDate() + 2); 
+            }
+            
+            let diasUteis = 0;
+            const diasNecessarios = 5;
+            
+            while (diasUteis < diasNecessarios) {
+                diaSemana = data.getDay();
+                if (diaSemana !== 0 && diaSemana !== 6) {
+                    diasUteis++;
+                }
+                
+                if (diasUteis < diasNecessarios) {
+                    data.setDate(data.getDate() + 1);
+                }
+            }
+            
+            const ano = data.getFullYear();
+            const mes = data.getMonth();
+            const dia = data.getDate();
+            
+            const dataBrasilia = new Date(ano, mes, dia, 23, 59, 59, 999);
+            
+            const offset = 3;
+            const dataUTC = new Date(dataBrasilia.getTime() + (offset * 60 * 60 * 1000));
+            
+            console.log(`📅 Data em Brasília: ${dataBrasilia.toLocaleString('pt-BR')}`);
+            console.log(`📅 Data salva (UTC): ${dataUTC.toISOString()}`);
+            
+            return dataUTC;
         }
-      });
 
-      pontuacaoAtual = Math.round(pontuacaoAtual); 
+        const prazoRecurso = calcularPrazoRecurso(new Date()); 
 
-    function calcularPrazoRecurso(dataInicio) {
-      let data = new Date(dataInicio);
-      let diasUteis = 0;
-      const diasNecessarios = 5;
-      
-      data.setDate(data.getDate() + 1);
-      data.setHours(0, 0, 1, 0);
-      
-      let diaSemana = data.getDay();
-      if (diaSemana === 0) { 
-        data.setDate(data.getDate() + 1); 
-      } else if (diaSemana === 6) { 
-        data.setDate(data.getDate() + 2); 
-      }
-      
-      while (diasUteis < diasNecessarios) {
-        data.setDate(data.getDate() + 1);
-        diaSemana = data.getDay();
-        if (diaSemana !== 0 && diaSemana !== 6) {
-          diasUteis++;
-        }
-      }
-      
-      data.setHours(23, 59, 59, 0);
-      
-      return data;
-    }
+        await prisma.avaliacao.update({
+            where: { id: parseInt(avaliacaoId) },
+            data: { prazoRecurso: prazoRecurso }
+        });
 
-    const prazoRecurso = calcularPrazoRecurso(new Date()); 
+        const mailOptions = {
+            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_USER}>`,
+            to: avaliacao.emailResponsavel, 
+            subject: `Avaliação Devolvida para Recurso - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            line-height: 1.6; 
+                            color: #333; 
+                            max-width: 600px; 
+                            margin: 0 auto;
+                            background: #f5f5f5;
+                        }
+                        .email-container {
+                            background: white;
+                            border-radius: 8px;
+                            overflow: hidden;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        }
+                        .header-img {
+                            width: 100%;
+                            max-width: 600px;
+                            height: auto;
+                            display: block;
+                            object-fit: contain;
+                        }
+                        .content { 
+                            padding: 25px; 
+                        }
+                        .footer { 
+                            background: #e9ecef; 
+                            padding: 20px; 
+                            text-align: center; 
+                            font-size: 12px; 
+                            color: #666;
+                        }
+                        .info-box { 
+                            background: white; 
+                            border: 1px solid #ddd;
+                            border-radius: 6px;
+                            padding: 20px;
+                            margin: 15px 0;
+                        }
+                        .destaque { 
+                            background: #fff3cd; 
+                            border: 1px solid #ffeaa7;
+                            border-radius: 6px;
+                            padding: 15px;
+                            margin: 15px 0;
+                        }
+                        .badge { 
+                            display: inline-block; 
+                            padding: 6px 12px; 
+                            border-radius: 15px; 
+                            font-size: 0.8em;
+                            font-weight: bold;
+                        }
+                        .recurso { 
+                            background: #ffc107; 
+                            color: #333; 
+                        }
+                        .btn { 
+                            background: #002776; 
+                            color: #ffffff !important; 
+                            padding: 12px 25px; 
+                            text-decoration: none; 
+                            border-radius: 6px; 
+                            font-weight: bold;
+                            display: inline-block;
+                            margin: 10px 0;
+                        }
+                        .footer-images {
+                            display: flex;
+                            justify-content: center;
+                            gap: 20px;
+                            margin: 15px 0;
+                            align-items: center;
+                        }
+                        .footer-img {
+                            max-width: 150px;
+                            height: 60px;
+                            object-fit: contain;
+                        }
+                        .footer-img[alt="SIMPE"] {
+                            max-width: 200px;
+                            height: 80px;
+                        }
+                        h3 { color: #002776; }
+                        h4 { color: #333; margin-top: 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="email-container">
+                        <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
+                            alt="Controladoria Geral do Estado" 
+                            class="header-img">
+                        
+                        <div class="content">
+                            <h3>Avaliação Devolvida para Recurso</h3>
+                            
+                            <div class="destaque">
+                                <p><strong>Sua avaliação foi analisada pela SCGE e está disponível para recurso.</strong></p>
+                            </div>
+                            
+                            <div class="info-box">
+                                <h4>Resumo da Avaliação</h4>
+                                <p><strong>Órgão/Entidade:</strong> ${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})</p>
+                                <p><strong>URL Avaliada:</strong> ${avaliacao.urlSecretaria}</p>
+                                <p><strong>Nota Atual (SCGE):</strong> ${pontuacaoAtual} / ${pontuacaoTotal} pontos</p>
+                                <p><strong>Status:</strong> <span class="badge recurso">AGUARDANDO RECURSO</span></p>
+                                <p><strong>Data da Devolução:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+                            </div>
+                            
+                            <div class="info-box">
+                                <h4>Próximos Passos</h4>
+                                <p><strong>Você tem a oportunidade de interpor recurso sobre os itens divergentes.</strong></p>
+                                <p><strong>Prazo para recurso:</strong> 5 dias úteis (até ${prazoRecurso.toLocaleDateString('pt-BR')} às 23:59:59)</p>
+                                <p style="font-size: 0.9em; color: #666;">
+                                    ⚠️ O prazo exato de expiração será mostrado no sistema.
+                                </p>
+                                <ul>
+                                    <li>Acesse o sistema para verificar a análise detalhada da SCGE</li>
+                                    <li>Verifique os comentários e justificativas dos analistas</li>
+                                    <li>Envie novas evidências ou argumentos para os requisitos em discordância</li>
+                                </ul>
+                            </div>
+                            
+                            <p style="margin-top: 25px; text-align: center;">
+                                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/avaliacao-usuario/${avaliacaoId}" 
+                                    class="btn" style="color: #ffffff !important;">
+                                    Acessar Sistema para Recurso
+                                </a>
+                            </p>
+                            
+                            <p style="margin-top: 15px;">
+                                Atenciosamente,<br>
+                                <strong>Equipe da Coordenação de Transparência Ativa (CTA)</strong></p>
+                            </p>
+                        </div>
+                        
+                        <div class="footer">
+                            <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
+                            <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
+                            R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
+                            
+                            <div class="footer-images">
+                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                                    alt="SIMPE" 
+                                    class="footer-img">
+                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
+                                    alt="Governo de Pernambuco" 
+                                    class="footer-img">
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                `
+        };
 
-      await prisma.avaliacao.update({
-          where: { id: parseInt(avaliacaoId) },
-          data: { prazoRecurso: prazoRecurso }
-      });
-
-      const mailOptions = {
-          from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_USER}>`,
-          to: avaliacao.emailResponsavel, 
-          subject: `Avaliação Devolvida para Recurso - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
-          html: `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                  <meta charset="utf-8">
-                  <style>
-                      body { 
-                          font-family: Arial, sans-serif; 
-                          line-height: 1.6; 
-                          color: #333; 
-                          max-width: 600px; 
-                          margin: 0 auto;
-                          background: #f5f5f5;
-                      }
-                      .email-container {
-                          background: white;
-                          border-radius: 8px;
-                          overflow: hidden;
-                          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                      }
-                      .header-img {
-                          width: 100%;
-                          max-width: 600px;
-                          height: auto;
-                          display: block;
-                          object-fit: contain;
-                      }
-                      .content { 
-                          padding: 25px; 
-                      }
-                      .footer { 
-                          background: #e9ecef; 
-                          padding: 20px; 
-                          text-align: center; 
-                          font-size: 12px; 
-                          color: #666;
-                      }
-                      .info-box { 
-                          background: white; 
-                          border: 1px solid #ddd;
-                          border-radius: 6px;
-                          padding: 20px;
-                          margin: 15px 0;
-                      }
-                      .destaque { 
-                          background: #fff3cd; 
-                          border: 1px solid #ffeaa7;
-                          border-radius: 6px;
-                          padding: 15px;
-                          margin: 15px 0;
-                      }
-                      .badge { 
-                          display: inline-block; 
-                          padding: 6px 12px; 
-                          border-radius: 15px; 
-                          font-size: 0.8em;
-                          font-weight: bold;
-                      }
-                      .recurso { 
-                          background: #ffc107; 
-                          color: #333; 
-                      }
-                      .btn { 
-                          background: #002776; 
-                          color: #ffffff !important; 
-                          padding: 12px 25px; 
-                          text-decoration: none; 
-                          border-radius: 6px; 
-                          font-weight: bold;
-                          display: inline-block;
-                          margin: 10px 0;
-                      }
-                      .footer-images {
-                          display: flex;
-                          justify-content: center;
-                          gap: 20px;
-                          margin: 15px 0;
-                          align-items: center;
-                      }
-                      .footer-img {
-                          max-width: 150px;
-                          height: 60px;
-                          object-fit: contain;
-                      }
-                      .footer-img[alt="SIMPE"] {
-                          max-width: 200px;
-                          height: 80px;
-                      }
-                      h3 { color: #002776; }
-                      h4 { color: #333; margin-top: 0; }
-                  </style>
-              </head>
-              <body>
-                  <div class="email-container">
-                      <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
-                           alt="Controladoria Geral do Estado" 
-                           class="header-img">
-                      
-                      <div class="content">
-                          <h3>Avaliação Devolvida para Recurso</h3>
-                          
-                          <div class="destaque">
-                              <p><strong>Sua avaliação foi analisada pela SCGE e está disponível para recurso.</strong></p>
-                          </div>
-                          
-                          <div class="info-box">
-                              <h4>Resumo da Avaliação</h4>
-                              <p><strong>Órgão/Entidade:</strong> ${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})</p>
-                              <p><strong>URL Avaliada:</strong> ${avaliacao.urlSecretaria}</p>
-                              <p><strong>Nota Atual (SCGE):</strong> ${pontuacaoAtual} / ${pontuacaoTotal} pontos</p>
-                              <p><strong>Status:</strong> <span class="badge recurso">AGUARDANDO RECURSO</span></p>
-                              <p><strong>Data da Devolução:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
-                          </div>
-                          
-                          <div class="info-box">
-                              <h4>Próximos Passos</h4>
-                              <p><strong>Você tem a oportunidade de interpor recurso sobre os itens divergentes.</strong></p>
-                              <p><strong>Prazo para recurso:</strong> 5 dias úteis (até ${prazoRecurso.toLocaleDateString('pt-BR')} às 23:59:59)</p>
-                              <p style="font-size: 0.9em; color: #666;">
-                                  ⚠️ O prazo exato de expiração será mostrado no sistema.
-                              </p>
-                              <ul>
-                                  <li>Acesse o sistema para verificar a análise detalhada da SCGE</li>
-                                  <li>Verifique os comentários e justificativas dos analistas</li>
-                                  <li>Envie novas evidências ou argumentos para os requisitos em discordância</li>
-                              </ul>
-                          </div>
-                          
-                          <p style="margin-top: 25px; text-align: center;">
-                              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/avaliacao-usuario/${avaliacaoId}" 
-                                class="btn" style="color: #ffffff !important;">
-                                Acessar Sistema para Recurso
-                              </a>
-                          </p>
-                          
-                          <p style="margin-top: 15px;">
-                              Atenciosamente,<br>
-                              <strong>Equipe da Coordenação de Transparência Ativa (CTA)</strong></p>
-                          </p>
-                      </div>
-                      
-                      <div class="footer">
-                          <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
-                          <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
-                          R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
-                          
-                          <div class="footer-images">
-                              <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
-                                   alt="SIMPE" 
-                                   class="footer-img">
-                              <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
-                                   alt="Governo de Pernambuco" 
-                                   class="footer-img">
-                          </div>
-                      </div>
-                  </div>
-              </body>
-              </html>
-            `
-      };
-
-      await transporter.sendMail(mailOptions);
-      
-      console.log(`[EMAIL DEVOLUÇÃO] Email enviado para ${avaliacao.emailResponsavel} sobre devolução para recurso da avaliação ${avaliacaoId}`);
-      
-      res.json({ 
-          success: true, 
-          message: 'Secretaria notificada sobre a devolução para recurso',
-          destinatario: avaliacao.emailResponsavel,
-          pontuacaoAtual: pontuacaoAtual, 
-          pontuacaoTotal: pontuacaoTotal,
-          prazoRecurso: prazoRecurso 
-      });
+        await transporter.sendMail(mailOptions);
+        
+        console.log(`[EMAIL DEVOLUÇÃO] Email enviado para ${avaliacao.emailResponsavel} sobre devolução para recurso da avaliação ${avaliacaoId}`);
+        
+        res.json({ 
+            success: true, 
+            message: 'Secretaria notificada sobre a devolução para recurso',
+            destinatario: avaliacao.emailResponsavel,
+            pontuacaoAtual: pontuacaoAtual, 
+            pontuacaoTotal: pontuacaoTotal,
+            prazoRecurso: prazoRecurso 
+        });
 
     } catch (error) {
       console.error('[EMAIL DEVOLUÇÃO] Erro ao enviar email de devolução:', error);
@@ -3750,7 +3779,7 @@ async function cleanupZombieScans() {
 }
 
 // ROTA PARA TESTE - FORÇAR EXPIRAÇÃO DO PRAZO
-/*app.post('/api/teste/expirar-recurso/:id', authenticateToken, authenticateAdminOnly, async (req, res) => {
+app.post('/api/teste/expirar-recurso/:id', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -3777,59 +3806,33 @@ async function cleanupZombieScans() {
   }
 });
 
-// ROTA GET TEMPORÁRIA PARA RESETAR PRAZO 
-app.get('/api/teste/reset-prazo-publico/:id', async (req, res) => {
+app.get('/api/teste/prazo/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const avaliacao = await prisma.avaliacao.findUnique({
+      where: { id: parseInt(id) }
+    });
     
-    function calcularPrazoTeste(dataInicio) {
-      let data = new Date(dataInicio);
-      let diasUteis = 0;
-      const diasNecessarios = 5;
-      
-      data.setDate(data.getDate() + 1);
-      data.setHours(0, 0, 1, 0);
-      
-      while (diasUteis < diasNecessarios) {
-        data.setDate(data.getDate() + 1);
-        const diaSemana = data.getDay();
-        if (diaSemana !== 0 && diaSemana !== 6) {
-          diasUteis++;
-        }
-      }
-      
-      return data;
+    if (!avaliacao) {
+      return res.status(404).json({ error: 'Avaliação não encontrada' });
     }
-
-    const prazoRecurso = calcularPrazoTeste(new Date());
-
-    console.log(`🔄 Resetando prazo via GET para 5 dias úteis: ${prazoRecurso}`);
-
-    const avaliacaoAtualizada = await prisma.avaliacao.update({
-      where: { id: parseInt(id) },
-      data: {
-        prazoRecurso: prazoRecurso,
-        recursoExpirado: false,
-        status: 'AGUARDANDO_RECURSO'
-      },
+    
+    const dataLimite = new Date(avaliacao.prazoRecurso);
+    
+    res.json({
+      avaliacaoId: id,
+      prazoRecurso: avaliacao.prazoRecurso,
+      formatoISO: dataLimite.toISOString(),
+      formatoBrasil: dataLimite.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      hora: dataLimite.getHours(),
+      minutos: dataLimite.getMinutes(),
+      segundos: dataLimite.getSeconds()
     });
-
-    const agora = new Date();
-    const segundosRestantes = Math.max(0, Math.ceil((prazoRecurso - agora) / 1000));
-
-    res.json({ 
-      success: true, 
-      message: '✅ Prazo resetado para 5 dias úteis via GET',
-      prazoRecurso: prazoRecurso,
-      novoPrazoFormatado: prazoRecurso.toLocaleString('pt-BR'),
-      segundosRestantes: segundosRestantes,
-      detalhes: 'Começa a contar da meia-noite e 1 segundo do próximo dia, excluindo finais de semana'
-    });
+    
   } catch (error) {
-    console.error("Erro ao resetar prazo via GET:", error);
-    res.status(500).json({ error: 'Erro ao resetar prazo.' });
+    res.status(500).json({ error: error.message });
   }
-});*/
+});
 
 // --- FUNÇÃO PARA EXPIRAR RECURSOS VENCIDOS ---
 async function expirarRecursos() {
