@@ -921,6 +921,55 @@
                 }
             }
 
+            // Adicione esta função (pode colocar perto das outras funções, ~linha 300)
+            function calcularPontuacaoAutoavaliacao() {
+                let pontuacaoTotal = 0;
+                
+                document.querySelectorAll('.requisito-card').forEach(card => {
+                    const requisitoId = card.dataset.requisitoId;
+                    
+                    if (card.dataset.tipo === 'composto') {
+                        const subitens = card.querySelectorAll('.subitem-card');
+                        let aprovados = 0;
+                        
+                        subitens.forEach(subitem => {
+                            const btnSim = subitem.querySelector('.subitem-sim');
+                            if (btnSim && btnSim.classList.contains('active')) {
+                                aprovados++;
+                            }
+                        });
+                        
+                        const pontuacaoBase = 8;
+                        
+                        if (aprovados >= 10) {
+                            pontuacaoTotal += pontuacaoBase; 
+                        } else if (aprovados >= 7) {
+                            pontuacaoTotal += pontuacaoBase * 0.7; 
+                        } else if (aprovados >= 4) {
+                            pontuacaoTotal += pontuacaoBase * 0.5; 
+                        } else if (aprovados >= 1) {
+                            pontuacaoTotal += pontuacaoBase * 0.3; 
+                        }
+                        
+                    } else {
+                        // Requisitos normais
+                        const simBtn = card.querySelector(`[data-action="sim-${requisitoId}"]`);
+                        const atende = simBtn && simBtn.classList.contains('active');
+                        
+                        // Extrair pontuação do texto do header
+                        const headerText = card.querySelector('.requisito-header span')?.textContent || '';
+                        const match = headerText.match(/\(Pontuação:\s*(\d+)\)/i) || headerText.match(/pontuação:\s*(\d+)/i);
+                        const pontuacao = match ? parseInt(match[1]) : 2; 
+                        
+                        if (atende) {
+                            pontuacaoTotal += pontuacao;
+                        }
+                    }
+                });
+                
+                return pontuacaoTotal;
+            }
+
             function limparFormularioCompleto() {
                 const secretariaId = secretariaHiddenInput.value;
                 if (secretariaId) {
@@ -2243,11 +2292,15 @@
                         });
                         return;
                     }
+
+                    const pontuacaoAutoavaliacao = calcularPontuacaoAutoavaliacao();
+                    console.log('📊 Pontuação calculada:', pontuacaoAutoavaliacao);
                     
                     const payload = {
                         urlSecretaria: urlSecretaria, 
                         nomeResponsavel: nomeResponsavel, 
                         emailResponsavel: emailResponsavel,
+                        pontuacaoAutoavaliacao: pontuacaoAutoavaliacao,
                         respostas: respostas.map(r => ({
                             requisitoId: r.requisitoId,
                             atende: r.atende,
