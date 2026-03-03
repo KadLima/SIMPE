@@ -2181,6 +2181,7 @@
                 
                 if (itensParaRecurso.length === 0) return '';
                 
+                // ✅ Array completo com os nomes dos 13 subitens na ordem correta
                 const textosSubitens = [
                     "Ouvidoria",
                     "Responsabilidade Fiscal",
@@ -2192,9 +2193,7 @@
                     "Obras",
                     "Patrimônio Público",
                     "Recursos Humanos",
-                    "Acesso à Informação",
-                    "Dados Abertos",
-                    "Participação"
+                    "Acesso à Informação"
                 ];
                 
                 return `
@@ -2215,13 +2214,13 @@
                         </p>
                         
                         ${itensParaRecurso.map((sub, index) => {
-                            const subItemIndex = sub.subRequisito?.id ? (sub.subRequisito.id - 1) : index;
-                            const textoSubitem = textosSubitens[subItemIndex] || `Subitem ${index + 1}`;
+                            const ordemSubitem = sub.subRequisito?.ordem || index;
+                            const textoSubitem = textosSubitens[ordemSubitem - 1] || `Subitem ${ordemSubitem}`;
                             
                             return `
                             <div class="subitem-recurso" data-subresposta-id="${sub.id}" style="border: 2px solid var(--azul-gov-principal); border-radius: 12px; padding: 20px; margin-bottom: 20px; background: #fff; box-shadow: var(--sombra-suave); position: relative;">
                                 <div style="position: absolute; top: -12px; left: 20px; background: var(--azul-gov-principal); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 600;">
-                                    Subitem ${index + 1}
+                                    Subitem ${ordemSubitem}
                                 </div>
                                 
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px 0;">
@@ -4195,14 +4194,14 @@
                     avaliacaoCompleta.respostas = []; 
                 }
 
-                const dataFormatada = new Date(avaliacaoCompleta.createdAt).toLocaleString('pt-BR');                
+                const dataFormatada = new Date(avaliacaoCompleta.createdAt).toLocaleString('pt-BR');
                 summaryContainer.innerHTML = `
-                    <h1>Detalhes da Autoavaliação</h1>
-                    <div class="report-summary">
-                        <span><strong>Órgão:</strong> ${avaliacaoCompleta.secretaria.nome}</span>
-                        <span><strong>Enviado por:</strong> ${avaliacaoCompleta.nomeResponsavel || 'Não informado'}</span>
-                        <span><strong>Ciclo:</strong> ${avaliacaoCompleta.ciclo}</span>
-                        <span><strong>Enviado em:</strong> ${dataFormatada}</span>
+                    <h1>${avaliacaoCompleta.secretaria.nome} (${avaliacaoCompleta.secretaria.sigla})</h1>
+                    <div class="report-summary" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <span><strong><i class="fas fa-user" style="margin-right: 5px;"></i>Responsável:</strong> ${avaliacaoCompleta.nomeResponsavel || 'Não informado'}</span>
+                        <span><strong><i class="fas fa-envelope" style="margin-right: 5px;"></i>E-mail:</strong> ${avaliacaoCompleta.emailResponsavel || 'Não informado'}</span>
+                        <span><strong><i class="fas fa-calendar" style="margin-right: 5px;"></i>Enviado em:</strong> ${dataFormatada}</span>
+                        <span><strong><i class="fas fa-sync" style="margin-right: 5px;"></i>Ciclo:</strong> ${avaliacaoCompleta.ciclo}</span>
                     </div>
                 `;
 
