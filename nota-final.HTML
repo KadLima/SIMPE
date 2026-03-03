@@ -949,22 +949,22 @@
                     <div style="flex: 1;">
                         <h1>Relatório Final de Avaliação - Ciclo 2025</h1>
                         <div class="status-badge">AVALIAÇÃO FINALIZADA</div>
-                        <div class="orgao-info">
+                        <div class="orgao-info" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
                             <div>
-                                <strong>Órgão Avaliado:</strong>
-                                <span id="orgao-nome">Carregando...</span>
-                            </div>
-                            <div>
-                                <strong>Data de Finalização:</strong>
-                                <span id="data-finalizacao">Carregando...</span>
-                            </div>
-                            <div>
-                                <strong>Enviado por:</strong>
+                                <strong><i class="fas fa-user" style="margin-right: 5px;"></i>Enviado por:</strong>
                                 <span id="responsavel-nome">Carregando...</span>
                             </div>
                             <div>
-                                <strong>Email:</strong>
+                                <strong><i class="fas fa-envelope" style="margin-right: 5px;"></i>Email:</strong>
                                 <span id="responsavel-email">Carregando...</span>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-building" style="margin-right: 5px;"></i>Órgão Avaliado:</strong>
+                                <span id="orgao-nome">Carregando...</span>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-calendar-check" style="margin-right: 5px;"></i>Data de Finalização:</strong>
+                                <span id="data-finalizacao">Carregando...</span>
                             </div>
                         </div>
                     </div>
@@ -1288,11 +1288,30 @@
                     </div>
                 `;
 
+                // ✅ COMENTÁRIO DA 1ª ANÁLISE (DO ANALISTA)
+                const comentarioAnalistaHTML = resposta.comentarioAdmin ? `
+                    <div class="dossie-bloco">
+                        <div class="bloco-title">Comentário do Analista - 1ª Análise</div>
+                        <div class="comment-container" style="background: #f8f9fa; border-left: 4px solid var(--azul-gov-principal);">
+                            <p style="margin: 0; white-space: pre-wrap;">"${resposta.comentarioAdmin}"</p>
+                        </div>
+                    </div>
+                ` : '';
+
+                const comentarioFinalHTML = resposta.analiseFinal?.comentario ? `
+                    <div class="dossie-bloco">
+                        <div class="bloco-title">Comentário Final da SCGE</div>
+                        <div class="comment-container" style="background: #e8f5e8; border-left: 4px solid var(--verde-sucesso);">
+                            <p style="margin: 0; white-space: pre-wrap;">"${resposta.analiseFinal.comentario}"</p>
+                        </div>
+                    </div>
+                ` : '';
+
                 // Resumo da pontuação
                 const resumoPontuacao = `
                     <div class="info-grid">
                         <span class="info-label">Pontuação Final:</span>
-                        <span>${aprovadosFinal}/${total} itens aprovados</span>
+                        <span>${aprovadosFinal}/${total} itens aprovados (${((aprovadosFinal/total)*100).toFixed(0)}%)</span>
                     </div>
                 `;
 
@@ -1302,12 +1321,8 @@
                         ${tabelaSubitens}
                         ${resumoPontuacao}
                     </div>
-                    ${resposta.comentarioAnaliseFinal ? `
-                        <div class="dossie-bloco">
-                            <div class="bloco-title">Comentário Final</div>
-                            <div class="comment-container">${resposta.comentarioAnaliseFinal}</div>
-                        </div>
-                    ` : ''}
+                    ${comentarioAnalistaHTML}
+                    ${comentarioFinalHTML}
                 `;
             }
 
