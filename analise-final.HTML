@@ -1671,8 +1671,7 @@
                             statusValidacaoPosRecurso: decisaoFinal 
                         },
                         comentarioAnaliseFinal: document.getElementById('modal-analise-final-comment')?.value || '', 
-                        linksAnaliseFinal: linksAnaliseFinal,
-                        atende: (decisaoFinal === 'aprovado')
+                        linksAnaliseFinal: linksAnaliseFinal
                     };
 
                     console.log('Enviando análise final com payload:', JSON.stringify(payload));
@@ -2823,8 +2822,7 @@
                         analiseFinal: {
                             comentario: card.querySelector('.analise-final-comment')?.value || '',
                             statusValidacaoPosRecurso: decisaoFinal 
-                        },
-                        atende: (decisaoFinal === 'aprovado')
+                        }
                     };
 
                     console.log('📤 Salvando análise final aberta (REVISADO):', JSON.stringify(payload));
