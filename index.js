@@ -3161,6 +3161,16 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
 
         console.log('✅ Usuário encontrado. Secretaria ID:', user.secretariaId);
 
+        const requisitos = await prisma.requisito.findMany({
+            where: {
+                OR: [
+                    { secretariaId: null },
+                    { secretariaId: user.secretariaId }
+                ]
+            }
+        });
+        const pontuacaoTotalCalculada = requisitos.reduce((total, req) => total + (req.pontuacao || 0), 0);
+
         const avaliacaoCriada = await prisma.avaliacao.create({
             data: {
                 secretariaId: user.secretariaId, 
@@ -3169,6 +3179,8 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
                 emailResponsavel: emailResponsavel,
                 status: 'EM_ANALISE_SCGE',
                 ciclo: 2025,
+                pontuacaoAutoavaliacao: req.body.pontuacaoAutoavaliacao || 0,
+                pontuacaoTotal: pontuacaoTotalCalculada
             }
         });
 
