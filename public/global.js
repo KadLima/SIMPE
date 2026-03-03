@@ -8,10 +8,25 @@ function protectPage() {
         Swal.fire({
             icon: 'warning',
             title: 'Acesso Restrito',
-            text: 'Você precisa estar logado para acessar esta página.',
+            width: '500px',
+            html: `
+                <div style="text-align: left; padding: 10px;">
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px;">
+                        <p style="margin: 0; color: #856404;">
+                            <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                            Você precisa estar logado para acessar esta página.
+                        </p>
+                    </div>
+                </div>
+            `,
             confirmButtonText: 'Fazer Login',
-            confirmButtonColor: '#002776',
-            allowOutsideClick: false
+            confirmButtonColor: '#27ae60',
+            allowOutsideClick: false,
+            customClass: {
+                popup: 'swal-custom-popup',
+                title: 'swal-custom-title',
+                confirmButton: 'swal-custom-confirm'
+            }
         }).then(() => {
             window.location.href = '/login';
         });
@@ -92,14 +107,57 @@ async function setupDynamicLinks() {
                 event.preventDefault();
                 Swal.fire({
                     icon: 'question',
-                    iconColor: '#002776', 
+                    iconColor: 'var(--azul-gov-principal)',
                     title: 'Confirmar Saída',
-                    text: 'Você tem certeza que deseja encerrar a sessão?',
+                    width: '500px',
+                    html: `
+                        <div style="text-align: left; padding: 10px;">
+                            <div style="background: #e8f4fd; border-left: 4px solid #002776; padding: 15px; border-radius: 8px;">
+                                <p style="margin: 0; color: #2c3e50;">
+                                    <i class="fas fa-info-circle" style="color: #002776; margin-right: 8px;"></i>
+                                    Você tem certeza que deseja encerrar a sessão?
+                                </p>
+                            </div>
+                        </div>
+                    `,
                     showCancelButton: true,
                     confirmButtonText: 'Sim, Sair',
                     cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#dc3545', 
-                    cancelButtonColor: '#6c757d'
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#7f8c8d',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm',
+                        cancelButton: 'swal-custom-cancel'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        localStorage.removeItem('authToken');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Você saiu!',
+                            width: '500px',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 8px;">
+                                        <p style="margin: 0; color: #155724;">
+                                            <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                                            Sua sessão foi encerrada com sucesso.
+                                        </p>
+                                    </div>
+                                </div>
+                            `,
+                            timer: 2000,
+                            showConfirmButton: false,
+                            customClass: {
+                                popup: 'swal-custom-popup',
+                                title: 'swal-custom-title'
+                            }
+                        });
+                        setTimeout(() => { window.location.href = '/'; }, 2000);
+                    }
                 }).then((result) => {
                     if (result.isConfirmed) {
                         localStorage.removeItem('authToken');
