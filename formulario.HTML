@@ -739,6 +739,45 @@
                 }
             });
 
+            // Função para atualizar a pontuação do requisito 31 em tempo real
+            function atualizarPontuacaoRequisito31(card) {
+                const subitens = card.querySelectorAll('.subitem-card');
+                let aprovados = 0;
+                
+                subitens.forEach(subitem => {
+                    const btnSim = subitem.querySelector('.subitem-sim');
+                    if (btnSim && btnSim.classList.contains('active')) {
+                        aprovados++;
+                    }
+                });
+                
+                const total = subitens.length; // 11
+                let pontuacaoPercentual = 0;
+                
+                if (aprovados >= 10) pontuacaoPercentual = 100;
+                else if (aprovados >= 7) pontuacaoPercentual = 70;
+                else if (aprovados >= 4) pontuacaoPercentual = 50;
+                else if (aprovados >= 1) pontuacaoPercentual = 30;
+                
+                const badge = card.querySelector('.pontuacao-badge');
+                if (badge) {
+                    badge.textContent = `Pontuação: ${pontuacaoPercentual}% (${aprovados}/${total} links)`;
+                    
+                    // Mudar cor do badge baseado na pontuação
+                    if (pontuacaoPercentual === 100) {
+                        badge.style.background = 'var(--verde-sucesso)';
+                    } else if (pontuacaoPercentual >= 70) {
+                        badge.style.background = '#17a2b8'; // azul
+                    } else if (pontuacaoPercentual >= 50) {
+                        badge.style.background = '#ffc107'; // amarelo
+                        badge.style.color = '#333';
+                    } else {
+                        badge.style.background = 'var(--azul-gov-claro)'; // azul padrão
+                        badge.style.color = 'white';
+                    }
+                }
+            }
+
             requisitosContainer.addEventListener('click', (event) => {
                 const target = event.target;
                 const requisitoCard = target.closest('.requisito-card');
@@ -1047,6 +1086,82 @@
                         if (wrapper) wrapper.classList.remove('show');
                     }
                 });
+
+                if (rascunho.subitens) {
+                    Object.keys(rascunho.subitens).forEach(requisitoId => {
+                        const card = document.querySelector(`.requisito-card[data-requisito-id="${requisitoId}"][data-tipo="composto"]`);
+                        if (!card) return;
+                        
+                        const subitensRascunho = rascunho.subitens[requisitoId];
+                        
+                        card.querySelectorAll('.subitem-card').forEach((subitemCard, index) => {
+                            const dadosSub = subitensRascunho[index];
+                            if (!dadosSub) return;
+                            
+                            const btnSim = subitemCard.querySelector('.subitem-sim');
+                            const btnNao = subitemCard.querySelector('.subitem-nao');
+                            const wrapper = document.getElementById(`subitem-evidence-${requisitoId}-${index}`);
+                            
+                            if (btnSim && btnNao) {
+                                btnSim.classList.remove('active');
+                                btnNao.classList.remove('active');
+                                
+                                btnSim.style.backgroundColor = '';
+                                btnSim.style.color = '';
+                                btnSim.style.borderColor = '';
+                                btnNao.style.backgroundColor = '';
+                                btnNao.style.color = '';
+                                btnNao.style.borderColor = '';
+                                
+                                if (dadosSub.atende) {
+                                    btnSim.classList.add('active');
+                                    btnSim.style.backgroundColor = 'var(--verde-sucesso)';
+                                    btnSim.style.color = 'white';
+                                    btnSim.style.borderColor = 'var(--verde-sucesso)';
+                                    if (wrapper) wrapper.classList.add('show');
+                                } else {
+                                    btnNao.classList.add('active');
+                                    btnNao.style.backgroundColor = 'var(--vermelho-erro)';
+                                    btnNao.style.color = 'white';
+                                    btnNao.style.borderColor = 'var(--vermelho-erro)';
+                                    if (wrapper) wrapper.classList.remove('show');
+                                }
+                            }
+                            
+                            // Restaurar evidências
+                            const evidenceList = document.getElementById(`subitem-evidence-list-${requisitoId}-${index}`);
+                            if (evidenceList) {
+                                evidenceList.innerHTML = '';
+                                
+                                // Adicionar linkComprovante se existir
+                                if (dadosSub.linkComprovante) {
+                                    const newItem = document.createElement('li');
+                                    newItem.className = 'evidence-item';
+                                    newItem.dataset.link = dadosSub.linkComprovante;
+                                    newItem.innerHTML = `<a href="${dadosSub.linkComprovante}" target="_blank">${dadosSub.linkComprovante}</a><button class="remove-evidence-btn">&times;</button>`;
+                                    evidenceList.appendChild(newItem);
+                                }
+                                
+                                // Adicionar outras evidências se existirem (caso o formato mude no futuro)
+                                if (dadosSub.evidencias && Array.isArray(dadosSub.evidencias)) {
+                                    dadosSub.evidencias.forEach(ev => {
+                                        const url = typeof ev === 'string' ? ev : ev.url;
+                                        if (url && url !== dadosSub.linkComprovante) {
+                                            const newItem = document.createElement('li');
+                                            newItem.className = 'evidence-item';
+                                            newItem.dataset.link = url;
+                                            newItem.innerHTML = `<a href="${url}" target="_blank">${url}</a><button class="remove-evidence-btn">&times;</button>`;
+                                            evidenceList.appendChild(newItem);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                        
+                        atualizarPontuacaoRequisito31(card);
+                    });
+                }
+
                 console.log(`Rascunho aplicado aos requisitos.`);
                 adicionarListenersRemoverEvidencia(); 
             }
@@ -1537,6 +1652,8 @@
                         if (!rascunho.subitens) rascunho.subitens = {};
                         rascunho.subitens[requisitoId] = subitens;
                     }
+
+                    atualizarPontuacaoRequisito31(card);
                 });
 
                 if (hasData) {
@@ -1655,9 +1772,6 @@
                                         <ul class="evidence-list" id="evidence-list-${req.id}"></ul> 
                                         <div class="add-evidence-buttons">
                                             <button class="btn-add-evidence add-link-btn" data-requisito-id="${req.id}">+ Adicionar Link</button>
-                                             ${req.linkFixo && !req.linkFixo.startsWith('KEYWORD:') ?
-                                                `<button class="btn-add-evidence add-fixo-btn" data-requisito-id="${req.id}" data-link-fixo="${req.linkFixo}">+ Adicionar Link Fixo (${req.linkFixo.substring(0,20)}...)</button>` : ''
-                                             }
                                         </div>
                                     </div>
                                 </div>
@@ -1700,9 +1814,19 @@
                             
                             btnNao.style.backgroundColor = '';
                             btnNao.style.color = '';
+                            btnNao.style.borderColor = '';
+                            
+                            btnSim.style.backgroundColor = '';
+                            btnSim.style.color = '';
+                            btnSim.style.borderColor = '';
                             
                             const wrapper = document.getElementById(`subitem-evidence-${requisitoId}-${subitemIndex}`);
                             if (wrapper) wrapper.classList.add('show');
+
+                            const card = this.closest('.requisito-card[data-tipo="composto"]');
+                            if (card) {
+                                atualizarPontuacaoRequisito31(card);
+                            }
                             
                             salvarRascunho();
                         });
@@ -1711,12 +1835,21 @@
                             btnNao.classList.add('active');
                             btnSim.classList.remove('active');
                             
+                            btnSim.style.backgroundColor = '';
+                            btnSim.style.color = '';
+                            btnSim.style.borderColor = '';
+                            
                             btnNao.style.backgroundColor = 'var(--vermelho-erro)';
                             btnNao.style.color = 'white';
                             btnNao.style.borderColor = 'var(--vermelho-erro)';
                             
                             const wrapper = document.getElementById(`subitem-evidence-${requisitoId}-${subitemIndex}`);
                             if (wrapper) wrapper.classList.remove('show');
+
+                            const card = this.closest('.requisito-card[data-tipo="composto"]');
+                            if (card) {
+                                atualizarPontuacaoRequisito31(card);
+                            }
                             
                             salvarRascunho();
                         });
@@ -1884,7 +2017,7 @@
                     <div class="requisito-header">
                     <span>${req.texto}</span>
                     <span class="pontuacao-badge" style="background: var(--azul-gov-claro); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em;">
-                        Pontuação: ${pontuacaoPercentual}% (${linksEncontradosCount}/13 links)
+                        Pontuação: ${pontuacaoPercentual}% (${linksEncontradosCount}/11 links)
                     </span>
                     </div>
                     <div class="requisito-body">
