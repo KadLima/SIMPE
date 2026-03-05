@@ -874,7 +874,7 @@
                     const pBase = resposta.requisito?.pontuacao || 0;
                     pontuacaoTotal += pBase;
 
-                    // Requisito composto (R31)
+                    // Requisito composto (R33)
                     if (resposta.subRespostas && resposta.subRespostas.length > 0) {
                         const subs = resposta.subRespostas;
 
@@ -932,8 +932,8 @@
                 }
             }
 
-            function atualizarInterfaceCardR31(respostaId) {
-                console.log('🔄 Atualizando interface do card R31:', respostaId);
+            function atualizarInterfaceCardR33(respostaId) {
+                console.log('🔄 Atualizando interface do card R33:', respostaId);
                 
                 const card = document.querySelector(`.resposta-card[data-resposta-id="${respostaId}"]`);
                 if (!card) {
@@ -2117,16 +2117,15 @@
                                         avaliacaoCompleta.respostas[respostaIndex].subRespostas[subIndex].statusValidacaoPosRecurso = status;
                                         console.log('📊 Dados locais atualizados');
                                         
-                                        // 🔥 ATUALIZAÇÕES CRÍTICAS
                                         // 1. Atualiza as pontuações no topo
                                         exibirQuatroNotas();
                                         
-                                        // 2. Atualiza o badge do card do requisito 31
+                                        // 2. Atualiza o badge do card do requisito 33
                                         if (respostaId) {
-                                            atualizarInterfaceCardR31(parseInt(respostaId));
+                                            atualizarInterfaceCardR33(parseInt(respostaId));
                                         } else {
                                             const rId = avaliacaoCompleta.respostas[respostaIndex].id;
-                                            atualizarInterfaceCardR31(rId);
+                                            atualizarInterfaceCardR33(rId);
                                         }
                                         
                                         Swal.fire({

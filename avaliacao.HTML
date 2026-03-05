@@ -1214,10 +1214,10 @@
 
                 recalcularEExibirPontuacoes();
 
-                console.log('=== VERIFICANDO REQUISITO 31 ===');
+                console.log('=== VERIFICANDO REQUISITO 33 ===');
                 avaliacaoCompleta.respostas.forEach((r, i) => {
-                    if (r.requisito?.texto.includes('REQUISITO 31')) {
-                        console.log('REQUISITO 31 ENCONTRADO!');
+                    if (r.requisito?.texto.includes('REQUISITO 33')) {
+                        console.log('REQUISITO 33 ENCONTRADO!');
                         console.log('subRespostas:', r.subRespostas);
                         console.log('Tem subRespostas?', r.subRespostas ? 'SIM' : 'NÃO');
                         console.log('Quantidade:', r.subRespostas?.length);
@@ -1383,7 +1383,7 @@
                             }
                             
                             if (!todosSubitensPreenchidos) {
-                                mensagem += `<p><strong>Requisito 31 - Subitens pendentes:</strong></p>`;
+                                mensagem += `<p><strong>Requisito 33 - Subitens pendentes:</strong></p>`;
                                 mensagem += `<ul style="text-align: left; list-style-position: inside;">`;
                                 subitensPendentes.forEach(item => {
                                     mensagem += `<li>${item.quantidade} subitem(ns) aguardando validação</li>`;
@@ -1432,7 +1432,7 @@
                             }
                             
                             if (subitensPendentes.length > 0) {
-                                mensagem += `<p><strong>Subitens pendentes no requisito 31:</strong> ${subitensPendentes[0].quantidade} subitem(ns) aguardando validação</p>`;
+                                mensagem += `<p><strong>Subitens pendentes no requisito 33:</strong> ${subitensPendentes[0].quantidade} subitem(ns) aguardando validação</p>`;
                             }
                             
                             Swal.fire({

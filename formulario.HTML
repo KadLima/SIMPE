@@ -739,8 +739,8 @@
                 }
             });
 
-            // Função para atualizar a pontuação do requisito 31 em tempo real
-            function atualizarPontuacaoRequisito31(card) {
+            // Função para atualizar a pontuação do requisito 33 em tempo real
+            function atualizarPontuacaoRequisito33(card) {
                 const subitens = card.querySelectorAll('.subitem-card');
                 let aprovados = 0;
                 
@@ -1158,7 +1158,7 @@
                             }
                         });
                         
-                        atualizarPontuacaoRequisito31(card);
+                        atualizarPontuacaoRequisito33(card);
                     });
                 }
 
@@ -1653,7 +1653,7 @@
                         rascunho.subitens[requisitoId] = subitens;
                     }
 
-                    atualizarPontuacaoRequisito31(card);
+                    atualizarPontuacaoRequisito33(card);
                 });
 
                 if (hasData) {
@@ -1726,7 +1726,7 @@
                     requisitosContainer.innerHTML = '';
                     
                     todosOsRequisitos.forEach((req, index) => {
-                        if (req.texto.includes('REQUISITO 31 - Disponibiliza os links')) {
+                        if (req.texto.includes('REQUISITO 33 - Disponibiliza os links')) {
                             const cardComposto = renderRequisitoComposto(req, linksParaRenderizar);
                             requisitosContainer.appendChild(cardComposto);
                         } else {
@@ -1825,7 +1825,7 @@
 
                             const card = this.closest('.requisito-card[data-tipo="composto"]');
                             if (card) {
-                                atualizarPontuacaoRequisito31(card);
+                                atualizarPontuacaoRequisito33(card);
                             }
                             
                             salvarRascunho();
@@ -1848,7 +1848,7 @@
 
                             const card = this.closest('.requisito-card[data-tipo="composto"]');
                             if (card) {
-                                atualizarPontuacaoRequisito31(card);
+                                atualizarPontuacaoRequisito33(card);
                             }
                             
                             salvarRascunho();
@@ -1982,7 +1982,7 @@
                 }
             }
 
-            // Função para renderizar o requisito composto R31
+            // Função para renderizar o requisito composto R33
             function renderRequisitoComposto(req, linksEncontrados) {
                 const subItens = [
                     { texto: "Ouvidoria", linkFixo: 'https://transparencia.pe.gov.br/participacao-cidada-pe/ouvidoria/' },

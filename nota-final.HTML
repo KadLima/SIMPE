@@ -1956,7 +1956,7 @@
                     const pontuacaoBase = resposta.requisito?.pontuacao || 0;
                     pontuacaoTotal += pontuacaoBase;
 
-                    // Requisito Composto (R31)
+                    // Requisito Composto (R33)
                     if (resposta.subRespostas && resposta.subRespostas.length > 0) {
                         const subs = resposta.subRespostas;
                         
@@ -1977,7 +1977,7 @@
                         ).length;
                         pontuacaoFinalCalc += calcularPontuacaoPorFaixa(finalAprovados, pontuacaoBase);
                         
-                        console.log(`[R31] Auto:${autoAprovados}/13, 1ª:${primeiraAprovados}/13, Final:${finalAprovados}/13, Base:${pontuacaoBase}`);
+                        console.log(`[R33] Auto:${autoAprovados}/13, 1ª:${primeiraAprovados}/13, Final:${finalAprovados}/13, Base:${pontuacaoBase}`);
                     }else {
                         if (resposta.atendeOriginal === true) {
                             pontuacaoOriginal += pontuacaoBase;
