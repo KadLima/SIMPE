@@ -1776,16 +1776,13 @@ app.post('/api/avaliacoes/:id/devolver', authenticateToken, authenticateAdminOrG
             }
         }
         
-        // 🔥 CORREÇÃO CRÍTICA: Criar data para 23:59:59 em Brasília
         const ano = data.getFullYear();
         const mes = data.getMonth();
         const dia = data.getDate();
         
-        // Criar data com 23:59:59 em Brasília (já considera o fuso)
         const dataBrasilia = new Date(ano, mes, dia, 23, 59, 59, 999);
         
-        // Converter para UTC subtraindo 3 horas
-        const offset = 3; // Brasília é UTC-3, então UTC = Brasília + 3
+        const offset = 3; 
         const dataUTC = new Date(dataBrasilia.getTime() + (offset * 60 * 60 * 1000));
         
         console.log(`📅 Data em Brasília: ${dataBrasilia.toLocaleString('pt-BR')}`);
