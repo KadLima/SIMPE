@@ -3,6 +3,7 @@ node_modules/
 *.log
 pre_validador.log
 scanner_completo.log
+scanner_unificado.log
 
 .env
 
