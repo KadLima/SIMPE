@@ -28,6 +28,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  tls: {
+    rejectUnauthorized: false 
+  }
 });
 
 cron.schedule('* * * * *', () => {
@@ -324,7 +327,7 @@ app.post('/api/recuperar-senha', async (req, res) => {
 
     try {
       await transporter.sendMail({
-        from: process.env.SMTP_USER,
+        from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
         to: email,
         subject: 'Recuperação de Senha - Sistema de Monitoramento da Transparência',
         html: `
@@ -562,92 +565,92 @@ app.post('/api/primeiro-acesso', async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: 'Primeiro Acesso - Sistema de Monitoramento da Transparência',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                body { 
-                    font-family: Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #333; 
-                    max-width: 600px; 
-                    margin: 0 auto;
-                    background: #f5f5f5;
-                }
-                .email-container {
-                    background: white;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                .header-img {
-                    width: 100%;
-                    max-width: 600px;
-                    height: auto;
-                    display: block;
-                    object-fit: contain;
-                }
-                .content { 
-                    padding: 30px; 
-                }
-                .footer { 
-                    background: #e9ecef; 
-                    padding: 20px; 
-                    text-align: center; 
-                    font-size: 12px; 
-                    color: #666;
-                }
-                .codigo-verificacao {
-                    background: #f8f9fa; 
-                    padding: 25px; 
-                    text-align: center; 
-                    font-size: 32px; 
-                    font-weight: bold; 
-                    letter-spacing: 8px; 
-                    margin: 25px 0; 
-                    border: 2px dashed #dee2e6;
-                    border-radius: 8px;
-                    font-family: 'Courier New', monospace;
-                }
-                .alerta {
-                    background: #e8f5e8;
-                    border: 1px solid #c3e6cb;
-                    border-radius: 6px;
-                    padding: 15px;
-                    margin: 15px 0;
-                    color: #155724;
-                }
-                .footer-images {
-                    display: flex;
-                    justify-content: center;
-                    gap: 20px;
-                    margin: 15px 0;
-                    align-items: center;
-                }
-                .footer-img {
-                    max-width: 150px;
-                    height: 60px;
-                    object-fit: contain;
-                }
-                .footer-img[alt="SIMPE"] {
-                    max-width: 200px;
-                    height: 80px;
-                }
-                h3 { color: #002776; margin-top: 0; }
-                .destaque {
-                    background: #e8f4fd;
-                    border: 1px solid #b3d9ff;
-                    border-radius: 6px;
-                    padding: 15px;
-                    margin: 15px 0;
-                }
-            </style>
-        </head>
+        from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'Primeiro Acesso - Sistema de Monitoramento da Transparência',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        line-height: 1.6; 
+                        color: #333; 
+                        max-width: 600px; 
+                        margin: 0 auto;
+                        background: #f5f5f5;
+                    }
+                    .email-container {
+                        background: white;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }
+                    .header-img {
+                        width: 100%;
+                        max-width: 600px;
+                        height: auto;
+                        display: block;
+                        object-fit: contain;
+                    }
+                    .content { 
+                        padding: 30px; 
+                    }
+                    .footer { 
+                        background: #e9ecef; 
+                        padding: 20px; 
+                        text-align: center; 
+                        font-size: 12px; 
+                        color: #666;
+                    }
+                    .codigo-verificacao {
+                        background: #f8f9fa; 
+                        padding: 25px; 
+                        text-align: center; 
+                        font-size: 32px; 
+                        font-weight: bold; 
+                        letter-spacing: 8px; 
+                        margin: 25px 0; 
+                        border: 2px dashed #dee2e6;
+                        border-radius: 8px;
+                        font-family: 'Courier New', monospace;
+                    }
+                    .alerta {
+                        background: #e8f5e8;
+                        border: 1px solid #c3e6cb;
+                        border-radius: 6px;
+                        padding: 15px;
+                        margin: 15px 0;
+                        color: #155724;
+                    }
+                    .footer-images {
+                        display: flex;
+                        justify-content: center;
+                        gap: 20px;
+                        margin: 15px 0;
+                        align-items: center;
+                    }
+                    .footer-img {
+                        max-width: 150px;
+                        height: 60px;
+                        object-fit: contain;
+                    }
+                    .footer-img[alt="SIMPE"] {
+                        max-width: 200px;
+                        height: 80px;
+                    }
+                    h3 { color: #002776; margin-top: 0; }
+                    .destaque {
+                        background: #e8f4fd;
+                        border: 1px solid #b3d9ff;
+                        border-radius: 6px;
+                        padding: 15px;
+                        margin: 15px 0;
+                    }
+                </style>
+            </head>
         <body>
             <div class="email-container">
                 <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
@@ -2085,7 +2088,7 @@ app.post('/api/enviar-relatorio-email', upload.single('relatorioPdf'), async (re
     }
 
     const mailOptions = {
-      from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_USER}>`,
+      from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
       to: email,
       subject: `Relatório Final de Avaliação - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
       html: `
@@ -2235,7 +2238,7 @@ app.post('/api/enviar-email-confirmacao', authenticateToken, async (req, res) =>
         }
 
         const mailOptions = {
-            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_USER}>`,
+            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
             to: email,
             subject: `Confirmação de Recebimento - Avaliação de Transparência Ativa`,
             html: `
@@ -2408,7 +2411,7 @@ app.post('/api/notificar-controladoria', authenticateToken, async (req, res) => 
         }
 
         const mailOptions = {
-            from: `"Sistema de Monitoramento - PE" <${process.env.SMTP_USER}>`,
+            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
             to: ['kadsonlima91@gmail.com',/*'transparencia@scge.pe.gov.br'*/],
             subject: `Nova Autoavaliação Recebida - ${nomeSecretaria}`,
             html: `
@@ -2612,7 +2615,7 @@ app.post('/api/avaliacoes/:id/notificar-recurso', authenticateToken, async (req,
         ).length;
 
         const mailOptions = {
-            from: `"Sistema de Monitoramento - PE" <${process.env.SMTP_USER}>`,
+            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
             to: ['kadsonlima91@gmail.com' , /*'transparencia@scge.pe.gov.br'*/],
             subject: `Recurso Recebido - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
             html: `
@@ -2878,7 +2881,7 @@ app.post('/api/avaliacoes/:id/notificar-devolucao-recurso', authenticateToken, a
         });
 
         const mailOptions = {
-            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_USER}>`,
+            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
             to: avaliacao.emailResponsavel, 
             subject: `Avaliação Devolvida para Recurso - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
             html: `
@@ -3915,10 +3918,10 @@ async function enviarEmailRecursoExpirado(avaliacao) {
     }
 
     const mailOptions = {
-      from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_USER}>`,
-      to: avaliacao.emailResponsavel,
-      subject: `Prazo de Recurso Expirado - ${avaliacao.secretaria.sigla}`,
-      html: `
+        from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        to: avaliacao.emailResponsavel,
+        subject: `Prazo de Recurso Expirado - ${avaliacao.secretaria.sigla}`,
+        html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -3994,215 +3997,214 @@ async function enviarEmailRecursoExpirado(avaliacao) {
 
 // FUNÇÃO PARA ENVIAR EMAIL DE NOTA FINAL PUBLICADA
 async function enviarEmailNotaFinal(avaliacao) {
-  if (!avaliacao || !avaliacao.emailResponsavel) {
-    throw new Error('Dados inválidos para enviar email de nota final.');
-  }
-
-  const pontuacaoFinal = avaliacao.pontuacaoFinal || 0;
-  const pontuacaoTotal = avaliacao.pontuacaoTotal || 180; 
-  const percentual = (pontuacaoFinal / pontuacaoTotal) * 100;
-  let mensagemDestaque = '';
-
-  if (percentual === 100) {
-    mensagemDestaque = 'EXCELÊNCIA TOTAL!';
-  } else if (percentual >= 90 && percentual < 100) {
-    mensagemDestaque = 'ÓTIMO DESEMPENHO!';
-  } else if (percentual >= 70 && percentual < 90) {
-    mensagemDestaque = 'DESEMPENHO SATISFATÓRIO.';
-  } else if (percentual > 0 && percentual < 70) {
-    mensagemDestaque = 'OPORTUNIDADE DE MELHORIA.';
-  } else {
-    mensagemDestaque = 'DESEMPENHO CRÍTICO.';
-  }
-
-  const mailOptions = {
-    from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_USER}>`,
-    to: avaliacao.emailResponsavel,
-    subject: `Nota Final Publicada - Avaliação de Transparência - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
-    html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                body { 
-                    font-family: Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #333; 
-                    max-width: 600px; 
-                    margin: 0 auto;
-                    background: #f5f5f5;
-                }
-                .email-container {
-                    background: white;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                .header-img {
-                    width: 100%;
-                    max-width: 600px;
-                    height: auto;
-                    display: block;
-                    object-fit: contain;
-                }
-                .content { 
-                    padding: 30px; 
-                }
-                .footer { 
-                    background: #e9ecef; 
-                    padding: 20px; 
-                    text-align: center; 
-                    font-size: 12px; 
-                    color: #666;
-                }
-                .resultado-final { 
-                    background: #e8f5e8; 
-                    border: 1px solid #c3e6cb;
-                    border-left: 4px solid #28a745;
-                    border-radius: 8px;
-                    padding: 20px;
-                    margin: 20px 0;
-                }
-                .badge { 
-                    display: inline-block; 
-                    padding: 8px 16px; 
-                    border-radius: 20px; 
-                    color: white; 
-                    font-weight: bold; 
-                    font-size: 1.1em; 
-                }
-                .aprovado { background: #28a745; }
-                .reprovado { background: #dc3545; }
-                .btn { 
-                    background: #002776; 
-                    color: #ffffff !important;  
-                    padding: 12px 25px; 
-                    text-decoration: none; 
-                    border-radius: 6px; 
-                    font-weight: bold;
-                    display: inline-block;
-                    margin: 10px 0;
-                }
-                .footer-images {
-                    display: flex;
-                    justify-content: center;
-                    gap: 20px;
-                    margin: 15px 0;
-                    align-items: center;
-                }
-                .footer-img {
-                    max-width: 150px;
-                    height: 60px;
-                    object-fit: contain;
-                }
-                .footer-img[alt="SIMPE"] {
-                    max-width: 200px;
-                    height: 80px;
-                }
-                h3 { color: #002776; margin-top: 0; }
-                h4 { color: #333; margin-top: 0; }
-            </style>
-        </head>
-        <body>
-            <div class="email-container">
-                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
-                     alt="Controladoria Geral do Estado" 
-                     class="header-img">
-                
-                <div class="content">
-                    <h3>Nota Final Publicada</h3>
-                    
-                    <p>Prezado(a) ${avaliacao.nomeResponsavel || 'Responsável'},</p>
-                    <p>O processo de avaliação da transparência ativa (Ciclo 2025) foi concluído e sua nota final está disponível para consulta.</p>
-                    
-                    <div class="resultado-final">
-                        <h4>Resultado Final da Avaliação</h4>
-                        <p style="margin: 8px 0;"><strong>Órgão:</strong> ${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})</p>
-                        <p style="margin: 8px 0;">
-                            <strong>Nota Final:</strong> 
-                            <span class="badge ${pontuacaoFinal >= (pontuacaoTotal * 0.7) ? 'aprovado' : 'reprovado'}">
-                                ${pontuacaoFinal} / ${pontuacaoTotal}
-                            </span>
-                        </p>
-                        <p style="margin: 8px 0;"><strong>Percentual:</strong> ${percentual.toFixed(1)}%</p>
-                        <p style="margin: 8px 0;"><strong>Desempenho:</strong> ${mensagemDestaque}</p>
-                    </div>
-                    
-                    <p>Você pode acessar o relatório detalhado completo, com os comentários da análise final e a evolução da sua pontuação, clicando no botão abaixo:</p>
-                    
-                    <p style="margin-top: 25px; text-align: center;">
-                        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/nota-final/${avaliacao.id}" class="btn" style="color: #ffffff !important;">
-                            Ver Relatório Final Detalhado
-                        </a>
-                    </p>
-                    
-                    <p style="margin-top: 15px;">
-                        Atenciosamente,<br>
-                        <strong>Equipe da Coordenação de Transparência Ativa (CTA)</strong>
-                    </p>
-                </div>
-                
-                <div class="footer">
-                    <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
-                    <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
-                    R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
-                    
-                    <div class="footer-images">
-                        <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
-                             alt="SIMPE" 
-                             class="footer-img">
-                        <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
-                             alt="Governo de Pernambuco" 
-                             class="footer-img">
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-    `
-  };
-
-  await transporter.sendMail(mailOptions);
-}
-
-// FUNÇÃO AUXILIAR: Recalcular status da resposta pai baseado nos subitens
-async function recalcularStatusRespostaPai(respostaId, isPosRecurso = false) {
-  try {
-    const subRespostas = await prisma.subResposta.findMany({
-      where: { respostaId },
-      include: { subRequisito: true }
-    });
-    
-    if (subRespostas.length === 0) return;
-    
-    const campoStatus = isPosRecurso ? 'statusValidacaoPosRecurso' : 'statusValidacao';
-    
-    const aprovados = subRespostas.filter(s => s[campoStatus] === 'aprovado').length;
-    const total = subRespostas.length;
-    
-    let statusGeral = 'pendente';
-    if (aprovados === total) {
-      statusGeral = 'aprovado';
-    } else if (aprovados === 0) {
-      statusGeral = 'rejeitado';
-    } else {
-      statusGeral = 'parcial'; 
+    if (!avaliacao || !avaliacao.emailResponsavel) {
+        throw new Error('Dados inválidos para enviar email de nota final.');
     }
-    
-    await prisma.resposta.update({
-      where: { id: respostaId },
-      data: {
-        [isPosRecurso ? 'statusValidacaoPosRecurso' : 'statusValidacao']: statusGeral
-      }
-    });
-    
-    console.log(`📊 Resposta ${respostaId} recalculada: ${aprovados}/${total} aprovados → status: ${statusGeral}`);
-    
-  } catch (error) {
-    console.error('❌ Erro ao recalcular status da resposta pai:', error);
-  }
+
+    const pontuacaoFinal = avaliacao.pontuacaoFinal || 0;
+    const pontuacaoTotal = avaliacao.pontuacaoTotal || 180; 
+    const percentual = (pontuacaoFinal / pontuacaoTotal) * 100;
+    let mensagemDestaque = '';
+
+    if (percentual === 100) {
+        mensagemDestaque = 'EXCELÊNCIA TOTAL!';
+    } else if (percentual >= 90 && percentual < 100) {
+        mensagemDestaque = 'ÓTIMO DESEMPENHO!';
+    } else if (percentual >= 70 && percentual < 90) {
+        mensagemDestaque = 'DESEMPENHO SATISFATÓRIO.';
+    } else if (percentual > 0 && percentual < 70) {
+        mensagemDestaque = 'OPORTUNIDADE DE MELHORIA.';
+    } else {
+        mensagemDestaque = 'DESEMPENHO CRÍTICO.';
+    }
+
+    const mailOptions = {
+        from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+        to: avaliacao.emailResponsavel,
+        subject: `Nota Final Publicada - Avaliação de Transparência - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        line-height: 1.6; 
+                        color: #333; 
+                        max-width: 600px; 
+                        margin: 0 auto;
+                        background: #f5f5f5;
+                    }
+                    .email-container {
+                        background: white;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }
+                    .header-img {
+                        width: 100%;
+                        max-width: 600px;
+                        height: auto;
+                        display: block;
+                        object-fit: contain;
+                    }
+                    .content { 
+                        padding: 30px; 
+                    }
+                    .footer { 
+                        background: #e9ecef; 
+                        padding: 20px; 
+                        text-align: center; 
+                        font-size: 12px; 
+                        color: #666;
+                    }
+                    .resultado-final { 
+                        background: #e8f5e8; 
+                        border: 1px solid #c3e6cb;
+                        border-left: 4px solid #28a745;
+                        border-radius: 8px;
+                        padding: 20px;
+                        margin: 20px 0;
+                    }
+                    .badge { 
+                        display: inline-block; 
+                        padding: 8px 16px; 
+                        border-radius: 20px; 
+                        color: white; 
+                        font-weight: bold; 
+                        font-size: 1.1em; 
+                    }
+                    .aprovado { background: #28a745; }
+                    .reprovado { background: #dc3545; }
+                    .btn { 
+                        background: #002776; 
+                        color: #ffffff !important;  
+                        padding: 12px 25px; 
+                        text-decoration: none; 
+                        border-radius: 6px; 
+                        font-weight: bold;
+                        display: inline-block;
+                        margin: 10px 0;
+                    }
+                    .footer-images {
+                        display: flex;
+                        justify-content: center;
+                        gap: 20px;
+                        margin: 15px 0;
+                        align-items: center;
+                    }
+                    .footer-img {
+                        max-width: 150px;
+                        height: 60px;
+                        object-fit: contain;
+                    }
+                    .footer-img[alt="SIMPE"] {
+                        max-width: 200px;
+                        height: 80px;
+                    }
+                    h3 { color: #002776; margin-top: 0; }
+                    h4 { color: #333; margin-top: 0; }
+                </style>
+            </head>
+            <body>
+                <div class="email-container">
+                    <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
+                        alt="Controladoria Geral do Estado" 
+                        class="header-img">
+                    
+                    <div class="content">
+                        <h3>Nota Final Publicada</h3>
+                        
+                        <p>Prezado(a) ${avaliacao.nomeResponsavel || 'Responsável'},</p>
+                        <p>O processo de avaliação da transparência ativa (Ciclo 2025) foi concluído e sua nota final está disponível para consulta.</p>
+                        
+                        <div class="resultado-final">
+                            <h4>Resultado Final da Avaliação</h4>
+                            <p style="margin: 8px 0;"><strong>Órgão:</strong> ${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})</p>
+                            <p style="margin: 8px 0;">
+                                <strong>Nota Final:</strong> 
+                                <span class="badge ${pontuacaoFinal >= (pontuacaoTotal * 0.7) ? 'aprovado' : 'reprovado'}">
+                                    ${pontuacaoFinal} / ${pontuacaoTotal}
+                                </span>
+                            </p>
+                            <p style="margin: 8px 0;"><strong>Percentual:</strong> ${percentual.toFixed(1)}%</p>
+                            <p style="margin: 8px 0;"><strong>Desempenho:</strong> ${mensagemDestaque}</p>
+                        </div>
+                        
+                        <p>Você pode acessar o relatório detalhado completo, com os comentários da análise final e a evolução da sua pontuação, clicando no botão abaixo:</p>
+                        
+                        <p style="margin-top: 25px; text-align: center;">
+                            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/nota-final/${avaliacao.id}" class="btn" style="color: #ffffff !important;">
+                                Ver Relatório Final Detalhado
+                            </a>
+                        </p>
+                        
+                        <p style="margin-top: 15px;">
+                            Atenciosamente,<br>
+                            <strong>Equipe da Coordenação de Transparência Ativa (CTA)</strong>
+                        </p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
+                        <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
+                        R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
+                        
+                        <div class="footer-images">
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                                alt="SIMPE" 
+                                class="footer-img">
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
+                                alt="Governo de Pernambuco" 
+                                class="footer-img">
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    await transporter.sendMail(mailOptions);
 }
+
+async function recalcularStatusRespostaPai(respostaId, isPosRecurso = false) {
+    try {
+        const subRespostas = await prisma.subResposta.findMany({
+        where: { respostaId },
+        include: { subRequisito: true }
+        });
+        
+        if (subRespostas.length === 0) return;
+        
+        const campoStatus = isPosRecurso ? 'statusValidacaoPosRecurso' : 'statusValidacao';
+        
+        const aprovados = subRespostas.filter(s => s[campoStatus] === 'aprovado').length;
+        const total = subRespostas.length;
+        
+        let statusGeral = 'pendente';
+        if (aprovados === total) {
+        statusGeral = 'aprovado';
+        } else if (aprovados === 0) {
+        statusGeral = 'rejeitado';
+        } else {
+        statusGeral = 'parcial'; 
+        }
+        
+        await prisma.resposta.update({
+        where: { id: respostaId },
+        data: {
+            [isPosRecurso ? 'statusValidacaoPosRecurso' : 'statusValidacao']: statusGeral
+        }
+        });
+        
+        console.log(`📊 Resposta ${respostaId} recalculada: ${aprovados}/${total} aprovados → status: ${statusGeral}`);
+        
+    } catch (error) {
+        console.error('❌ Erro ao recalcular status da resposta pai:', error);
+    }
+} 
 
 app.post('/api/requisitos-extras', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
     const { texto, pontuacao, secretariaId, textoAjuda } = req.body;
