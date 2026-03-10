@@ -84,21 +84,21 @@ app.post('/api/login-pos-primeiro-acesso', async (req, res) => {
 });
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 15, 
-  message: {
-    error: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
+    windowMs: 15 * 60 * 1000, 
+    max: 15, 
+    message: {
+        error: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
 });
 
 const passwordRecoveryLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 3, 
-  message: {
-    error: 'Muitas tentativas de recuperação de senha. Tente novamente em 15 minutos.'
-  }
+    windowMs: 15 * 60 * 1000, 
+    max: 3, 
+    message: {
+        error: 'Muitas tentativas de recuperação de senha. Tente novamente em 15 minutos.'
+    }
 });
 
 const captchaStore = new Map();
@@ -153,78 +153,78 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/assets', express.static('public/assets'));
 
 function generateCaptcha() {
-  const text = crypto.randomBytes(3).toString('hex').toUpperCase();
-  const id = crypto.randomBytes(8).toString('hex');
-  captchaStore.set(id, text);
-  setTimeout(() => captchaStore.delete(id), 10 * 60 * 1000);
-  return { id, text };
+    const text = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const id = crypto.randomBytes(8).toString('hex');
+    captchaStore.set(id, text);
+    setTimeout(() => captchaStore.delete(id), 10 * 60 * 1000);
+    return { id, text };
 }
 
 function validateCaptcha(id, answer) {
-  const stored = captchaStore.get(id);
-  if (!stored) return false;
-  captchaStore.delete(id); 
-  return stored === answer.toUpperCase();
+    const stored = captchaStore.get(id);
+    if (!stored) return false;
+    captchaStore.delete(id); 
+    return stored === answer.toUpperCase();
 }
 
 // Validação de força da senha
 function isPasswordStrong(password) {
-  const minLength = 8;
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
   
-  return {
-    isValid: password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar,
-    requirements: {
-      minLength: password.length >= minLength,
-      hasUpperCase,
-      hasLowerCase,
-      hasNumbers,
-      hasSpecialChar
-    }
-  };
+    return {
+        isValid: password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar,
+        requirements: {
+        minLength: password.length >= minLength,
+        hasUpperCase,
+        hasLowerCase,
+        hasNumbers,
+        hasSpecialChar
+        }
+    };
 }
 
 // Geração de senha forte sugerida
 function generateStrongPassword() {
-  const length = 12;
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-  let password = "";
-  
-  password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[crypto.randomInt(26)];
-  password += "abcdefghijklmnopqrstuvwxyz"[crypto.randomInt(26)];
-  password += "0123456789"[crypto.randomInt(10)];
-  password += "!@#$%^&*"[crypto.randomInt(8)];
-  
-  for (let i = password.length; i < length; i++) {
-    password += charset[crypto.randomInt(charset.length)];
-  }
-  
-  return password.split('').sort(() => 0.5 - Math.random()).join('');
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
+    
+    password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[crypto.randomInt(26)];
+    password += "abcdefghijklmnopqrstuvwxyz"[crypto.randomInt(26)];
+    password += "0123456789"[crypto.randomInt(10)];
+    password += "!@#$%^&*"[crypto.randomInt(8)];
+    
+    for (let i = password.length; i < length; i++) {
+        password += charset[crypto.randomInt(charset.length)];
+    }
+    
+    return password.split('').sort(() => 0.5 - Math.random()).join('');
 }
 
 // ROTA PARA GERAR CAPTCHA
 app.get('/api/captcha', (req, res) => {
-  const captcha = generateCaptcha();
-  res.json({ 
-    id: captcha.id, 
-    text: captcha.text 
-  });
+    const captcha = generateCaptcha();
+    res.json({ 
+        id: captcha.id, 
+        text: captcha.text 
+    });
 });
 
 // ROTA PARA VERIFICAR FORÇA DA SENHA
 app.post('/api/check-password-strength', (req, res) => {
-  const { password } = req.body;
-  const strength = isPasswordStrong(password);
-  res.json(strength);
+    const { password } = req.body;
+    const strength = isPasswordStrong(password);
+    res.json(strength);
 });
 
 // ROTA PARA GERAR SENHA SUGERIDA
 app.get('/api/suggest-password', (req, res) => {
-  const suggestedPassword = generateStrongPassword();
-  res.json({ password: suggestedPassword });
+    const suggestedPassword = generateStrongPassword();
+    res.json({ password: suggestedPassword });
 });
 
 // --- ROTAS DE PÁGINAS ---
@@ -240,335 +240,97 @@ app.get("/avaliacao-usuario/:id", (req, res) => { res.sendFile(path.join(__dirna
 app.get("/analise-final/:id", (req, res) => { res.sendFile(path.join(__dirname, 'analise-final.html')); });
 
 app.post('/login', loginLimiter, async (req, res) => {
-  const { email, password, captchaId, captchaAnswer } = req.body;
+    const { email, password, captchaId, captchaAnswer } = req.body;
 
-  if (!email || !password || !captchaId || !captchaAnswer) {
-    return res.status(400).json({ error: 'E-mail, senha e CAPTCHA são obrigatórios.' });
-  }
-
-  if (!validateCaptcha(captchaId, captchaAnswer)) {
-    return res.status(400).json({ error: 'CAPTCHA inválido.' });
-  }
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { email: email },
-    });
-
-    if (!user || !bcrypt.compareSync(password, user.password)) {
-      return res.status(401).json({ error: 'Credenciais inválidas.' });
+    if (!email || !password || !captchaId || !captchaAnswer) {
+        return res.status(400).json({ error: 'E-mail, senha e CAPTCHA são obrigatórios.' });
     }
 
-    if (user.primeiroAcesso) {
-      return res.status(403).json({ 
-        error: 'Primeiro acesso requerido. Complete seu cadastro.',
-        primeiroAcesso: true,
-        email: user.email
-      });
+    if (!validateCaptcha(captchaId, captchaAnswer)) {
+        return res.status(400).json({ error: 'CAPTCHA inválido.' });
     }
 
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        userEmail: user.email, 
-        role: user.role, 
-        secretariaId: user.secretariaId,
-        primeiroAcesso: false
-      },
-      process.env.JWT_SECRET || 'SEGREDO_SUPER_SECRETO',
-      { expiresIn: '8h' }
-    );
+    try {
+        const user = await prisma.user.findUnique({
+        where: { email: email },
+        });
 
-    res.json({
-      message: 'Login bem-sucedido!',
-      token: token,
-      primeiroAcesso: false,
-      user: { 
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        secretariaId: user.secretariaId
-      }
-    });
+        if (!user || !bcrypt.compareSync(password, user.password)) {
+        return res.status(401).json({ error: 'Credenciais inválidas.' });
+        }
 
-  } catch (error) {
-    console.error("Erro na rota de login:", error);
-    res.status(500).json({ error: 'Ocorreu um erro interno.' });
-  }
+        if (user.primeiroAcesso) {
+        return res.status(403).json({ 
+            error: 'Primeiro acesso requerido. Complete seu cadastro.',
+            primeiroAcesso: true,
+            email: user.email
+        });
+        }
+
+        const token = jwt.sign(
+        { 
+            userId: user.id, 
+            userEmail: user.email, 
+            role: user.role, 
+            secretariaId: user.secretariaId,
+            primeiroAcesso: false
+        },
+        process.env.JWT_SECRET || 'SEGREDO_SUPER_SECRETO',
+        { expiresIn: '8h' }
+        );
+
+        res.json({
+        message: 'Login bem-sucedido!',
+        token: token,
+        primeiroAcesso: false,
+        user: { 
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            secretariaId: user.secretariaId
+        }
+        });
+
+    } catch (error) {
+        console.error("Erro na rota de login:", error);
+        res.status(500).json({ error: 'Ocorreu um erro interno.' });
+    }
 });
 
 app.post('/api/recuperar-senha', async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ error: 'Email é obrigatório' });
-    }
-
-    const usuario = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!usuario) {
-      return res.status(404).json({ error: 'Email não encontrado no sistema' });
-    }
-
-    const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiraEm = new Date(Date.now() + 30 * 60 * 1000); 
-
-    await prisma.codigoVerificacao.create({
-      data: {
-        email,
-        codigo,
-        tipo: 'recuperacao',
-        expiraEm,
-      },
-    });
-
     try {
-      await transporter.sendMail({
-        from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-        to: email,
-        subject: 'Recuperação de Senha - Sistema de Monitoramento da Transparência',
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <meta charset="utf-8">
-              <style>
-                  body { 
-                      font-family: Arial, sans-serif; 
-                      line-height: 1.6; 
-                      color: #333; 
-                      max-width: 600px; 
-                      margin: 0 auto;
-                      background: #f5f5f5;
-                  }
-                  .email-container {
-                      background: white;
-                      border-radius: 8px;
-                      overflow: hidden;
-                      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                  }
-                  .header-img {
-                      width: 100%;
-                      max-width: 600px;
-                      height: auto;
-                      display: block;
-                      object-fit: contain;
-                  }
-                  .content { 
-                      padding: 30px; 
-                  }
-                  .footer { 
-                      background: #e9ecef; 
-                      padding: 20px; 
-                      text-align: center; 
-                      font-size: 12px; 
-                      color: #666;
-                  }
-                  .codigo-verificacao {
-                      background: #f8f9fa; 
-                      padding: 25px; 
-                      text-align: center; 
-                      font-size: 32px; 
-                      font-weight: bold; 
-                      letter-spacing: 8px; 
-                      margin: 25px 0; 
-                      border: 2px dashed #dee2e6;
-                      border-radius: 8px;
-                      font-family: 'Courier New', monospace;
-                  }
-                  .alerta {
-                      background: #fff3cd;
-                      border: 1px solid #ffeaa7;
-                      border-radius: 6px;
-                      padding: 15px;
-                      margin: 15px 0;
-                      color: #856404;
-                  }
-                  .footer-images {
-                      display: flex;
-                      justify-content: center;
-                      gap: 20px;
-                      margin: 15px 0;
-                      align-items: center;
-                  }
-                  .footer-img {
-                      max-width: 150px;
-                      height: 60px;
-                      object-fit: contain;
-                  }
-                  .footer-img[alt="SIMPE"] {
-                      max-width: 200px;
-                      height: 80px;
-                  }
-                  h3 { color: #002776; margin-top: 0; }
-              </style>
-          </head>
-          <body>
-              <div class="email-container">
-                  <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
-                       alt="Controladoria Geral do Estado" 
-                       class="header-img">
-                  
-                  <div class="content">
-                      <h3>Recuperação de Senha</h3>
-                      
-                      <p>Olá,</p>
-                      <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>Sistema de Monitoramento da Transparência</strong>.</p>
-                      
-                      <p>Seu código de verificação é:</p>
-                      
-                      <div class="codigo-verificacao">
-                          ${codigo}
-                      </div>
-                      
-                      <div class="alerta">
-                          <p><strong>⚠️ Este código expira em 30 minutos.</strong></p>
-                          <p>Não compartilhe este código com ninguém.</p>
-                      </div>
-                      
-                      <p>Se você não solicitou a recuperação de senha, por favor ignore este email.</p>
-                      
-                      <p style="margin-top: 25px;">
-                          Atenciosamente,<br>
-                          <strong>Equipe da Coordenação de Transparência Ativa (CTA)</strong>
-                      </p>
-                  </div>
-                  
-                  <div class="footer">
-                      <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
-                      <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
-                      R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
-                      
-                      <div class="footer-images">
-                          <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
-                               alt="SIMPE" 
-                               class="footer-img">
-                          <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
-                               alt="Governo de Pernambuco" 
-                               class="footer-img">
-                      </div>
-                  </div>
-              </div>
-          </body>
-          </html>
-        `,
-      });
-    } catch (emailError) {
-      console.error('Erro ao enviar email:', emailError);
-      return res.status(500).json({ error: 'Erro ao enviar código por email' });
-    }
+        const { email } = req.body;
 
-    res.json({ success: true, message: 'Código de verificação enviado para seu email' });
+        if (!email) {
+        return res.status(400).json({ error: 'Email é obrigatório' });
+        }
 
-  } catch (error) {
-    console.error('Erro na recuperação de senha:', error);
-    res.status(500).json({ error: 'Erro interno no servidor' });
-  }
-});
+        const usuario = await prisma.user.findUnique({
+        where: { email },
+        });
 
-app.post('/api/verificar-codigo', async (req, res) => {
-  try {
-    const { email, codigo, tipo } = req.body;
+        if (!usuario) {
+        return res.status(404).json({ error: 'Email não encontrado no sistema' });
+        }
 
-    if (!email || !codigo || !tipo) {
-      return res.status(400).json({ error: 'Dados incompletos' });
-    }
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiraEm = new Date(Date.now() + 30 * 60 * 1000); 
 
-    const codigoVerificacao = await prisma.codigoVerificacao.findFirst({
-      where: {
-        email,
-        codigo,
-        tipo,
-        usado: false,
-        expiraEm: { gt: new Date() },
-      },
-    });
+        await prisma.codigoVerificacao.create({
+        data: {
+            email,
+            codigo,
+            tipo: 'recuperacao',
+            expiraEm,
+        },
+        });
 
-    if (!codigoVerificacao) {
-      return res.status(400).json({ error: 'Código inválido ou expirado' });
-    }
-
-    await prisma.codigoVerificacao.update({
-      where: { id: codigoVerificacao.id },
-      data: { usado: true },
-    });
-
-    res.json({ success: true, message: 'Código verificado com sucesso' });
-
-  } catch (error) {
-    console.error('Erro na verificação do código:', error);
-    res.status(500).json({ error: 'Erro interno no servidor' });
-  }
-});
-
-// 3. Redefinir senha
-app.post('/api/redefinir-senha', passwordRecoveryLimiter, async (req, res) => {
-  try {
-    const { email, novaSenha } = req.body;
-
-    if (!email || !novaSenha) {
-      return res.status(400).json({ error: 'Email e nova senha são obrigatórios' });
-    }
-
-    const passwordCheck = isPasswordStrong(novaSenha);
-    if (!passwordCheck.isValid) {
-      return res.status(400).json({ 
-        error: 'A senha não atende aos critérios de segurança.',
-        requirements: passwordCheck.requirements
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(novaSenha, 12);
-
-    await prisma.user.update({
-      where: { email },
-      data: { password: hashedPassword },
-    });
-
-    res.json({ success: true, message: 'Senha redefinida com sucesso' });
-
-  } catch (error) {
-    console.error('Erro ao redefinir senha:', error);
-    res.status(500).json({ error: 'Erro interno ao redefinir senha' });
-  }
-});
-
-app.post('/api/primeiro-acesso', async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ error: 'Email é obrigatório' });
-    }
-
-    const usuario = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!usuario) {
-      return res.status(404).json({ error: 'Email não encontrado no sistema' });
-    }
-
-    const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiraEm = new Date(Date.now() + 30 * 60 * 1000);
-
-    await prisma.codigoVerificacao.create({
-      data: {
-        email,
-        codigo,
-        tipo: 'primeiro_acesso',
-        expiraEm,
-      },
-    });
-
-    await transporter.sendMail({
-        from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-        to: email,
-        subject: 'Primeiro Acesso - Sistema de Monitoramento da Transparência',
-        html: `
+        try {
+        await transporter.sendMail({
+            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+            to: email,
+            subject: 'Recuperação de Senha - Sistema de Monitoramento da Transparência',
+            html: `
             <!DOCTYPE html>
             <html>
             <head>
@@ -618,12 +380,12 @@ app.post('/api/primeiro-acesso', async (req, res) => {
                         font-family: 'Courier New', monospace;
                     }
                     .alerta {
-                        background: #e8f5e8;
-                        border: 1px solid #c3e6cb;
+                        background: #fff3cd;
+                        border: 1px solid #ffeaa7;
                         border-radius: 6px;
                         padding: 15px;
                         margin: 15px 0;
-                        color: #155724;
+                        color: #856404;
                     }
                     .footer-images {
                         display: flex;
@@ -642,226 +404,464 @@ app.post('/api/primeiro-acesso', async (req, res) => {
                         height: 80px;
                     }
                     h3 { color: #002776; margin-top: 0; }
-                    .destaque {
-                        background: #e8f4fd;
-                        border: 1px solid #b3d9ff;
-                        border-radius: 6px;
-                        padding: 15px;
-                        margin: 15px 0;
-                    }
                 </style>
             </head>
-        <body>
-            <div class="email-container">
-                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
-                     alt="Controladoria Geral do Estado" 
-                     class="header-img">
-                
-                <div class="content">
-                    <h3>Primeiro Acesso ao Sistema</h3>
+            <body>
+                <div class="email-container">
+                    <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
+                        alt="Controladoria Geral do Estado" 
+                        class="header-img">
                     
-                    <div class="destaque">
-                        <p><strong>Bem-vindo(a) ao Sistema de Monitoramento da Transparência!</strong></p>
+                    <div class="content">
+                        <h3>Recuperação de Senha</h3>
+                        
+                        <p>Olá,</p>
+                        <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>Sistema de Monitoramento da Transparência</strong>.</p>
+                        
+                        <p>Seu código de verificação é:</p>
+                        
+                        <div class="codigo-verificacao">
+                            ${codigo}
+                        </div>
+                        
+                        <div class="alerta">
+                            <p><strong>⚠️ Este código expira em 30 minutos.</strong></p>
+                            <p>Não compartilhe este código com ninguém.</p>
+                        </div>
+                        
+                        <p>Se você não solicitou a recuperação de senha, por favor ignore este email.</p>
+                        
+                        <p style="margin-top: 25px;">
+                            Atenciosamente,<br>
+                            <strong>Equipe da Coordenação de Transparência Ativa (CTA)</strong>
+                        </p>
                     </div>
                     
-                    <p>Olá,</p>
-                    <p>Você foi cadastrado(a) como responsável pela avaliação de transparência do seu órgão/entidade.</p>
-                    <p>Para criar sua senha e acessar o sistema pela primeira vez, utilize o código de verificação abaixo:</p>
-                    
-                    <div class="codigo-verificacao">
-                        ${codigo}
-                    </div>
-                    
-                    <div class="alerta">
-                        <p><strong>✅ Este código expira em 30 minutos.</strong></p>
-                        <p>Após a criação da senha, você poderá acessar o sistema normalmente.</p>
-                    </div>
-                    
-                    <p><strong>Próximos passos:</strong></p>
-                    <ul>
-                        <li>Insira este código na tela de primeiro acesso</li>
-                        <li>Crie uma senha segura para sua conta</li>
-                        <li>Faça login no sistema com seu email e a nova senha</li>
-                    </ul>
-                    
-                    <p style="margin-top: 25px;">
-                        Atenciosamente,<br>
-                        <strong>Equipe da Coordenação de Transparência Ativa (CTA)</strong>
-                    </p>
-                </div>
-                
-                <div class="footer">
-                    <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
-                    <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
-                    R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
-                    
-                    <div class="footer-images">
-                        <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
-                             alt="SIMPE" 
-                             class="footer-img">
-                        <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
-                             alt="Governo de Pernambuco" 
-                             class="footer-img">
+                    <div class="footer">
+                        <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
+                        <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
+                        R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
+                        
+                        <div class="footer-images">
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                                alt="SIMPE" 
+                                class="footer-img">
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
+                                alt="Governo de Pernambuco" 
+                                class="footer-img">
+                        </div>
                     </div>
                 </div>
-            </div>
-        </body>
-        </html>
-      `,
-    });
+            </body>
+            </html>
+            `,
+        });
+        } catch (emailError) {
+        console.error('Erro ao enviar email:', emailError);
+        return res.status(500).json({ error: 'Erro ao enviar código por email' });
+        }
 
-    res.json({ success: true, message: 'Código de verificação enviado' });
+        res.json({ success: true, message: 'Código de verificação enviado para seu email' });
 
-  } catch (error) {
-    console.error('Erro no primeiro acesso:', error);
-    res.status(500).json({ error: 'Erro interno no servidor' });
-  }
+    } catch (error) {
+        console.error('Erro na recuperação de senha:', error);
+        res.status(500).json({ error: 'Erro interno no servidor' });
+    }
+});
+
+app.post('/api/verificar-codigo', async (req, res) => {
+    try {
+        const { email, codigo, tipo } = req.body;
+
+        if (!email || !codigo || !tipo) {
+        return res.status(400).json({ error: 'Dados incompletos' });
+        }
+
+        const codigoVerificacao = await prisma.codigoVerificacao.findFirst({
+        where: {
+            email,
+            codigo,
+            tipo,
+            usado: false,
+            expiraEm: { gt: new Date() },
+        },
+        });
+
+        if (!codigoVerificacao) {
+        return res.status(400).json({ error: 'Código inválido ou expirado' });
+        }
+
+        await prisma.codigoVerificacao.update({
+        where: { id: codigoVerificacao.id },
+        data: { usado: true },
+        });
+
+        res.json({ success: true, message: 'Código verificado com sucesso' });
+
+    } catch (error) {
+        console.error('Erro na verificação do código:', error);
+        res.status(500).json({ error: 'Erro interno no servidor' });
+    }
+});
+
+// 3. Redefinir senha
+app.post('/api/redefinir-senha', passwordRecoveryLimiter, async (req, res) => {
+    try {
+        const { email, novaSenha } = req.body;
+
+        if (!email || !novaSenha) {
+        return res.status(400).json({ error: 'Email e nova senha são obrigatórios' });
+        }
+
+        const passwordCheck = isPasswordStrong(novaSenha);
+        if (!passwordCheck.isValid) {
+        return res.status(400).json({ 
+            error: 'A senha não atende aos critérios de segurança.',
+            requirements: passwordCheck.requirements
+        });
+        }
+
+        const hashedPassword = await bcrypt.hash(novaSenha, 12);
+
+        await prisma.user.update({
+        where: { email },
+        data: { password: hashedPassword },
+        });
+
+        res.json({ success: true, message: 'Senha redefinida com sucesso' });
+
+    } catch (error) {
+        console.error('Erro ao redefinir senha:', error);
+        res.status(500).json({ error: 'Erro interno ao redefinir senha' });
+    }
+});
+
+app.post('/api/primeiro-acesso', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+        return res.status(400).json({ error: 'Email é obrigatório' });
+        }
+
+        const usuario = await prisma.user.findUnique({
+        where: { email },
+        });
+
+        if (!usuario) {
+        return res.status(404).json({ error: 'Email não encontrado no sistema' });
+        }
+
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiraEm = new Date(Date.now() + 30 * 60 * 1000);
+
+        await prisma.codigoVerificacao.create({
+        data: {
+            email,
+            codigo,
+            tipo: 'primeiro_acesso',
+            expiraEm,
+        },
+        });
+
+        await transporter.sendMail({
+            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+            to: email,
+            subject: 'Primeiro Acesso - Sistema de Monitoramento da Transparência',
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            line-height: 1.6; 
+                            color: #333; 
+                            max-width: 600px; 
+                            margin: 0 auto;
+                            background: #f5f5f5;
+                        }
+                        .email-container {
+                            background: white;
+                            border-radius: 8px;
+                            overflow: hidden;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        }
+                        .header-img {
+                            width: 100%;
+                            max-width: 600px;
+                            height: auto;
+                            display: block;
+                            object-fit: contain;
+                        }
+                        .content { 
+                            padding: 30px; 
+                        }
+                        .footer { 
+                            background: #e9ecef; 
+                            padding: 20px; 
+                            text-align: center; 
+                            font-size: 12px; 
+                            color: #666;
+                        }
+                        .codigo-verificacao {
+                            background: #f8f9fa; 
+                            padding: 25px; 
+                            text-align: center; 
+                            font-size: 32px; 
+                            font-weight: bold; 
+                            letter-spacing: 8px; 
+                            margin: 25px 0; 
+                            border: 2px dashed #dee2e6;
+                            border-radius: 8px;
+                            font-family: 'Courier New', monospace;
+                        }
+                        .alerta {
+                            background: #e8f5e8;
+                            border: 1px solid #c3e6cb;
+                            border-radius: 6px;
+                            padding: 15px;
+                            margin: 15px 0;
+                            color: #155724;
+                        }
+                        .footer-images {
+                            display: flex;
+                            justify-content: center;
+                            gap: 20px;
+                            margin: 15px 0;
+                            align-items: center;
+                        }
+                        .footer-img {
+                            max-width: 150px;
+                            height: 60px;
+                            object-fit: contain;
+                        }
+                        .footer-img[alt="SIMPE"] {
+                            max-width: 200px;
+                            height: 80px;
+                        }
+                        h3 { color: #002776; margin-top: 0; }
+                        .destaque {
+                            background: #e8f4fd;
+                            border: 1px solid #b3d9ff;
+                            border-radius: 6px;
+                            padding: 15px;
+                            margin: 15px 0;
+                        }
+                    </style>
+                </head>
+            <body>
+                <div class="email-container">
+                    <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
+                        alt="Controladoria Geral do Estado" 
+                        class="header-img">
+                    
+                    <div class="content">
+                        <h3>Primeiro Acesso ao Sistema</h3>
+                        
+                        <div class="destaque">
+                            <p><strong>Bem-vindo(a) ao Sistema de Monitoramento da Transparência!</strong></p>
+                        </div>
+                        
+                        <p>Olá,</p>
+                        <p>Você foi cadastrado(a) como responsável pela avaliação de transparência do seu órgão/entidade.</p>
+                        <p>Para criar sua senha e acessar o sistema pela primeira vez, utilize o código de verificação abaixo:</p>
+                        
+                        <div class="codigo-verificacao">
+                            ${codigo}
+                        </div>
+                        
+                        <div class="alerta">
+                            <p><strong>✅ Este código expira em 30 minutos.</strong></p>
+                            <p>Após a criação da senha, você poderá acessar o sistema normalmente.</p>
+                        </div>
+                        
+                        <p><strong>Próximos passos:</strong></p>
+                        <ul>
+                            <li>Insira este código na tela de primeiro acesso</li>
+                            <li>Crie uma senha segura para sua conta</li>
+                            <li>Faça login no sistema com seu email e a nova senha</li>
+                        </ul>
+                        
+                        <p style="margin-top: 25px;">
+                            Atenciosamente,<br>
+                            <strong>Equipe da Coordenação de Transparência Ativa (CTA)</strong>
+                        </p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
+                        <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
+                        R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
+                        
+                        <div class="footer-images">
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                                alt="SIMPE" 
+                                class="footer-img">
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
+                                alt="Governo de Pernambuco" 
+                                class="footer-img">
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `,
+        });
+
+        res.json({ success: true, message: 'Código de verificação enviado' });
+
+    } catch (error) {
+        console.error('Erro no primeiro acesso:', error);
+        res.status(500).json({ error: 'Erro interno no servidor' });
+    }
 });
 
 app.post('/api/criar-senha', passwordRecoveryLimiter, async (req, res) => {
-  try {
-    const { email, novaSenha } = req.body;
+    try {
+        const { email, novaSenha } = req.body;
 
-    if (!email || !novaSenha) {
-      return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+        if (!email || !novaSenha) {
+            return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+        }
+
+        const passwordCheck = isPasswordStrong(novaSenha);
+        if (!passwordCheck.isValid) {
+            return res.status(400).json({ 
+                error: 'A senha não atende aos critérios de segurança.',
+                requirements: passwordCheck.requirements
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(novaSenha, 12);
+
+        const usuarioAtualizado = await prisma.user.update({
+            where: { email },
+            data: { 
+                password: hashedPassword,
+                primeiroAcesso: false 
+            },
+        });
+
+        const token = jwt.sign(
+        { 
+            userId: usuarioAtualizado.id, 
+            userEmail: usuarioAtualizado.email, 
+            role: usuarioAtualizado.role, 
+            secretariaId: usuarioAtualizado.secretariaId,
+            primeiroAcesso: false
+        },
+            process.env.JWT_SECRET || 'SEGREDO_SUPER_SECRETO',
+            { expiresIn: '8h' }
+        );
+
+        res.json({ 
+            success: true, 
+            message: 'Senha criada com sucesso',
+            token: token,
+            user: {
+                id: usuarioAtualizado.id,
+                email: usuarioAtualizado.email,
+                role: usuarioAtualizado.role,
+                secretariaId: usuarioAtualizado.secretariaId
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro ao criar senha:', error);
+        res.status(500).json({ error: 'Erro interno ao criar senha' });
     }
-
-    const passwordCheck = isPasswordStrong(novaSenha);
-    if (!passwordCheck.isValid) {
-      return res.status(400).json({ 
-        error: 'A senha não atende aos critérios de segurança.',
-        requirements: passwordCheck.requirements
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(novaSenha, 12);
-
-    const usuarioAtualizado = await prisma.user.update({
-      where: { email },
-      data: { 
-        password: hashedPassword,
-        primeiroAcesso: false 
-      },
-    });
-
-    const token = jwt.sign(
-      { 
-        userId: usuarioAtualizado.id, 
-        userEmail: usuarioAtualizado.email, 
-        role: usuarioAtualizado.role, 
-        secretariaId: usuarioAtualizado.secretariaId,
-        primeiroAcesso: false
-      },
-      process.env.JWT_SECRET || 'SEGREDO_SUPER_SECRETO',
-      { expiresIn: '8h' }
-    );
-
-    res.json({ 
-      success: true, 
-      message: 'Senha criada com sucesso',
-      token: token,
-      user: {
-        id: usuarioAtualizado.id,
-        email: usuarioAtualizado.email,
-        role: usuarioAtualizado.role,
-        secretariaId: usuarioAtualizado.secretariaId
-      }
-    });
-
-  } catch (error) {
-    console.error('Erro ao criar senha:', error);
-    res.status(500).json({ error: 'Erro interno ao criar senha' });
-  }
 });
 
 // ROTA PARA ADMIN CRIAR NOVOS USUÁRIOS
 app.post('/api/users', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
-  const { email, password, role, secretariaId } = req.body;
+    const { email, password, role, secretariaId } = req.body;
 
-  console.log(`[ADMIN] Recebida solicitação para criar usuário: ${email}, Role: ${role}, SecID: ${secretariaId}`);
+    console.log(`[ADMIN] Recebida solicitação para criar usuário: ${email}, Role: ${role}, SecID: ${secretariaId}`);
 
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Apenas administradores podem criar usuários.' });
-  }
-
-  if (!email || !password || !role || !secretariaId) {
-    return res.status(400).json({ error: 'Todos os campos (email, senha, papel, secretaria) são obrigatórios.' });
-  }
-  
-   if (role !== 'ADMIN' && role !== 'GESTOR' && role !== 'USER') {
-      return res.status(400).json({ error: 'Papel (role) inválido. Deve ser ADMIN, GESTOR ou USER.' });
-  }
-
-  try {
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
-
-    if (existingUser) {
-      console.warn(`[ADMIN] Falha: Email ${email} já existe.`);
-      return res.status(409).json({ error: 'Este endereço de e-mail já está em uso.' });
+    if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Apenas administradores podem criar usuários.' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10); 
-
-    const newUser = await prisma.user.create({
-      data: {
-        nome: 'Usuário', 
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        role: role, 
-        secretariaId: parseInt(secretariaId),
-      },
-    });
-
-    console.log(`[ADMIN] ✅ Usuário ${newUser.email} criado com sucesso.`);
+    if (!email || !password || !role || !secretariaId) {
+        return res.status(400).json({ error: 'Todos os campos (email, senha, papel, secretaria) são obrigatórios.' });
+    }
     
-    const { password: _, ...userSemSenha } = newUser;
-    res.status(201).json(userSemSenha);
-
-  } catch (error) {
-    console.error('[ADMIN] Erro ao criar usuário:', error);
-    if (error.code === 'P2003' || error.message.includes('Foreign key constraint failed')) {
-         return res.status(400).json({ error: 'ID da Secretaria não encontrado. Verifique se a secretaria selecionada é válida.' });
+    if (role !== 'ADMIN' && role !== 'GESTOR' && role !== 'USER') {
+        return res.status(400).json({ error: 'Papel (role) inválido. Deve ser ADMIN, GESTOR ou USER.' });
     }
-    res.status(500).json({ error: 'Erro interno ao criar usuário.', details: error.message });
-  }
+
+    try {
+        const existingUser = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() },
+        });
+
+        if (existingUser) {
+            console.warn(`[ADMIN] Falha: Email ${email} já existe.`);
+            return res.status(409).json({ error: 'Este endereço de e-mail já está em uso.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10); 
+
+        const newUser = await prisma.user.create({
+            data: {
+                nome: 'Usuário', 
+                email: email.toLowerCase(),
+                password: hashedPassword,
+                role: role, 
+                secretariaId: parseInt(secretariaId),
+            },
+        });
+
+        console.log(`[ADMIN] ✅ Usuário ${newUser.email} criado com sucesso.`);
+        
+        const { password: _, ...userSemSenha } = newUser;
+        res.status(201).json(userSemSenha);
+
+    } catch (error) {
+        console.error('[ADMIN] Erro ao criar usuário:', error);
+        if (error.code === 'P2003' || error.message.includes('Foreign key constraint failed')) {
+            return res.status(400).json({ error: 'ID da Secretaria não encontrado. Verifique se a secretaria selecionada é válida.' });
+        }
+        res.status(500).json({ error: 'Erro interno ao criar usuário.', details: error.message });
+    }
 });
 
 // ROTA PARA LISTAR TODOS OS USUÁRIOS (APENAS ADMIN)
 app.get('/api/users', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Apenas administradores podem ver a lista de usuários.' });
-  }
-    
-      try {
-        const users = await prisma.user.findMany({
-            select: {
-                id: true,
-                email: true,
-                nome: true,
-                role: true,
-                secretariaId: true,
-                primeiroAcesso: true,
-                createdAt: true,
-                secretaria: {
-                    select: {
-                        id: true,
-                        nome: true,
-                        sigla: true
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
-        });
-
-        res.json(users);
-    } catch (error) {
-        console.error('[ADMIN] Erro ao listar usuários:', error);
-        res.status(500).json({ error: 'Erro interno ao buscar usuários.' });
+    if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Apenas administradores podem ver a lista de usuários.' });
     }
+    
+        try {
+            const users = await prisma.user.findMany({
+                select: {
+                    id: true,
+                    email: true,
+                    nome: true,
+                    role: true,
+                    secretariaId: true,
+                    primeiroAcesso: true,
+                    createdAt: true,
+                    secretaria: {
+                        select: {
+                            id: true,
+                            nome: true,
+                            sigla: true
+                        }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            });
+
+            res.json(users);
+        } catch (error) {
+            console.error('[ADMIN] Erro ao listar usuários:', error);
+            res.status(500).json({ error: 'Erro interno ao buscar usuários.' });
+        }
 });
 
 // ROTA PARA EXCLUIR USUÁRIO 
@@ -1270,99 +1270,99 @@ app.get('/secretarias/:id', async (req, res) => {
 
 // ROTA PARA O PRÉ-VALIDADOR
 app.post('/pre-validate', async (req, res) => {
-  const { urlSecretaria } = req.body;
-  if (!urlSecretaria) {
-    return res.status(400).json({ error: 'urlSecretaria é obrigatória' });
-  }
-
-  try {
-    const linksPrincipais = await prisma.requisito.findMany({
-      where: { 
-        linkFixo: { not: null },
-        NOT: { linkFixo: { contains: 'KEYWORD:' } }
-      }
-    });
-    
-    const subRequisitos = await prisma.subRequisito.findMany({
-      where: { linkFixo: { not: null } }
-    });
-    
-    const todosLinks = [
-      ...linksPrincipais.map(r => r.linkFixo),
-      ...subRequisitos.map(s => s.linkFixo)
-    ].filter(link => link && !link.startsWith('KEYWORD:'));
-    
-    console.log(`🔍 Pré-validador procurando ${todosLinks.length} links (${linksPrincipais.length} principais + ${subRequisitos.length} subitens)`);
-    
-    if (todosLinks.length === 0) {
-      return res.json([]);
+    const { urlSecretaria } = req.body;
+    if (!urlSecretaria) {
+        return res.status(400).json({ error: 'urlSecretaria é obrigatória' });
     }
 
-    const scriptPath = path.join(__dirname, 'pre_validador.py');
-    const scriptArgs = [
-      scriptPath,
-      urlSecretaria,
-      '--find-links', 
-      todosLinks.join(',')
-    ];
+    try {
+        const linksPrincipais = await prisma.requisito.findMany({
+        where: { 
+            linkFixo: { not: null },
+            NOT: { linkFixo: { contains: 'KEYWORD:' } }
+        }
+        });
+        
+        const subRequisitos = await prisma.subRequisito.findMany({
+        where: { linkFixo: { not: null } }
+        });
+        
+        const todosLinks = [
+        ...linksPrincipais.map(r => r.linkFixo),
+        ...subRequisitos.map(s => s.linkFixo)
+        ].filter(link => link && !link.startsWith('KEYWORD:'));
+        
+        console.log(`🔍 Pré-validador procurando ${todosLinks.length} links (${linksPrincipais.length} principais + ${subRequisitos.length} subitens)`);
+        
+        if (todosLinks.length === 0) {
+        return res.json([]);
+        }
 
-    const pythonProcess = spawn('python', scriptArgs, { cwd: __dirname });
+        const scriptPath = path.join(__dirname, 'pre_validador.py');
+        const scriptArgs = [
+        scriptPath,
+        urlSecretaria,
+        '--find-links', 
+        todosLinks.join(',')
+        ];
 
-    let resultadoJson = '';
-    let erroOutput = '';
+        const pythonProcess = spawn('python', scriptArgs, { cwd: __dirname });
 
-    pythonProcess.stdout.on('data', (data) => {
-      resultadoJson += data.toString();
-    });
+        let resultadoJson = '';
+        let erroOutput = '';
 
-    pythonProcess.stderr.on('data', (data) => {
-      erroOutput += data.toString();
-    });
+        pythonProcess.stdout.on('data', (data) => {
+        resultadoJson += data.toString();
+        });
 
-    pythonProcess.on('close', (code) => {
-      if (code !== 0) {
-        console.error(`Erro no script pre_validador.py: ${erroOutput}`);
-        return res.status(500).json({ error: 'Falha na verificação automática.', details: erroOutput });
-      }
-      try {
-        const linksEncontrados = JSON.parse(resultadoJson || '[]');
-        console.log(`✅ Pré-validador encontrou ${linksEncontrados.length} links`);
-        res.json(linksEncontrados);
-      } catch (parseError) {
-        console.error('Erro ao parsear resultado:', parseError);
-        res.status(500).json({ error: 'Falha ao interpretar resultado da verificação.', details: resultadoJson });
-      }
-    });
+        pythonProcess.stderr.on('data', (data) => {
+        erroOutput += data.toString();
+        });
 
-  } catch (error) {
-    console.error('Erro na pré-validação:', error);
-    res.status(500).json({ error: 'Erro interno no servidor ao tentar pré-validar.' });
-  }
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                console.error(`Erro no script pre_validador.py: ${erroOutput}`);
+                return res.status(500).json({ error: 'Falha na verificação automática.', details: erroOutput });
+            }
+            try {
+                const linksEncontrados = JSON.parse(resultadoJson || '[]');
+                console.log(`✅ Pré-validador encontrou ${linksEncontrados.length} links`);
+                res.json(linksEncontrados);
+            } catch (parseError) {
+                console.error('Erro ao parsear resultado:', parseError);
+                res.status(500).json({ error: 'Falha ao interpretar resultado da verificação.', details: resultadoJson });
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro na pré-validação:', error);
+        res.status(500).json({ error: 'Erro interno no servidor ao tentar pré-validar.' });
+    }
 });
 
 // ROTA PARA A VARREDURA COMPLETA
 app.post('/start-crawl', authenticateToken, async (req, res) => {
-  const { url, depth } = req.body;
-  if (!url) { return res.status(400).json({ error: 'URL é obrigatória' }); }
-  try {
-    const sessionId = `session_${Date.now()}`;
-    await prisma.scanSession.create({ data: { id: sessionId, url_base: url, status: 'iniciado' } });
-    
-    const scriptPath = path.join(__dirname, 'ScannerUnificado.py');
-    const scriptArgs = [scriptPath, url, '--session-id', sessionId, '--depth', String(depth || 5)];
-    const pythonProcess = spawn('python', scriptArgs, { cwd: __dirname });
+    const { url, depth } = req.body;
+    if (!url) { return res.status(400).json({ error: 'URL é obrigatória' }); }
+    try {
+        const sessionId = `session_${Date.now()}`;
+        await prisma.scanSession.create({ data: { id: sessionId, url_base: url, status: 'iniciado' } });
+        
+        const scriptPath = path.join(__dirname, 'ScannerUnificado.py');
+        const scriptArgs = [scriptPath, url, '--session-id', sessionId, '--depth', String(depth || 5)];
+        const pythonProcess = spawn('python', scriptArgs, { cwd: __dirname });
 
-    activeProcesses.set(sessionId, { process: pythonProcess, url: url, startTime: new Date() });
-    pythonProcess.stdout.on('data', (data) => { console.log(`[${sessionId}]:`, data.toString().trim()); });
-    pythonProcess.stderr.on('data', (data) => { console.error(`[${sessionId} Error]:`, data.toString().trim()); });
-    pythonProcess.on('close', (code) => {
-      console.log(`[${sessionId}] Processo finalizado com código: ${code}`);
-      activeProcesses.delete(sessionId);
-    });
-    res.json({ success: true, message: 'Varredura iniciada!', sessionId: sessionId });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro interno ao iniciar varredura: ' + error.message });
-  }
+        activeProcesses.set(sessionId, { process: pythonProcess, url: url, startTime: new Date() });
+        pythonProcess.stdout.on('data', (data) => { console.log(`[${sessionId}]:`, data.toString().trim()); });
+        pythonProcess.stderr.on('data', (data) => { console.error(`[${sessionId} Error]:`, data.toString().trim()); });
+        pythonProcess.on('close', (code) => {
+        console.log(`[${sessionId}] Processo finalizado com código: ${code}`);
+        activeProcesses.delete(sessionId);
+        });
+        res.json({ success: true, message: 'Varredura iniciada!', sessionId: sessionId });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro interno ao iniciar varredura: ' + error.message });
+    }
 });
 
 // ROTA PARA CRIAR LINKS (usada pelo scanner_completo.py)
