@@ -22,7 +22,7 @@ class PreValidador:
         self.base_domain = urlparse(base_url).netloc
         self.logger = logging.getLogger(__name__)
         
-        # 🔥 Criar um diretório temporário único para cada execução
+
         self.user_data_dir = tempfile.mkdtemp()
         
         try:
@@ -32,7 +32,7 @@ class PreValidador:
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
-            # 🔥 Usar diretório temporário único
+
             chrome_options.add_argument(f"--user-data-dir={self.user_data_dir}")
             
             self.driver = webdriver.Chrome(options=chrome_options)
@@ -46,7 +46,6 @@ class PreValidador:
         try:
             if hasattr(self, 'driver'):
                 self.driver.quit()
-            # Limpar diretório temporário
             if hasattr(self, 'user_data_dir') and os.path.exists(self.user_data_dir):
                 import shutil
                 shutil.rmtree(self.user_data_dir, ignore_errors=True)
@@ -107,7 +106,6 @@ class PreValidador:
                         visitados.add(href_absoluto)
                         queue.append((href_absoluto, profundidade_atual + 1))
         finally:
-            # 🔥 Garantir que o driver seja fechado mesmo em caso de erro
             self.driver.quit()
             if hasattr(self, 'user_data_dir') and os.path.exists(self.user_data_dir):
                 import shutil
