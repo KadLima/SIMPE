@@ -530,7 +530,7 @@ app.post('/api/recuperar-senha', emailRecoveryLimiter, async (req, res) => {
                         R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
                         
                         <div class="footer-images">
-                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/simpe.png" 
                                 alt="SIMPE" 
                                 class="footer-img">
                             <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
@@ -783,7 +783,7 @@ app.post('/api/primeiro-acesso', emailRecoveryLimiter, async (req, res) => {
                         R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
                         
                         <div class="footer-images">
-                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/simpe.png" 
                                 alt="SIMPE" 
                                 class="footer-img">
                             <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
@@ -2365,7 +2365,7 @@ app.post('/api/enviar-relatorio-email', upload.single('relatorioPdf'), async (re
                         R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
                         
                         <div class="footer-images">
-                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/simpe.png" 
                                 alt="SIMPE" 
                                 class="footer-img">
                             <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
@@ -2582,7 +2582,7 @@ app.post('/api/enviar-email-confirmacao', authenticateToken, async (req, res) =>
                             R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
                             
                             <div class="footer-images">
-                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/simpe.png" 
                                      alt="SIMPE" 
                                      class="footer-img">
                                 <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
@@ -2757,7 +2757,7 @@ app.post('/api/notificar-controladoria', authenticateToken, async (req, res) => 
                             R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
                             
                             <div class="footer-images">
-                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/simpe.png" 
                                      alt="SIMPE" 
                                      class="footer-img">
                                 <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
@@ -2976,7 +2976,7 @@ app.post('/api/avaliacoes/:id/notificar-recurso', authenticateToken, async (req,
                             R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
                             
                             <div class="footer-images">
-                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/simpe.png" 
                                      alt="SIMPE" 
                                      class="footer-img">
                                 <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
@@ -3241,7 +3241,7 @@ app.post('/api/avaliacoes/:id/notificar-devolucao-recurso', authenticateToken, a
                             R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
                             
                             <div class="footer-images">
-                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                                <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/simpe.png" 
                                     alt="SIMPE" 
                                     class="footer-img">
                                 <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
@@ -4362,7 +4362,7 @@ async function enviarEmailNotaFinal(avaliacao) {
                         R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
                         
                         <div class="footer-images">
-                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/simpe.png" 
                                 alt="SIMPE" 
                                 class="footer-img">
                             <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
