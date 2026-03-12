@@ -19,23 +19,26 @@ const upload = multer();
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const cron = require('node-cron');
+const loginAttempts = new Map();
+const passwordRecoveryAttempts = new Map();
+const captchaStore = new Map();
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false 
-  }
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: process.env.SMTP_PORT || 587,
+    secure: false,
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+    },
+    tls: {
+        rejectUnauthorized: false 
+    }
 });
 
 cron.schedule('* * * * *', () => {
-  console.log('Executando verificação de expiração de recursos...');
-  expirarRecursos();
+    console.log('Executando verificação de expiração de recursos...');
+    expirarRecursos();
 });
 
 // ROTA ESPECIAL PARA LOGIN APÓS PRIMEIRO ACESSO 
@@ -83,25 +86,24 @@ app.post('/api/login-pos-primeiro-acesso', async (req, res) => {
     }
 });
 
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, 
-    max: 15, 
-    message: {
-        error: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
-const passwordRecoveryLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, 
-    max: 3, 
-    message: {
-        error: 'Muitas tentativas de recuperação de senha. Tente novamente em 15 minutos.'
+// Limpeza automática a cada minuto para remover entradas expiradas
+setInterval(() => {
+    const now = Date.now();
+    
+    // Limpar tentativas de login expiradas
+    for (const [email, data] of loginAttempts.entries()) {
+        if (now > data.resetTime) {
+            loginAttempts.delete(email);
+        }
     }
-});
-
-const captchaStore = new Map();
+    
+    // Limpar tentativas de recuperação de senha expiradas
+    for (const [email, data] of passwordRecoveryAttempts.entries()) {
+        if (now > data.resetTime) {
+            passwordRecoveryAttempts.delete(email);
+        }
+    }
+}, 60 * 1000); 
 
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
@@ -178,11 +180,11 @@ function isPasswordStrong(password) {
     return {
         isValid: password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar,
         requirements: {
-        minLength: password.length >= minLength,
-        hasUpperCase,
-        hasLowerCase,
-        hasNumbers,
-        hasSpecialChar
+            minLength: password.length >= minLength,
+            hasUpperCase,
+            hasLowerCase,
+            hasNumbers,
+            hasSpecialChar
         }
     };
 }
@@ -239,7 +241,86 @@ app.get("/dashboard", (req, res) => { res.sendFile(path.join(__dirname, 'dashboa
 app.get("/avaliacao-usuario/:id", (req, res) => { res.sendFile(path.join(__dirname, 'avaliacao-usuario.html')); });
 app.get("/analise-final/:id", (req, res) => { res.sendFile(path.join(__dirname, 'analise-final.html')); });
 
-app.post('/login', loginLimiter, async (req, res) => {
+// Middleware de rate limit por email
+function emailLoginLimiter(req, res, next) {
+    const { email } = req.body;
+    
+    if (!email) {
+        return next();
+    }
+
+    const now = Date.now();
+    const userAttempts = loginAttempts.get(email) || { count: 0, resetTime: now + (30 * 1000) }; 
+
+    // Se o tempo de reset já passou, o contador é resetado
+    if (now > userAttempts.resetTime) {
+        userAttempts.count = 0;
+        userAttempts.resetTime = now + (30 * 1000); // 30 segundos
+    }
+
+    // Incrementa tentativas
+    userAttempts.count++;
+    loginAttempts.set(email, userAttempts);
+
+    // Define limite máximo de tentativas (ex: 5 tentativas)
+    const MAX_ATTEMPTS = 5;
+
+    if (userAttempts.count > MAX_ATTEMPTS) {
+        const secondsLeft = Math.ceil((userAttempts.resetTime - now) / 1000);
+        return res.status(429).json({ 
+            error: `Muitas tentativas de login para este usuário. Tente novamente em ${secondsLeft} segundos.`,
+            remainingTime: secondsLeft
+        });
+    }
+
+    // Anexa informações ao request para uso posterior 
+    req.loginAttempts = {
+        remaining: MAX_ATTEMPTS - userAttempts.count,
+        resetTime: userAttempts.resetTime
+    };
+
+    next();
+}
+
+// Middleware de rate limit para recuperação de senha 
+function emailRecoveryLimiter(req, res, next) {
+    const { email } = req.body;
+    
+    if (!email) return next();
+
+    const now = Date.now();
+    const userAttempts = passwordRecoveryAttempts.get(email) || { 
+        count: 0, 
+        resetTime: now + (30 * 1000)
+    };
+
+    if (now > userAttempts.resetTime) {
+        userAttempts.count = 0;
+        userAttempts.resetTime = now + (30 * 1000);
+    }
+
+    userAttempts.count++;
+    passwordRecoveryAttempts.set(email, userAttempts);
+
+    const MAX_ATTEMPTS = 3; 
+
+    if (userAttempts.count > MAX_ATTEMPTS) {
+        const secondsLeft = Math.ceil((userAttempts.resetTime - now) / 1000);
+        return res.status(429).json({ 
+            error: `Muitas tentativas de recuperação de senha para este email. Tente novamente em ${secondsLeft} segundos.`,
+            remainingTime: secondsLeft
+        });
+    }
+
+    req.recoveryAttempts = {
+        remaining: MAX_ATTEMPTS - userAttempts.count,
+        resetTime: userAttempts.resetTime
+    };
+
+    next();
+}
+
+app.post('/login', emailLoginLimiter, async (req, res) => {
     const { email, password, captchaId, captchaAnswer } = req.body;
 
     if (!email || !password || !captchaId || !captchaAnswer) {
@@ -256,15 +337,17 @@ app.post('/login', loginLimiter, async (req, res) => {
         });
 
         if (!user || !bcrypt.compareSync(password, user.password)) {
-        return res.status(401).json({ error: 'Credenciais inválidas.' });
+            return res.status(401).json({ error: 'Credenciais inválidas.' });
         }
 
+        loginAttempts.delete(email);
+
         if (user.primeiroAcesso) {
-        return res.status(403).json({ 
-            error: 'Primeiro acesso requerido. Complete seu cadastro.',
-            primeiroAcesso: true,
-            email: user.email
-        });
+            return res.status(403).json({ 
+                error: 'Primeiro acesso requerido. Complete seu cadastro.',
+                primeiroAcesso: true,
+                email: user.email
+            });
         }
 
         const token = jwt.sign(
@@ -297,7 +380,7 @@ app.post('/login', loginLimiter, async (req, res) => {
     }
 });
 
-app.post('/api/recuperar-senha', async (req, res) => {
+app.post('/api/recuperar-senha', emailRecoveryLimiter, async (req, res) => {
     try {
         const { email } = req.body;
 
@@ -306,11 +389,15 @@ app.post('/api/recuperar-senha', async (req, res) => {
         }
 
         const usuario = await prisma.user.findUnique({
-        where: { email },
+            where: { email },
         });
 
+        if (usuario) {
+            passwordRecoveryAttempts.delete(email);
+        }
+
         if (!usuario) {
-        return res.status(404).json({ error: 'Email não encontrado no sistema' });
+            return res.status(404).json({ error: 'Email não encontrado no sistema' });
         }
 
         const codigo = Math.floor(100000 + Math.random() * 900000).toString();
@@ -505,7 +592,7 @@ app.post('/api/verificar-codigo', async (req, res) => {
 });
 
 // 3. Redefinir senha
-app.post('/api/redefinir-senha', passwordRecoveryLimiter, async (req, res) => {
+app.post('/api/redefinir-senha', emailRecoveryLimiter, async (req, res) => {
     try {
         const { email, novaSenha } = req.body;
 
@@ -536,7 +623,7 @@ app.post('/api/redefinir-senha', passwordRecoveryLimiter, async (req, res) => {
     }
 });
 
-app.post('/api/primeiro-acesso', async (req, res) => {
+app.post('/api/primeiro-acesso', emailRecoveryLimiter, async (req, res) => {
     try {
         const { email } = req.body;
 
@@ -718,7 +805,7 @@ app.post('/api/primeiro-acesso', async (req, res) => {
     }
 });
 
-app.post('/api/criar-senha', passwordRecoveryLimiter, async (req, res) => {
+app.post('/api/criar-senha', emailRecoveryLimiter, async (req, res) => {
     try {
         const { email, novaSenha } = req.body;
 
@@ -834,34 +921,34 @@ app.get('/api/users', authenticateToken, authenticateOnlyAdmin, async (req, res)
         return res.status(403).json({ error: 'Apenas administradores podem ver a lista de usuários.' });
     }
     
-        try {
-            const users = await prisma.user.findMany({
-                select: {
-                    id: true,
-                    email: true,
-                    nome: true,
-                    role: true,
-                    secretariaId: true,
-                    primeiroAcesso: true,
-                    createdAt: true,
-                    secretaria: {
-                        select: {
-                            id: true,
-                            nome: true,
-                            sigla: true
-                        }
+    try {
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                email: true,
+                nome: true,
+                role: true,
+                secretariaId: true,
+                primeiroAcesso: true,
+                createdAt: true,
+                secretaria: {
+                    select: {
+                        id: true,
+                        nome: true,
+                        sigla: true
                     }
-                },
-                orderBy: {
-                    createdAt: 'desc'
                 }
-            });
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
 
-            res.json(users);
-        } catch (error) {
-            console.error('[ADMIN] Erro ao listar usuários:', error);
-            res.status(500).json({ error: 'Erro interno ao buscar usuários.' });
-        }
+        res.json(users);
+    } catch (error) {
+        console.error('[ADMIN] Erro ao listar usuários:', error);
+        res.status(500).json({ error: 'Erro interno ao buscar usuários.' });
+    }
 });
 
 // ROTA PARA EXCLUIR USUÁRIO 
@@ -911,60 +998,60 @@ app.delete('/api/users/:id', authenticateToken, authenticateOnlyAdmin, async (re
 
 // ROTA PARA ADMIN CRIAR NOVAS SECRETARIAS
 app.post('/api/secretarias', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
-  const { nome, sigla, url } = req.body;
+    const { nome, sigla, url } = req.body;
 
-  console.log(`[ADMIN] Recebida solicitação para criar secretaria: ${sigla} - ${nome}`);
+    console.log(`[ADMIN] Recebida solicitação para criar secretaria: ${sigla} - ${nome}`);
 
-  if (!nome || !sigla || !url) {
-    return res.status(400).json({ error: 'Todos os campos (nome, sigla, URL) são obrigatórios.' });
-  }
-
-  const siglaRegex = /^[A-Z]{2,10}$/;
-  if (!siglaRegex.test(sigla)) {
-    return res.status(400).json({ error: 'A sigla deve conter apenas letras maiúsculas e ter entre 2 e 10 caracteres.' });
-  }
-
-  try {
-    new URL(url);
-  } catch (error) {
-    return res.status(400).json({ error: 'URL inválida. Certifique-se de incluir http:// ou https://.' });
-  }
-
-  try {
-    const existingSigla = await prisma.secretaria.findUnique({
-      where: { sigla: sigla.toUpperCase() },
-    });
-
-    if (existingSigla) {
-      console.warn(`[ADMIN] Falha: Sigla ${sigla} já existe.`);
-      return res.status(409).json({ error: 'Esta sigla já está em uso.' });
+    if (!nome || !sigla || !url) {
+        return res.status(400).json({ error: 'Todos os campos (nome, sigla, URL) são obrigatórios.' });
     }
 
-    const existingNome = await prisma.secretaria.findUnique({
-      where: { nome: nome },
-    });
-
-    if (existingNome) {
-      console.warn(`[ADMIN] Falha: Nome ${nome} já existe.`);
-      return res.status(409).json({ error: 'Este nome já está em uso.' });
+    const siglaRegex = /^[A-Z]{2,10}$/;
+    if (!siglaRegex.test(sigla)) {
+        return res.status(400).json({ error: 'A sigla deve conter apenas letras maiúsculas e ter entre 2 e 10 caracteres.' });
     }
 
-    const novaSecretaria = await prisma.secretaria.create({
-      data: {
-        nome: nome.trim(),
-        sigla: sigla.toUpperCase().trim(),
-        url: url.trim(),
-      },
-    });
+    try {
+        new URL(url);
+    } catch (error) {
+        return res.status(400).json({ error: 'URL inválida. Certifique-se de incluir http:// ou https://.' });
+    }
 
-    console.log(`[ADMIN] ✅ Secretaria ${novaSecretaria.sigla} criada com sucesso.`);
+    try {
+        const existingSigla = await prisma.secretaria.findUnique({
+            where: { sigla: sigla.toUpperCase() },
+        });
+
+        if (existingSigla) {
+            console.warn(`[ADMIN] Falha: Sigla ${sigla} já existe.`);
+            return res.status(409).json({ error: 'Esta sigla já está em uso.' });
+        }
+
+        const existingNome = await prisma.secretaria.findUnique({
+            where: { nome: nome },
+        });
+
+        if (existingNome) {
+            console.warn(`[ADMIN] Falha: Nome ${nome} já existe.`);
+            return res.status(409).json({ error: 'Este nome já está em uso.' });
+        }
+
+        const novaSecretaria = await prisma.secretaria.create({
+            data: {
+                nome: nome.trim(),
+                sigla: sigla.toUpperCase().trim(),
+                url: url.trim(),
+            },
+        });
+
+        console.log(`[ADMIN] ✅ Secretaria ${novaSecretaria.sigla} criada com sucesso.`);
     
-    res.status(201).json(novaSecretaria);
+        res.status(201).json(novaSecretaria);
 
-  } catch (error) {
-    console.error('[ADMIN] Erro ao criar secretaria:', error);
-    res.status(500).json({ error: 'Erro interno ao criar secretaria.', details: error.message });
-  }
+    } catch (error) {
+        console.error('[ADMIN] Erro ao criar secretaria:', error);
+        res.status(500).json({ error: 'Erro interno ao criar secretaria.', details: error.message });
+    }
 });
 
 // ROTA PARA O USUÁRIO LOGADO BUSCAR SUAS PRÓPRIAS AVALIAÇÕES (VERSÃO DE DIAGNÓSTICO)
@@ -1203,7 +1290,7 @@ app.get('/api/admin/nota-final/:id', authenticateToken, authenticateAdminOrGesto
     }
 });
 
-// ROTA SEGURA PARA UM USUÁRIO VER OS DETALHES DE UMA DE SUAS AVALIAÇÕES (MODIFICADA)
+// ROTA SEGURA PARA UM USUÁRIO VER OS DETALHES DE UMA DE SUAS AVALIAÇÕES
 app.get('/api/my-avaliacoes/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
@@ -1367,25 +1454,26 @@ app.post('/start-crawl', authenticateToken, async (req, res) => {
 
 // ROTA PARA CRIAR LINKS (usada pelo scanner_completo.py)
 app.post("/links", async (req, res) => {
-  try {
-    const { url, tipo, origem, status, httpCode, finalUrl, profundidade, session_id } = req.body;
-    if (!session_id) {
-      return res.status(400).json({ error: 'session_id é obrigatório.' });
+    try {
+        const { url, tipo, origem, status, httpCode, finalUrl, profundidade, session_id } = req.body;
+        if (!session_id) {
+            return res.status(400).json({ error: 'session_id é obrigatório.' });
+        }
+        const newLink = await prisma.link.create({
+            data: {
+                url, tipo, origem, status: status || "Não verificado", httpCode, finalUrl, profundidade,
+                session: { connect: { id: session_id } },
+            },
+        });
+        res.status(201).json(newLink);
+
+    } catch (error) {
+        console.error("[ERRO CRÍTICO] Falha ao criar link:", error);
+        if (error.code === 'P2025') {
+            return res.status(400).json({ error: `Falha: ScanSession com id '${req.body.session_id}' não existe.` });
+        }
+        res.status(500).json({ error: "Erro ao criar link" });
     }
-    const newLink = await prisma.link.create({
-      data: {
-        url, tipo, origem, status: status || "Não verificado", httpCode, finalUrl, profundidade,
-        session: { connect: { id: session_id } },
-      },
-    });
-    res.status(201).json(newLink);
-  } catch (error) {
-    console.error("[ERRO CRÍTICO] Falha ao criar link:", error);
-    if (error.code === 'P2025') {
-       return res.status(400).json({ error: `Falha: ScanSession com id '${req.body.session_id}' não existe.` });
-    }
-    res.status(500).json({ error: "Erro ao criar link" });
-  }
 });
 
 // ROTA PARA O ADMIN VALIDAR UMA RESPOSTA ESPECÍFICA
@@ -1400,61 +1488,61 @@ app.patch('/api/respostas/:id', authenticateToken, authenticateAdminOrGestor, as
     console.log('Links recebidos:', linksAnalista);
 
     try {
-      const resultado = await prisma.$transaction(async (prisma) => {
-          const dataToUpdate = {};
-          if (statusValidacao) dataToUpdate.statusValidacao = statusValidacao;
-          if (comentarioAdmin !== undefined) dataToUpdate.comentarioAdmin = comentarioAdmin;
-          if (recursoAtende !== undefined) dataToUpdate.recursoAtende = recursoAtende;
+        const resultado = await prisma.$transaction(async (prisma) => {
+            const dataToUpdate = {};
+            if (statusValidacao) dataToUpdate.statusValidacao = statusValidacao;
+            if (comentarioAdmin !== undefined) dataToUpdate.comentarioAdmin = comentarioAdmin;
+            if (recursoAtende !== undefined) dataToUpdate.recursoAtende = recursoAtende;
 
-          const respostaAtualizada = await prisma.resposta.update({
-              where: { id: parseInt(id) },
-              data: dataToUpdate
-          });
+            const respostaAtualizada = await prisma.resposta.update({
+                where: { id: parseInt(id) },
+                data: dataToUpdate
+             });
 
-          if (linksAnalista !== undefined) {
-              console.log('Processando linksAnalista:', linksAnalista);
+            if (linksAnalista !== undefined) {
+                console.log('Processando linksAnalista:', linksAnalista);
               
-              await prisma.linkAnalista.deleteMany({
-                  where: { respostaId: parseInt(id) }
-              });
+                await prisma.linkAnalista.deleteMany({
+                    where: { respostaId: parseInt(id) }
+                });
 
-              if (Array.isArray(linksAnalista) && linksAnalista.length > 0) {
-                const linksValidos = linksAnalista.filter(link => 
-                    link && typeof link === 'string' && link.trim() !== ''
-                );
+                if (Array.isArray(linksAnalista) && linksAnalista.length > 0) {
+                    const linksValidos = linksAnalista.filter(link => 
+                        link && typeof link === 'string' && link.trim() !== ''
+                    );
 
-                if (linksValidos.length > 0) {
-                    await prisma.linkAnalista.createMany({
-                        data: linksValidos.map(link => ({
-                            url: link.trim(),
-                            respostaId: parseInt(id)
-                        }))
-                    });
+                    if (linksValidos.length > 0) {
+                        await prisma.linkAnalista.createMany({
+                            data: linksValidos.map(link => ({
+                                url: link.trim(),
+                                respostaId: parseInt(id)
+                            }))
+                        });
+                    }
                 }
-              }
-          }
+            }
 
-          return await prisma.resposta.findUnique({
-              where: { id: parseInt(id) },
-              include: {
-                requisito: true,
-                evidencias: true,
-                linksAnalista: true,
-                linksAnaliseFinal: true
-              }
-          });
-      });
+            return await prisma.resposta.findUnique({
+                where: { id: parseInt(id) },
+                include: {
+                    requisito: true,
+                    evidencias: true,
+                    linksAnalista: true,
+                    linksAnaliseFinal: true
+                }
+            });
+        });
 
-      console.log('✅ Resposta atualizada com sucesso:', {
-          id: resultado.id,
-          totalLinks: resultado.linksAnalista.length
-      });
+        console.log('✅ Resposta atualizada com sucesso:', {
+            id: resultado.id,
+            totalLinks: resultado.linksAnalista.length
+        });
 
-      res.json(resultado);
+        res.json(resultado);
 
     }catch (error) {
-      console.error(`❌ Erro ao atualizar resposta ${id}:`, error);
-      res.status(500).json({ error: "Erro ao salvar a validação." });
+        console.error(`❌ Erro ao atualizar resposta ${id}:`, error);
+        res.status(500).json({ error: "Erro ao salvar a validação." });
     }
 });
 
@@ -1575,250 +1663,250 @@ app.patch('/api/requisitos/:id', authenticateToken, authenticateOnlyAdmin, async
 });
 
 app.post('/api/respostas/:id/subitens', authenticateToken, async (req, res) => {
-  try {
-    const { id: respostaId } = req.params;
-    const { subitens } = req.body;
+    try {
+        const { id: respostaId } = req.params;
+        const { subitens } = req.body;
     
-    console.log(`📝 Salvando ${subitens.length} subitens para resposta ${respostaId}`);
+        console.log(`📝 Salvando ${subitens.length} subitens para resposta ${respostaId}`);
     
-    const resultado = await prisma.$transaction(async (prisma) => {
-      const subRespostas = [];
-      
-      for (const sub of subitens) {
-        // Verificar se já existe
-        const existente = await prisma.subResposta.findFirst({
-          where: {
-            respostaId: parseInt(respostaId),
-            subRequisitoId: sub.subRequisitoId
-          }
-        });
+        const resultado = await prisma.$transaction(async (prisma) => {
+                const subRespostas = [];
         
-        if (existente) {
-          // Atualizar existente
-          const atualizada = await prisma.subResposta.update({
-            where: { id: existente.id },
-            data: {
-              atende: sub.atende,
-              linkComprovante: sub.linkComprovante,
-              comentarioSecretaria: sub.comentario,
-              statusValidacao: 'pendente' 
+                for (const sub of subitens) {
+                    // Verificar se já existe
+                    const existente = await prisma.subResposta.findFirst({
+                    where: {
+                        respostaId: parseInt(respostaId),
+                        subRequisitoId: sub.subRequisitoId
+                    }
+                });
+            
+                if (existente) {
+                    // Atualizar existente
+                    const atualizada = await prisma.subResposta.update({
+                        where: { id: existente.id },
+                        data: {
+                            atende: sub.atende,
+                            linkComprovante: sub.linkComprovante,
+                            comentarioSecretaria: sub.comentario,
+                            statusValidacao: 'pendente' 
+                        }
+                    });
+                    subRespostas.push(atualizada);
+                } else {
+                    const nova = await prisma.subResposta.create({
+                        data: {
+                            respostaId: parseInt(respostaId),
+                            subRequisitoId: sub.subRequisitoId,
+                            atende: sub.atende,
+                            linkComprovante: sub.linkComprovante,
+                            comentarioSecretaria: sub.comentario,
+                            statusValidacao: 'pendente'
+                        }
+                    });
+                    subRespostas.push(nova);
+                }
             }
-          });
-          subRespostas.push(atualizada);
-        } else {
-          const nova = await prisma.subResposta.create({
-            data: {
-              respostaId: parseInt(respostaId),
-              subRequisitoId: sub.subRequisitoId,
-              atende: sub.atende,
-              linkComprovante: sub.linkComprovante,
-              comentarioSecretaria: sub.comentario,
-              statusValidacao: 'pendente'
-            }
-          });
-          subRespostas.push(nova);
-        }
-      }
       
-      return subRespostas;
-    });
+            return subRespostas;
+        });
     
-    res.json({ success: true, subRespostas: resultado });
+        res.json({ success: true, subRespostas: resultado });
     
-  } catch (error) {
-    console.error('❌ Erro ao salvar subitens:', error);
-    res.status(500).json({ error: 'Erro ao salvar subitens' });
-  }
+    } catch (error) {
+        console.error('❌ Erro ao salvar subitens:', error);
+        res.status(500).json({ error: 'Erro ao salvar subitens' });
+    }
 });
 
 // ROTA PARA VALIDAR SUBITENS (ANALISTA)
 app.patch('/api/subrespostas/:id/validar', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { statusValidacao, comentario } = req.body;
+    try {
+        const { id } = req.params;
+        const { statusValidacao, comentario } = req.body;
     
-    const subResposta = await prisma.subResposta.update({
-      where: { id: parseInt(id) },
-      data: {
-        statusValidacao,
-        comentarioAdmin: comentario
-      }
-    });
+        const subResposta = await prisma.subResposta.update({
+            where: { id: parseInt(id) },
+            data: {
+                statusValidacao,
+                comentarioAdmin: comentario
+            }
+        });
     
-    await recalcularStatusRespostaPai(subResposta.respostaId);
+        await recalcularStatusRespostaPai(subResposta.respostaId);
     
-    res.json(subResposta);
+        res.json(subResposta);
     
-  } catch (error) {
-    console.error('❌ Erro ao validar subitem:', error);
-    res.status(500).json({ error: 'Erro ao validar subitem' });
-  }
+    } catch (error) {
+        console.error('❌ Erro ao validar subitem:', error);
+        res.status(500).json({ error: 'Erro ao validar subitem' });
+    }
 });
 
 // ROTA PARA VALIDAR SUBITENS NO RECURSO (ANÁLISE FINAL)
 app.patch('/api/subrespostas/:id/validar-recurso', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { statusValidacaoPosRecurso, comentario } = req.body;
+    try {
+        const { id } = req.params;
+        const { statusValidacaoPosRecurso, comentario } = req.body;
     
-    const subResposta = await prisma.subResposta.update({
-      where: { id: parseInt(id) },
-      data: {
-        statusValidacaoPosRecurso,
-        comentarioAnaliseFinal: comentario
-      }
-    });
+        const subResposta = await prisma.subResposta.update({
+            where: { id: parseInt(id) },
+            data: {
+                statusValidacaoPosRecurso,
+                comentarioAnaliseFinal: comentario
+            }
+        });
     
-    await recalcularStatusRespostaPai(subResposta.respostaId, true);
+        await recalcularStatusRespostaPai(subResposta.respostaId, true);
     
-    res.json(subResposta);
+        res.json(subResposta);
     
-  } catch (error) {
-    console.error('❌ Erro ao validar subitem no recurso:', error);
-    res.status(500).json({ error: 'Erro ao validar subitem no recurso' });
-  }
+    } catch (error) {
+        console.error('❌ Erro ao validar subitem no recurso:', error);
+        res.status(500).json({ error: 'Erro ao validar subitem no recurso' });
+    }
 });
 
 // ROTA PARA SALVAR RECURSO DE SUBITENS (SECRETARIA)
 app.post('/api/subrespostas/recurso', authenticateToken, async (req, res) => {
-  try {
-    const { subRespostas } = req.body;
+    try {
+        const { subRespostas } = req.body;
     
-    const resultado = await prisma.$transaction(async (prisma) => {
-      const atualizadas = [];
+        const resultado = await prisma.$transaction(async (prisma) => {
+            const atualizadas = [];
       
-      for (const sub of subRespostas) {
-        const atualizada = await prisma.subResposta.update({
-          where: { id: sub.id },
-          data: {
-            atende: sub.atende,
-            linkComprovante: sub.linkComprovante,
-            comentarioRecurso: sub.comentario,
-            statusValidacaoPosRecurso: 'pendente',
-            teveRecurso: true
-          }
+            for (const sub of subRespostas) {
+                const atualizada = await prisma.subResposta.update({
+                    where: { id: sub.id },
+                    data: {
+                        atende: sub.atende,
+                        linkComprovante: sub.linkComprovante,
+                        comentarioRecurso: sub.comentario,
+                        statusValidacaoPosRecurso: 'pendente',
+                        teveRecurso: true
+                    }
+                });
+        
+                if (sub.evidencias && sub.evidencias.length > 0) {
+                    await prisma.subEvidencia.createMany({
+                        data: sub.evidencias.map(ev => ({
+                        subRespostaId: sub.id,
+                        tipo: 'recurso',
+                        url: ev.url
+                        }))
+                    });
+                }
+        
+                atualizadas.push(atualizada);
+            }
+      
+            return atualizadas;
         });
-        
-        if (sub.evidencias && sub.evidencias.length > 0) {
-          await prisma.subEvidencia.createMany({
-            data: sub.evidencias.map(ev => ({
-              subRespostaId: sub.id,
-              tipo: 'recurso',
-              url: ev.url
-            }))
-          });
-        }
-        
-        atualizadas.push(atualizada);
-      }
-      
-      return atualizadas;
-    });
     
-    res.json({ success: true, subRespostas: resultado });
+        res.json({ success: true, subRespostas: resultado });
     
-  } catch (error) {
-    console.error('❌ Erro ao salvar recurso de subitens:', error);
-    res.status(500).json({ error: 'Erro ao salvar recurso de subitens' });
-  }
+    } catch (error) {
+        console.error('❌ Erro ao salvar recurso de subitens:', error);
+        res.status(500).json({ error: 'Erro ao salvar recurso de subitens' });
+    }
 });
 
 // ROTA PARA BUSCAR SUBITENS DE UMA RESPOSTA
 app.get('/api/respostas/:id/subitens', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
+    try {
+        const { id } = req.params;
     
-    const subRespostas = await prisma.subResposta.findMany({
-      where: { respostaId: parseInt(id) },
-      include: {
-        subRequisito: true,
-        evidencias: true
-      },
-      orderBy: {
-        subRequisito: {
-          ordem: 'asc'
-        }
-      }
-    });
+        const subRespostas = await prisma.subResposta.findMany({
+            where: { respostaId: parseInt(id) },
+            include: {
+                subRequisito: true,
+                evidencias: true
+            },
+            orderBy: {
+                subRequisito: {
+                    ordem: 'asc'
+                }
+            }
+        });
     
-    res.json(subRespostas);
+        res.json(subRespostas);
     
-  } catch (error) {
-    console.error('❌ Erro ao buscar subitens:', error);
-    res.status(500).json({ error: 'Erro ao buscar subitens' });
-  }
+    } catch (error) {
+        console.error('❌ Erro ao buscar subitens:', error);
+        res.status(500).json({ error: 'Erro ao buscar subitens' });
+    }
 });
 
 app.post('/api/avaliacoes/:id/devolver', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
-  try {
-    const { id } = req.params;
+    try {
+        const { id } = req.params;
     
-    function calcularPrazoRecurso(dataInicio) {
-        let data = new Date(dataInicio);
+        function calcularPrazoRecurso(dataInicio) {
+            let data = new Date(dataInicio);
         
-        data.setDate(data.getDate() + 1);
+            data.setDate(data.getDate() + 1);
         
-        let diaSemana = data.getDay();
-        if (diaSemana === 0) { 
-            data.setDate(data.getDate() + 1); 
-        } else if (diaSemana === 6) { 
-            data.setDate(data.getDate() + 2); 
-        }
-        
-        let diasUteis = 0;
-        const diasNecessarios = 5;
-        
-        while (diasUteis < diasNecessarios) {
-            diaSemana = data.getDay();
-            if (diaSemana !== 0 && diaSemana !== 6) {
-                diasUteis++;
+            let diaSemana = data.getDay();
+            if (diaSemana === 0) { 
+                data.setDate(data.getDate() + 1); 
+            } else if (diaSemana === 6) { 
+                data.setDate(data.getDate() + 2); 
             }
+        
+            let diasUteis = 0;
+            const diasNecessarios = 5;
+        
+            while (diasUteis < diasNecessarios) {
+                diaSemana = data.getDay();
+                if (diaSemana !== 0 && diaSemana !== 6) {
+                    diasUteis++;
+                }
             
-            if (diasUteis < diasNecessarios) {
-                data.setDate(data.getDate() + 1);
+                if (diasUteis < diasNecessarios) {
+                    data.setDate(data.getDate() + 1);
+                }
             }
+        
+            const ano = data.getFullYear();
+            const mes = data.getMonth();
+            const dia = data.getDate();
+        
+            const dataBrasilia = new Date(ano, mes, dia, 23, 59, 59, 999);
+            
+            const offset = 3; 
+            const dataUTC = new Date(dataBrasilia.getTime() + (offset * 60 * 60 * 1000));
+        
+            console.log(`📅 Data em Brasília: ${dataBrasilia.toLocaleString('pt-BR')}`);
+            console.log(`📅 Data salva (UTC): ${dataUTC.toISOString()}`);
+        
+            return dataUTC;
         }
-        
-        const ano = data.getFullYear();
-        const mes = data.getMonth();
-        const dia = data.getDate();
-        
-        const dataBrasilia = new Date(ano, mes, dia, 23, 59, 59, 999);
-        
-        const offset = 3; 
-        const dataUTC = new Date(dataBrasilia.getTime() + (offset * 60 * 60 * 1000));
-        
-        console.log(`📅 Data em Brasília: ${dataBrasilia.toLocaleString('pt-BR')}`);
-        console.log(`📅 Data salva (UTC): ${dataUTC.toISOString()}`);
-        
-        return dataUTC;
-    }
 
-    const dataRecebimento = new Date(); 
-    const prazoRecurso = calcularPrazoRecurso(dataRecebimento);
+        const dataRecebimento = new Date(); 
+        const prazoRecurso = calcularPrazoRecurso(dataRecebimento);
 
-    console.log(`Definindo prazo de 5 dias úteis: ${prazoRecurso}`);
+        console.log(`Definindo prazo de 5 dias úteis: ${prazoRecurso}`);
     
-    const avaliacaoAtualizada = await prisma.avaliacao.update({
-      where: { id: parseInt(id) },
-      data: {
-        status: 'AGUARDANDO_RECURSO',
-        prazoRecurso: prazoRecurso,
-        recursoExpirado: false 
-      },
-    });
+        const avaliacaoAtualizada = await prisma.avaliacao.update({
+            where: { id: parseInt(id) },
+            data: {
+                status: 'AGUARDANDO_RECURSO',
+                prazoRecurso: prazoRecurso,
+                recursoExpirado: false 
+            },
+        });
 
-    console.log(`✅ Avaliação ${id} devolvida com prazo até: ${prazoRecurso}`);
+        console.log(`✅ Avaliação ${id} devolvida com prazo até: ${prazoRecurso}`);
 
-    res.json({ 
-      success: true, 
-      avaliacao: avaliacaoAtualizada,
-      prazoRecurso: prazoRecurso 
-    });
-  } catch (error) {
-    console.error("Erro ao devolver avaliação:", error);
-    res.status(500).json({ error: 'Ocorreu um erro ao tentar devolver a avaliação.' });
-  }
+        res.json({ 
+            success: true, 
+            avaliacao: avaliacaoAtualizada,
+            prazoRecurso: prazoRecurso 
+        });
+    } catch (error) {
+        console.error("Erro ao devolver avaliação:", error);
+        res.status(500).json({ error: 'Ocorreu um erro ao tentar devolver a avaliação.' });
+    }
 });
 
 // ROTA PARA A SECRETARIA ENVIAR O RECURSO DE UMA AVALIAÇÃO
@@ -2041,191 +2129,313 @@ app.patch('/api/avaliacoes/:id/nota-pos-recurso', authenticateToken, async (req,
 
 // ROTA CORRIGIDA PARA ENVIAR RELATÓRIO POR EMAIL
 app.post('/api/enviar-relatorio-email', upload.single('relatorioPdf'), async (req, res) => {
-  try {
-    const { email, avaliacaoId } = req.body;
-    const pdfBuffer = req.file?.buffer;
+    try {
+        const { email, avaliacaoId } = req.body;
+        const pdfBuffer = req.file?.buffer;
 
-    console.log(`[EMAIL] Recebida solicitação para enviar relatório para: ${email}, Avaliação: ${avaliacaoId}`);
+        console.log(`[EMAIL] Recebida solicitação para enviar relatório para: ${email}, Avaliação: ${avaliacaoId}`);
     
-    if (!email || !avaliacaoId || !pdfBuffer) {
-      console.log('[EMAIL] Dados incompletos:', { email, avaliacaoId, pdfBuffer: !!pdfBuffer });
-      return res.status(400).json({ 
-        error: 'Dados incompletos: email, avaliacaoId e PDF são obrigatórios' 
-      });
-    }
+        if (!email || !avaliacaoId || !pdfBuffer) {
+            console.log('[EMAIL] Dados incompletos:', { email, avaliacaoId, pdfBuffer: !!pdfBuffer });
+            return res.status(400).json({ 
+                error: 'Dados incompletos: email, avaliacaoId e PDF são obrigatórios' 
+            });
+        }
 
-    const avaliacao = await prisma.avaliacao.findUnique({
-      where: { id: parseInt(avaliacaoId) },
-      include: {
-        secretaria: true,
-        respostas: {
-          include: {
-            requisito: true,
-          },
-        },
-      },
-    });
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { id: parseInt(avaliacaoId) },
+            include: {
+                secretaria: true,
+                respostas: {
+                    include: {
+                        requisito: true,
+                    },
+                },
+            },
+        });
 
-    if (!avaliacao) {
-      return res.status(404).json({ error: 'Avaliação não encontrada' });
-    }
+        if (!avaliacao) {
+            return res.status(404).json({ error: 'Avaliação não encontrada' });
+        }
 
-    const pontuacaoFinal = avaliacao.pontuacaoFinal || calcularPontuacaoFinal(avaliacao.respostas);
+        const pontuacaoFinal = avaliacao.pontuacaoFinal || calcularPontuacaoFinal(avaliacao.respostas);
 
-    const percentual = (pontuacaoFinal / 180) * 100; 
-    let mensagemDestaque = '';
+        const percentual = (pontuacaoFinal / 180) * 100; 
+        let mensagemDestaque = '';
     
-    if (percentual === 100) {
-      mensagemDestaque = 'PARABÉNS! EXCELÊNCIA TOTAL! Sua secretaria atingiu a pontuação máxima';
-    } else if (percentual >= 90 && percentual < 100) {
-      mensagemDestaque = 'ÓTIMO DESEMPENHO! Sua secretaria atingiu uma pontuação destacada';
-    } else if (percentual >= 70 && percentual < 90) {
-      mensagemDestaque = 'DESEMPENHO SATISFATÓRIO. Continue investindo em melhorias';
-    } else if (percentual >= 1 && percentual < 70) {
-      mensagemDestaque = 'OPORTUNIDADE DE MELHORIA. Sua secretaria precisa focar em corrigir os requisitos que não atende';
-    } else {
-      mensagemDestaque = 'DESEMPENHO CRÍTICO. É fundamental uma ação imediata.';
-    }
+        if (percentual === 100) {
+            mensagemDestaque = 'PARABÉNS! EXCELÊNCIA TOTAL! Sua secretaria atingiu a pontuação máxima';
+        } else if (percentual >= 90 && percentual < 100) {
+            mensagemDestaque = 'ÓTIMO DESEMPENHO! Sua secretaria atingiu uma pontuação destacada';
+        } else if (percentual >= 70 && percentual < 90) {
+            mensagemDestaque = 'DESEMPENHO SATISFATÓRIO. Continue investindo em melhorias';
+        } else if (percentual >= 1 && percentual < 70) {
+            mensagemDestaque = 'OPORTUNIDADE DE MELHORIA. Sua secretaria precisa focar em corrigir os requisitos que não atende';
+        } else {
+            mensagemDestaque = 'DESEMPENHO CRÍTICO. É fundamental uma ação imediata.';
+        }
 
-    const mailOptions = {
-      from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-      to: email,
-      subject: `Relatório Final de Avaliação - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-                .header { background: #002776; color: white; padding: 25px; text-align: center; }
-                .content { padding: 25px; background: #f9f9f9; }
-                .footer { background: #e9ecef; padding: 20px; text-align: center; font-size: 12px; color: #666; }
-                .destaque { background: #e8f5e8; padding: 20px; border-left: 4px solid #28a745; margin: 20px 0; border-radius: 4px; }
-                .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; color: white; font-weight: bold; font-size: 1.1em; }
-                .aprovado { background: #28a745; }
-                .reprovado { background: #dc3545; }
-                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-                .info-item { background: white; padding: 10px; border-radius: 4px; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>Governo de Pernambuco</h1>
-                <h2>Controladoria Geral do Estado</h2>
-            </div>
-            
-            <div class="content">
-                <h3>Prezado(a) Responsável,</h3>
-                
-                <p>Conforme previsto no <strong>Ciclo de Avaliação 2025 da Transparência Ativa</strong>, encaminhamos o relatório final de avaliação referente à sua secretaria.</p>
-                
-                <div class="destaque">
-                    <h4>Resumo da Avaliação</h4>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <strong>Órgão:</strong><br>
-                            ${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})
+        const mailOptions = {
+            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+            to: email,
+            subject: `Relatório Final de Avaliação - ${avaliacao.secretaria.sigla} - Ciclo 2026`,
+            html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        line-height: 1.6; 
+                        color: #333; 
+                        max-width: 600px; 
+                        margin: 0 auto;
+                        background: #f5f5f5;
+                    }
+                    .email-container {
+                        background: white;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }
+                    .header-img {
+                        width: 100%;
+                        max-width: 600px;
+                        height: auto;
+                        margin: 0 auto; 
+                        display: block;
+                        object-fit: contain;
+                    }
+                    .content { 
+                        padding: 30px; 
+                    }
+                    .footer { 
+                        background: #e9ecef; 
+                        padding: 20px; 
+                        text-align: center; 
+                        font-size: 12px; 
+                        color: #666;
+                    }
+                    .resultado-final { 
+                        background: #e8f5e8; 
+                        border: 1px solid #c3e6cb;
+                        border-left: 4px solid #28a745;
+                        border-radius: 8px;
+                        padding: 20px;
+                        margin: 20px 0;
+                    }
+                    .info-grid { 
+                        display: grid; 
+                        grid-template-columns: 1fr 1fr; 
+                        gap: 15px; 
+                        margin: 15px 0; 
+                    }
+                    .info-item { 
+                        background: white; 
+                        padding: 15px; 
+                        border-radius: 6px; 
+                        border: 1px solid #e9ecef;
+                    }
+                    .badge { 
+                        display: inline-block; 
+                        padding: 8px 16px; 
+                        border-radius: 20px; 
+                        color: white; 
+                        font-weight: bold; 
+                        font-size: 1.1em; 
+                    }
+                    .aprovado { background: #28a745; }
+                    .reprovado { background: #dc3545; }
+                    .destaque { 
+                        background: #e8f4fd; 
+                        border: 1px solid #b3d9ff;
+                        border-radius: 6px;
+                        padding: 15px;
+                        margin: 15px 0;
+                    }
+                    .btn { 
+                        background: #002776; 
+                        color: #ffffff !important; 
+                        padding: 12px 25px; 
+                        text-decoration: none; 
+                        border-radius: 6px; 
+                        font-weight: bold;
+                        display: inline-block;
+                        margin: 10px 0;
+                    }
+                    .footer-images {
+                        display: flex;
+                        justify-content: center;
+                        gap: 20px;
+                        margin: 15px 0;
+                        align-items: center;
+                    }
+                    .footer-img {
+                        max-width: 150px;
+                        height: 60px;
+                        object-fit: contain;
+                    }
+                    .footer-img[alt="SIMPE"] {
+                        max-width: 200px;
+                        height: 80px;
+                    }
+                    h3 { color: #002776; margin-top: 0; }
+                    h4 { color: #333; margin-top: 0; }
+                    ul { padding-left: 20px; }
+                    li { margin-bottom: 8px; }
+                </style>
+            </head>
+            <body>
+                <div class="email-container">
+                    <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-footer.png" 
+                        alt="Controladoria Geral do Estado" 
+                        class="header-img">
+                    
+                    <div class="content">
+                        <h3>Relatório Final de Avaliação</h3>
+                        
+                        <div class="destaque">
+                            <p><strong>O processo de avaliação da sua secretaria foi concluído!</strong></p>
                         </div>
-                        <div class="info-item">
-                            <strong>Nota Final:</strong><br>
-                            <span class="badge ${pontuacaoFinal > 140 ? 'aprovado' : 'reprovado'}">${pontuacaoFinal} pontos</span>
+                        
+                        <p>Prezado(a) <strong>${avaliacao.nomeResponsavel || 'Responsável'}</strong>,</p>
+                        <p>Conforme previsto no <strong>Ciclo de Avaliação 2026 da Transparência Ativa</strong>, encaminhamos o relatório final de avaliação referente à sua secretaria.</p>
+                        
+                        <div class="resultado-final">
+                            <h4>Resumo da Avaliação</h4>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <strong>Órgão/Entidade:</strong><br>
+                                    ${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})
+                                </div>
+                                <div class="info-item">
+                                    <strong>Nota Final:</strong><br>
+                                    <span class="badge ${pontuacaoFinal > 140 ? 'aprovado' : 'reprovado'}">${pontuacaoFinal} / ${pontuacaoTotal} pontos</span>
+                                </div>
+                            </div>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <strong>Data de Finalização:</strong><br>
+                                    ${new Date(avaliacao.updatedAt).toLocaleDateString('pt-BR')}
+                                </div>
+                                <div class="info-item">
+                                    <strong>Desempenho:</strong><br>
+                                    ${mensagemDestaque}
+                                </div>
+                            </div>
+                            <div class="info-item" style="grid-column: span 2; margin-top: 10px;">
+                                <strong>Percentual de Aproveitamento:</strong><br>
+                                ${percentual.toFixed(1)}%
+                            </div>
                         </div>
+                        
+                        <p><strong>O relatório detalhado em anexo contém:</strong></p>
+                        <ul>
+                            <li>Evolução da pontuação durante as fases da avaliação (autoavaliação, análise SCGE e pós-recurso)</li>
+                            <li>Análise detalhada de cada requisito avaliado</li>
+                            <li>Resultados da autoavaliação, análise da SCGE e recursos</li>
+                            <li>Evidências e comentários dos analistas em cada etapa</li>
+                            <li>Links e justificativas para cada item avaliado</li>
+                        </ul>
+                        
+                        <p style="margin-top: 25px; text-align: center;">
+                            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/nota-final/${avaliacao.id}" 
+                            class="btn" style="color: #ffffff !important;">
+                            Acessar Relatório no Sistema
+                            </a>
+                        </p>
+                        
+                        <div class="destaque" style="margin-top: 25px;">
+                            <p style="margin: 0;"><strong>📄 Documento oficial:</strong> Este relatório constitui-se como documento oficial do processo de avaliação da transparência ativa do ciclo 2026.</p>
+                        </div>
+                        
+                        <p>Em caso de dúvidas ou necessidade de esclarecimentos adicionais, favor entrar em contato com nossa equipe através do email <strong>transparencia@scge.pe.gov.br</strong>.</p>
+                        
+                        <p style="margin-top: 25px;">
+                            Atenciosamente,<br>
+                            <strong>Equipe da Coordenação de Transparência Ativa (CTA)</strong><br>
+                            Controladoria Geral do Estado de Pernambuco
+                        </p>
                     </div>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <strong>Data de Finalização:</strong><br>
-                            ${new Date(avaliacao.updatedAt).toLocaleDateString('pt-BR')}
-                        </div>
-                        <div class="info-item">
-                            <strong>Status:</strong><br>
-                            ${mensagemDestaque.split('!')[0]}!
+                    
+                    <div class="footer">
+                        <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
+                        <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
+                        R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
+                        
+                        <div class="footer-images">
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/SIMPE-marca.png" 
+                                alt="SIMPE" 
+                                class="footer-img">
+                            <img src="${process.env.BASE_URL || 'http://localhost:3000'}/assets/logo-header.png" 
+                                alt="Governo de Pernambuco" 
+                                class="footer-img">
                         </div>
                     </div>
                 </div>
-                
-                <p><strong>O relatório detalhado em anexo contém:</strong></p>
-                <ul>
-                    <li>Evolução da pontuação durante as fases da avaliação</li>
-                    <li>Análise detalhada de cada requisito avaliado</li>
-                    <li>Resultados da autoavaliação, análise SCGE e recursos</li>
-                    <li>Evidências e comentários dos analistas</li>
-                </ul>
-                
-                <p>Este relatório constitui-se como documento oficial do processo de avaliação. Em caso de dúvidas ou necessidade de esclarecimentos adicionais, favor entrar em contato com nossa equipe através do email <strong>transparencia@scge.pe.gov.br</strong>.</p>
-                
-                <p>Atenciosamente,<br>
-                  <strong>Equipe da Coordenação de Transparência Ativa (CTA) Controladoria Geral do Estado de Pernambuco</strong></p>
-                  <strong>Secretaria da Controladoria-Geral do Estado de Pernambuco</strong></p>
-            </div>
-            
-            <div class="footer">
-                <p><em>Este é um email automático. Por favor, não responda diretamente a esta mensagem.</em></p>
-                <p>Secretaria da Controladoria-Geral do Estado de Pernambuco<br>
-                R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090 </p>
-            </div>
-        </body>
-        </html>
-      `,
-      attachments: [
-        {
-          filename: `relatorio-final-${avaliacao.secretaria.sigla}-${avaliacaoId}.pdf`,
-          content: pdfBuffer,
-          contentType: 'application/pdf',
-        },
-      ],
-    };
+            </body>
+            </html>
+            `,
+            attachments: [
+                {
+                    filename: `relatorio-final-${avaliacao.secretaria.sigla}-${avaliacaoId}.pdf`,
+                    content: pdfBuffer,
+                    contentType: 'application/pdf',
+                },
+            ],
+        };
 
-    await transporter.sendMail(mailOptions);
+        await transporter.sendMail(mailOptions);
 
-    console.log(`[EMAIL] Email enviado com sucesso para: ${email}`);
+        console.log(`[EMAIL] Email enviado com sucesso para: ${email}`);
     
-    res.json({ 
-      success: true, 
-      message: 'Relatório enviado por email com sucesso',
-      destinatario: email
-    });
+        res.json({ 
+            success: true, 
+            message: 'Relatório enviado por email com sucesso',
+            destinatario: email
+        });
 
-  } catch (error) {
-    console.error('[EMAIL] Erro ao enviar email:', error);
-    res.status(500).json({ 
-      error: 'Erro interno ao enviar email: ' + error.message 
-    });
-  }
+    } catch (error) {
+        console.error('[EMAIL] Erro ao enviar email:', error);
+        res.status(500).json({ 
+            error: 'Erro interno ao enviar email: ' + error.message 
+        });
+    }
 });
 
 // ROTA DE DEBUG SEM AUTENTICAÇÃO 
 app.get('/api/debug/prazo-publico/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const avaliacao = await prisma.avaliacao.findUnique({
-      where: { id: parseInt(id) }
-    });
+    try {
+        const { id } = req.params;
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { id: parseInt(id) }
+        });
 
-    if (!avaliacao) {
-      return res.status(404).json({ error: 'Avaliação não encontrada' });
+        if (!avaliacao) {
+            return res.status(404).json({ error: 'Avaliação não encontrada' });
+        }
+
+        const agora = new Date();
+        const prazo = new Date(avaliacao.prazoRecurso);
+        const diferencaMs = prazo - agora;
+        const segundosRestantes = Math.ceil(diferencaMs / 1000);
+
+        res.json({
+            avaliacaoId: parseInt(id),
+            status: avaliacao.status,
+            prazoRecurso: avaliacao.prazoRecurso,
+            prazoFormatado: prazo.toLocaleString('pt-BR'),
+            agora: agora.toLocaleString('pt-BR'),
+            diferencaMs: diferencaMs,
+            segundosRestantes: segundosRestantes,
+            dentroDoPrazo: segundosRestantes > 0,
+            recursoExpirado: avaliacao.recursoExpirado
+        });
+    } catch (error) {
+        console.error('Erro no debug público:', error);
+        res.status(500).json({ error: 'Erro no debug público' });
     }
-
-    const agora = new Date();
-    const prazo = new Date(avaliacao.prazoRecurso);
-    const diferencaMs = prazo - agora;
-    const segundosRestantes = Math.ceil(diferencaMs / 1000);
-
-    res.json({
-      avaliacaoId: parseInt(id),
-      status: avaliacao.status,
-      prazoRecurso: avaliacao.prazoRecurso,
-      prazoFormatado: prazo.toLocaleString('pt-BR'),
-      agora: agora.toLocaleString('pt-BR'),
-      diferencaMs: diferencaMs,
-      segundosRestantes: segundosRestantes,
-      dentroDoPrazo: segundosRestantes > 0,
-      recursoExpirado: avaliacao.recursoExpirado
-    });
-  } catch (error) {
-    console.error('Erro no debug público:', error);
-    res.status(500).json({ error: 'Erro no debug público' });
-  }
 });
 
 // ROTA PARA ENVIAR EMAIL DE CONFIRMAÇÃO DE AVALIAÇÃO
@@ -2617,7 +2827,7 @@ app.post('/api/avaliacoes/:id/notificar-recurso', authenticateToken, async (req,
         const mailOptions = {
             from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
             to: ['kadsonlima91@gmail.com' , /*'transparencia@scge.pe.gov.br'*/],
-            subject: `Recurso Recebido - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
+            subject: `Recurso Recebido - ${avaliacao.secretaria.sigla} - Ciclo 2026`,
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -2883,7 +3093,7 @@ app.post('/api/avaliacoes/:id/notificar-devolucao-recurso', authenticateToken, a
         const mailOptions = {
             from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
             to: avaliacao.emailResponsavel, 
-            subject: `Avaliação Devolvida para Recurso - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
+            subject: `Avaliação Devolvida para Recurso - ${avaliacao.secretaria.sigla} - Ciclo 2026`,
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -3059,68 +3269,68 @@ app.post('/api/avaliacoes/:id/notificar-devolucao-recurso', authenticateToken, a
         });
 
     } catch (error) {
-      console.error('[EMAIL DEVOLUÇÃO] Erro ao enviar email de devolução:', error);
-      res.status(500).json({ 
-          error: 'Erro interno ao notificar secretaria sobre devolução: ' + error.message 
-      });
+        console.error('[EMAIL DEVOLUÇÃO] Erro ao enviar email de devolução:', error);
+        res.status(500).json({ 
+            error: 'Erro interno ao notificar secretaria sobre devolução: ' + error.message 
+        });
     }
 });
 
 // ROTA MELHORADA PARA VERIFICAR PRAZO DO RECURSO
 app.get('/api/avaliacoes/:id/verificar-prazo-recurso', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const avaliacao = await prisma.avaliacao.findUnique({
-      where: { id: parseInt(id) }
-    });
+    try {
+        const { id } = req.params;
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { id: parseInt(id) }
+        });
 
-    if (!avaliacao) {
-      return res.status(404).json({ error: 'Avaliação não encontrada' });
-    }
+        if (!avaliacao) {
+            return res.status(404).json({ error: 'Avaliação não encontrada' });
+        }
 
-    if (!avaliacao.prazoRecurso) {
-      return res.json({ 
-        dentroDoPrazo: false, 
-        mensagem: 'Prazo não definido',
-        dataLimite: null,
-        segundosRestantes: 0
-      });
-    }
+        if (!avaliacao.prazoRecurso) {
+            return res.json({ 
+                dentroDoPrazo: false, 
+                mensagem: 'Prazo não definido',
+                dataLimite: null,
+                segundosRestantes: 0
+            });
+        }
 
-    const agora = new Date();
-    const dataLimite = new Date(avaliacao.prazoRecurso);
-    const dentroDoPrazo = agora <= dataLimite;
+        const agora = new Date();
+        const dataLimite = new Date(avaliacao.prazoRecurso);
+        const dentroDoPrazo = agora <= dataLimite;
     
-    const segundosRestantes = Math.max(0, Math.ceil((dataLimite - agora) / 1000));
+        const segundosRestantes = Math.max(0, Math.ceil((dataLimite - agora) / 1000));
 
-    res.json({ 
-      dentroDoPrazo, 
-      segundosRestantes: dentroDoPrazo ? segundosRestantes : 0,
-      dataLimite: avaliacao.prazoRecurso,
-      recursoExpirado: avaliacao.recursoExpirado
-    });
-  } catch (error) {
-    console.error('Erro ao verificar prazo:', error);
-    res.status(500).json({ error: 'Erro ao verificar prazo' });
-  }
+        res.json({ 
+            dentroDoPrazo, 
+            segundosRestantes: dentroDoPrazo ? segundosRestantes : 0,
+            dataLimite: avaliacao.prazoRecurso,
+            recursoExpirado: avaliacao.recursoExpirado
+        });
+    } catch (error) {
+        console.error('Erro ao verificar prazo:', error);
+        res.status(500).json({ error: 'Erro ao verificar prazo' });
+    }
 });
 
 function calcularPontuacaoFinal(respostas) {
-  let pontuacaoFinal = 0;
+    let pontuacaoFinal = 0;
   
-  respostas.forEach(resposta => {
-    const pontuacaoRequisito = resposta.requisito.pontuacao;
-    const isSplit = resposta.atendeDisponibilidadeOriginal !== null;
+    respostas.forEach(resposta => {
+        const pontuacaoRequisito = resposta.requisito.pontuacao;
+        const isSplit = resposta.atendeDisponibilidadeOriginal !== null;
 
-    if (isSplit) {
-      if (resposta.validacaoDisponibilidade === 'aprovado') pontuacaoFinal += pontuacaoRequisito / 2;
-      if (resposta.validacaoSerieHistorica === 'aprovado') pontuacaoFinal += pontuacaoRequisito / 2;
-    } else {
-      if (resposta.statusValidacao === 'aprovado') pontuacaoFinal += pontuacaoRequisito;
-    }
-  });
+        if (isSplit) {
+            if (resposta.validacaoDisponibilidade === 'aprovado') pontuacaoFinal += pontuacaoRequisito / 2;
+            if (resposta.validacaoSerieHistorica === 'aprovado') pontuacaoFinal += pontuacaoRequisito / 2;
+        } else {
+            if (resposta.statusValidacao === 'aprovado') pontuacaoFinal += pontuacaoRequisito;
+        }
+    });
 
-  return Math.round(pontuacaoFinal);
+    return Math.round(pontuacaoFinal);
 }
 
 // ROTA PARA SALVAR UMA NOVA AVALIAÇÃO COMPLETA 
@@ -3178,7 +3388,7 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
                 nomeResponsavel: nomeResponsavel,
                 emailResponsavel: emailResponsavel,
                 status: 'EM_ANALISE_SCGE',
-                ciclo: 2025,
+                ciclo: 2026,
                 pontuacaoAutoavaliacao: req.body.pontuacaoAutoavaliacao || 0,
                 pontuacaoTotal: pontuacaoTotalCalculada
             }
@@ -3235,94 +3445,94 @@ app.post('/api/avaliacoes', authenticateToken, async (req, res) => {
         }
 
         if (subitens && Array.isArray(subitens) && subitens.length > 0) {
-          console.log(`📝 Salvando ${subitens.length} subitens...`);
-          console.log('subitens[0]:', JSON.stringify(subitens[0], null, 2));
-          console.log('respostas array:', respostas.map(r => ({ requisitoId: r.requisitoId, tipo: typeof r.requisitoId })));
+            console.log(`📝 Salvando ${subitens.length} subitens...`);
+            console.log('subitens[0]:', JSON.stringify(subitens[0], null, 2));
+            console.log('respostas array:', respostas.map(r => ({ requisitoId: r.requisitoId, tipo: typeof r.requisitoId })));
           
-          const subitensPorRequisito = {};
+            const subitensPorRequisito = {};
           
-          subitens.forEach(sub => {
-              if (!subitensPorRequisito[sub.requisitoId]) {
-                  subitensPorRequisito[sub.requisitoId] = [];
-              }
-              subitensPorRequisito[sub.requisitoId].push(sub);
-          });
+            subitens.forEach(sub => {
+                if (!subitensPorRequisito[sub.requisitoId]) {
+                    subitensPorRequisito[sub.requisitoId] = [];
+                }
+                subitensPorRequisito[sub.requisitoId].push(sub);
+            });
           
-          for (const [requisitoId, listaSubitens] of Object.entries(subitensPorRequisito)) {
-              console.log(`🔍 Procurando requisito ID: ${requisitoId} (tipo: ${typeof requisitoId})`);
-              const respostaIndex = respostas.findIndex(r => 
-                r.requisitoId == requisitoId  
-              );
+            for (const [requisitoId, listaSubitens] of Object.entries(subitensPorRequisito)) {
+                console.log(`🔍 Procurando requisito ID: ${requisitoId} (tipo: ${typeof requisitoId})`);
+                const respostaIndex = respostas.findIndex(r => 
+                    r.requisitoId == requisitoId  
+                );
               
-              console.log(`respostaIndex encontrado: ${respostaIndex}`);
+                console.log(`respostaIndex encontrado: ${respostaIndex}`);
               
-              if (respostaIndex !== -1) {
-                  const respostaCriadaId = respostasCriadas[respostaIndex];
+                if (respostaIndex !== -1) {
+                    const respostaCriadaId = respostasCriadas[respostaIndex];
                   
-                  console.log(`📌 Processando ${listaSubitens.length} subitens para resposta ${respostaCriadaId}`);
+                    console.log(`📌 Processando ${listaSubitens.length} subitens para resposta ${respostaCriadaId}`);
                   
-                  for (const sub of listaSubitens) {
-                      try {
-                          if (!sub.subRequisitoOrdem) {
-                              console.warn(`⚠️ Subitem sem subRequisitoOrdem ignorado:`, sub);
-                              continue;
-                          }
+                    for (const sub of listaSubitens) {
+                        try {
+                            if (!sub.subRequisitoOrdem) {
+                                console.warn(`⚠️ Subitem sem subRequisitoOrdem ignorado:`, sub);
+                                continue;
+                            }
 
-                          const ordemParaBuscar = sub.subRequisitoOrdem;
+                            const ordemParaBuscar = sub.subRequisitoOrdem;
                           
-                          const subRequisito = await prisma.subRequisito.findFirst({
-                              where: {
-                                  requisitoPaiId: parseInt(requisitoId),
-                                  ordem: ordemParaBuscar
-                              }
-                          });
+                            const subRequisito = await prisma.subRequisito.findFirst({
+                                where: {
+                                    requisitoPaiId: parseInt(requisitoId),
+                                    ordem: ordemParaBuscar
+                                }
+                            });
 
-                          if (!subRequisito) {
-                              console.error(`❌ Subrequisito não encontrado para ordem ${sub.subRequisitoOrdem} no requisito ${requisitoId}`);
-                              continue;
-                          }
+                            if (!subRequisito) {
+                                console.error(`❌ Subrequisito não encontrado para ordem ${sub.subRequisitoOrdem} no requisito ${requisitoId}`);
+                                continue;
+                            }
                           
-                          const subResposta = await prisma.subResposta.create({
-                              data: {
-                                  respostaId: respostaCriadaId,
-                                  subRequisitoId: subRequisito.id, 
-                                  atende: sub.atende || false,
-                                  linkComprovante: sub.linkComprovante || null,
-                                  comentarioSecretaria: sub.comentario || null,
-                                  statusValidacao: 'pendente'
-                              }
-                          });
+                            const subResposta = await prisma.subResposta.create({
+                                data: {
+                                    respostaId: respostaCriadaId,
+                                    subRequisitoId: subRequisito.id, 
+                                    atende: sub.atende || false,
+                                    linkComprovante: sub.linkComprovante || null,
+                                    comentarioSecretaria: sub.comentario || null,
+                                    statusValidacao: 'pendente'
+                                }
+                            });
                           
-                          console.log(`  ✅ Subresposta ${subResposta.id} criada para ordem ${sub.subRequisitoOrdem}`);
+                            console.log(`  ✅ Subresposta ${subResposta.id} criada para ordem ${sub.subRequisitoOrdem}`);
                           
-                          if (sub.evidencias && Array.isArray(sub.evidencias) && sub.evidencias.length > 0) {
-                              for (const ev of sub.evidencias) {
-                                  if (ev.url && ev.url.trim() !== '') {
-                                      await prisma.subEvidencia.create({
-                                          data: {
-                                              subRespostaId: subResposta.id,
-                                              tipo: 'original',
-                                              url: ev.url.trim()
-                                          }
-                                      });
-                                  }
-                              }
-                              console.log(`    ✅ ${sub.evidencias.length} evidências criadas para ordem ${sub.subRequisitoOrdem}`);
-                          }
+                            if (sub.evidencias && Array.isArray(sub.evidencias) && sub.evidencias.length > 0) {
+                                for (const ev of sub.evidencias) {
+                                    if (ev.url && ev.url.trim() !== '') {
+                                        await prisma.subEvidencia.create({
+                                            data: {
+                                                subRespostaId: subResposta.id,
+                                                tipo: 'original',
+                                                url: ev.url.trim()
+                                            }
+                                        });
+                                    }
+                                }
+                                console.log(`    ✅ ${sub.evidencias.length} evidências criadas para ordem ${sub.subRequisitoOrdem}`);
+                            }
                           
-                      } catch (error) {
-                          console.error(`❌ Erro ao criar subresposta para ordem ${sub.subRequisitoOrdem}:`, error);
-                      }
-                  }
-              } else {
-                  console.log(`❌ NÃO ENCONTROU resposta para requisitoId ${requisitoId}`);
-              }
-          }
+                        } catch (error) {
+                            console.error(`❌ Erro ao criar subresposta para ordem ${sub.subRequisitoOrdem}:`, error);
+                        }
+                    }
+                } else {
+                    console.log(`❌ NÃO ENCONTROU resposta para requisitoId ${requisitoId}`);
+                }
+            }
           
-          console.log(`✅ Todos os ${subitens.length} subitens processados`);
-      } else {
-          console.log('ℹ️ Nenhum subitem para salvar');
-      }
+            console.log(`✅ Todos os ${subitens.length} subitens processados`);
+        } else {
+            console.log('ℹ️ Nenhum subitem para salvar');
+        }
 
         console.log(`✅ Processo concluído. ${respostasCriadas.length} respostas criadas.`);
 
@@ -3431,22 +3641,22 @@ app.get('/api/debug-schema', async (req, res) => {
 
 // Parar uma varredura
 app.post('/stop-crawl/:sessionId', authenticateToken, async (req, res) => {
-  const { sessionId } = req.params;
-  if (!activeProcesses.has(sessionId)) {
+    const { sessionId } = req.params;
+    if (!activeProcesses.has(sessionId)) {
+        try {
+            await prisma.scanSession.update({ where: { id: sessionId, status: 'iniciado' }, data: { status: 'interrompido' } });
+        } catch (error) {}
+        return res.status(404).json({ message: 'Sessão não encontrada ou já finalizada.' });
+    }
     try {
-      await prisma.scanSession.update({ where: { id: sessionId, status: 'iniciado' }, data: { status: 'interrompido' } });
-    } catch (error) {}
-    return res.status(404).json({ message: 'Sessão não encontrada ou já finalizada.' });
-  }
-  try {
-    const processInfo = activeProcesses.get(sessionId);
-    processInfo.process.kill('SIGKILL');
-    activeProcesses.delete(sessionId);
-    await prisma.scanSession.update({ where: { id: sessionId }, data: { status: 'interrompido' } });
-    res.json({ success: true, message: 'Varredura interrompida com sucesso' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao parar varredura' });
-  }
+        const processInfo = activeProcesses.get(sessionId);
+        processInfo.process.kill('SIGKILL');
+        activeProcesses.delete(sessionId);
+        await prisma.scanSession.update({ where: { id: sessionId }, data: { status: 'interrompido' } });
+        res.json({ success: true, message: 'Varredura interrompida com sucesso' });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao parar varredura' });
+    }
 });
 
 // Listar todas as avaliações
@@ -3477,50 +3687,50 @@ app.get('/api/avaliacoes', authenticateToken, authenticateAdminOrGestor, async (
 
 // Buscar detalhes de uma avaliação
 app.get('/api/avaliacoes/:id', authenticateToken, authenticateAdminOrGestor, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const avaliacao = await prisma.avaliacao.findUnique({
-      where: { id: parseInt(id) },
-      include: { 
-        secretaria: true, 
-        respostas: { 
-          orderBy: { requisitoId: 'asc' }, 
-          include: { 
-            requisito: true, 
-            evidencias: true, 
-            linksAnalista: true, 
-            linksAnaliseFinal: true,
-            subRespostas: {
-              include: {
-                subRequisito: true,
-                evidencias: true
-              },
-              orderBy: {
-                subRequisito: {
-                  ordem: 'asc'
-                }
-              }
-            }
-          } 
-        } 
-      },
-    });
-    if (!avaliacao) { return res.status(404).json({ error: "Avaliação não encontrada." }); }
-    res.json(avaliacao);
-  } catch (error) {
-    console.error('Erro ao buscar avaliação:', error);
-    res.status(500).json({ error: "Erro ao buscar detalhes da avaliação." });
-  }
+    const { id } = req.params;
+    try {
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { id: parseInt(id) },
+            include: { 
+                secretaria: true, 
+                respostas: { 
+                    orderBy: { requisitoId: 'asc' }, 
+                    include: { 
+                        requisito: true, 
+                        evidencias: true, 
+                        linksAnalista: true, 
+                        linksAnaliseFinal: true,
+                        subRespostas: {
+                            include: {
+                                subRequisito: true,
+                                evidencias: true
+                            },
+                            orderBy: {
+                                subRequisito: {
+                                    ordem: 'asc'
+                                }
+                            }
+                        }
+                    } 
+                } 
+            },
+        });
+        if (!avaliacao) { return res.status(404).json({ error: "Avaliação não encontrada." }); }
+        res.json(avaliacao);
+    } catch (error) {
+        console.error('Erro ao buscar avaliação:', error);
+        res.status(500).json({ error: "Erro ao buscar detalhes da avaliação." });
+    }
 });
 
 // Listar todas as sessões do scanner
 app.get("/sessions", authenticateToken, async (req, res) => {
-  try {
-    const sessions = await prisma.scanSession.findMany({ orderBy: { createdAt: 'desc' } });
-    res.json(sessions);
-  } catch (error) {
-    res.status(500).json({ error: "Erro ao buscar sessões" });
-  }
+    try {
+        const sessions = await prisma.scanSession.findMany({ orderBy: { createdAt: 'desc' } });
+        res.json(sessions);
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao buscar sessões" });
+    }
 });
 
 app.get('/scan-stream/:sessionId', (req, res) => {
@@ -3563,12 +3773,12 @@ app.get('/verify-token', authenticateToken, (req, res) => {
 
 // Listar todas as secretarias
 app.get('/secretarias', async (req, res) => {
-  try {
-    const secretarias = await prisma.secretaria.findMany({ orderBy: { nome: 'asc' } });
-    res.json(secretarias);
-  } catch (error) {
-    res.status(500).json({ error: "Erro ao buscar a lista de secretarias." });
-  }
+    try {
+        const secretarias = await prisma.secretaria.findMany({ orderBy: { nome: 'asc' } });
+        res.json(secretarias);
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao buscar a lista de secretarias." });
+    }
 });
 
 
@@ -3605,83 +3815,83 @@ app.get('/requisitos', async (req, res) => {
 });
 
 app.delete('/avaliacoes/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    await prisma.resposta.deleteMany({ where: { avaliacaoId: parseInt(id) } });
-    await prisma.avaliacao.delete({ where: { id: parseInt(id) } });
-    res.json({ success: true, message: 'Avaliação apagada com sucesso.' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao apagar a avaliação.' });
-  }
+    const { id } = req.params;
+    try {
+        await prisma.resposta.deleteMany({ where: { avaliacaoId: parseInt(id) } });
+        await prisma.avaliacao.delete({ where: { id: parseInt(id) } });
+        res.json({ success: true, message: 'Avaliação apagada com sucesso.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao apagar a avaliação.' });
+    }
 });
 
 
 app.delete('/sessions/:id', authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  try {
-    await prisma.link.deleteMany({ where: { session_id: id } });
-    await prisma.scanSession.delete({ where: { id: id } });
-    res.json({ success: true, message: 'Sessão apagada com sucesso.' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao apagar a sessão.' });
-  }
+    const { id } = req.params;
+    try {
+        await prisma.link.deleteMany({ where: { session_id: id } });
+        await prisma.scanSession.delete({ where: { id: id } });
+        res.json({ success: true, message: 'Sessão apagada com sucesso.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao apagar a sessão.' });
+    }
 });
 
 
 app.get("/scan-sessions/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const session = await prisma.scanSession.findUnique({ where: { id } });
-    if (!session) { return res.status(404).json({ error: "Sessão não encontrada" }); }
-    res.json(session);
-  } catch (error) {
-    res.status(500).json({ error: "Erro ao buscar sessão" });
-  }
+    const { id } = req.params;
+    try {
+        const session = await prisma.scanSession.findUnique({ where: { id } });
+        if (!session) { return res.status(404).json({ error: "Sessão não encontrada" }); }
+        res.json(session);
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao buscar sessão" });
+    }
 });
 
 app.patch("/scan-session/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const { status, total_links, depthReached, errorMessage } = req.body;
-    const updateData = {};
-    if (status) updateData.status = status;
-    if (typeof total_links !== 'undefined') updateData.total_links = total_links;
-    if (typeof depthReached !== 'undefined') updateData.depthReached = depthReached;
-    if (errorMessage) updateData.errorMessage = errorMessage;
-    const updated = await prisma.scanSession.update({ where: { id }, data: updateData });
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao atualizar scan session' });
-  }
+    const { id } = req.params;
+    try {
+        const { status, total_links, depthReached, errorMessage } = req.body;
+        const updateData = {};
+        if (status) updateData.status = status;
+        if (typeof total_links !== 'undefined') updateData.total_links = total_links;
+        if (typeof depthReached !== 'undefined') updateData.depthReached = depthReached;
+        if (errorMessage) updateData.errorMessage = errorMessage;
+        const updated = await prisma.scanSession.update({ where: { id }, data: updateData });
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao atualizar scan session' });
+    }
 });
 
 app.get("/links", async (req, res) => {
-  try {
-    const { session_id } = req.query;
-    console.log(`--- [LOG] Rota GET /links chamada para a session_id: ${session_id}`);
+    try {
+        const { session_id } = req.query;
+        console.log(`--- [LOG] Rota GET /links chamada para a session_id: ${session_id}`);
 
-    if (!session_id) {
-      console.log("[AVISO] session_id não foi fornecido na requisição.");
-      return res.status(400).json({error: "session_id é obrigatório"});
+        if (!session_id) {
+        console.log("[AVISO] session_id não foi fornecido na requisição.");
+        return res.status(400).json({error: "session_id é obrigatório"});
+        }
+
+        console.log(`[LOG] Buscando links no banco de dados onde a session_id é exatamente: '${session_id}'`);
+        const links = await prisma.link.findMany({
+        where: {
+            session_id: session_id
+        },
+        orderBy: {
+            createdAt: 'asc'
+        }
+        });
+        
+        console.log(`[LOG] A consulta do Prisma encontrou ${links.length} links para esta sessão.`);
+        res.json(links);
+
+    } catch (error) {
+        console.error("[ERRO CRÍTICO] Falha na rota GET /links:", error);
+        res.status(500).json({ error: "Erro ao buscar links" });
     }
-
-    console.log(`[LOG] Buscando links no banco de dados onde a session_id é exatamente: '${session_id}'`);
-    const links = await prisma.link.findMany({
-      where: {
-        session_id: session_id
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
-    });
-    
-    console.log(`[LOG] A consulta do Prisma encontrou ${links.length} links para esta sessão.`);
-    res.json(links);
-
-  } catch (error) {
-    console.error("[ERRO CRÍTICO] Falha na rota GET /links:", error);
-    res.status(500).json({ error: "Erro ao buscar links" });
-  }
 });
 
 app.patch('/links/by-url', async (req, res) => {
@@ -3713,286 +3923,286 @@ app.patch('/links/by-url', async (req, res) => {
 });
 
 app.get('/export/csv/:sessionId', async (req, res) => {
-  const { sessionId } = req.params;
-  try {
-    const links = await prisma.link.findMany({ where: { session_id: sessionId }, orderBy: { url: 'asc' } });
-    if (links.length === 0) return res.status(404).send('Nenhum link encontrado.');
-    const header = 'URL;Status;Codigo_HTTP;Tipo;Origem;URL_Final\n';
-    const rows = links.map(link => {
-      const rowData = [link.url, link.status, link.httpCode || '', link.tipo, link.origem, link.finalUrl || ''].map(field => `"${String(field).replace(/"/g, '""')}"`);
-      return rowData.join(';');
-    }).join('\n');
-    const csvContent = header + rows;
-    const fileName = `relatorio_${sessionId.substring(0, 8)}.csv`;
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
-    res.status(200).end(csvContent);
-  } catch (error) { res.status(500).send('Erro ao gerar o relatório CSV.'); }
+    const { sessionId } = req.params;
+    try {
+        const links = await prisma.link.findMany({ where: { session_id: sessionId }, orderBy: { url: 'asc' } });
+        if (links.length === 0) return res.status(404).send('Nenhum link encontrado.');
+        const header = 'URL;Status;Codigo_HTTP;Tipo;Origem;URL_Final\n';
+        const rows = links.map(link => {
+            const rowData = [link.url, link.status, link.httpCode || '', link.tipo, link.origem, link.finalUrl || ''].map(field => `"${String(field).replace(/"/g, '""')}"`);
+            return rowData.join(';');
+        }).join('\n');
+        const csvContent = header + rows;
+        const fileName = `relatorio_${sessionId.substring(0, 8)}.csv`;
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+        res.status(200).end(csvContent);
+    } catch (error) { res.status(500).send('Erro ao gerar o relatório CSV.'); }
 });
 
 app.get('/export/json/:sessionId', async (req, res) => {
-  const { sessionId } = req.params;
-  try {
-    const links = await prisma.link.findMany({ where: { session_id: sessionId }, orderBy: { url: 'asc' } });
-    if (links.length === 0) return res.status(404).send('Nenhum link encontrado.');
-    const fileName = `relatorio_${sessionId.substring(0, 8)}.json`;
-    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
-    res.json(links);
-  } catch (error) { res.status(500).send('Erro ao gerar o relatório JSON.'); }
+    const { sessionId } = req.params;
+    try {
+        const links = await prisma.link.findMany({ where: { session_id: sessionId }, orderBy: { url: 'asc' } });
+        if (links.length === 0) return res.status(404).send('Nenhum link encontrado.');
+        const fileName = `relatorio_${sessionId.substring(0, 8)}.json`;
+        res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+        res.json(links);
+    } catch (error) { res.status(500).send('Erro ao gerar o relatório JSON.'); }
 });
 
 app.get('/export/xlsx/:sessionId', async (req, res) => {
-  const { sessionId } = req.params;
-  try {
-    const links = await prisma.link.findMany({ where: { session_id: sessionId }, orderBy: { url: 'asc' } });
-    if (links.length === 0) return res.status(404).send('Nenhum link encontrado.');
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Links');
-    worksheet.columns = [
-      { header: 'URL', key: 'url', width: 70 }, { header: 'Status', key: 'status', width: 20 },
-      { header: 'Codigo HTTP', key: 'httpCode', width: 15 }, { header: 'Tipo', key: 'tipo', width: 15 },
-      { header: 'Origem', key: 'origem', width: 70 }, { header: 'URL Final', key: 'finalUrl', width: 70 },
-    ];
-    worksheet.addRows(links);
-    const fileName = `relatorio_${sessionId.substring(0, 8)}.xlsx`;
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
-    await workbook.xlsx.write(res);
-    res.end();
-  } catch (error) { res.status(500).send('Erro ao gerar o relatório Excel.'); }
+    const { sessionId } = req.params;
+    try {
+        const links = await prisma.link.findMany({ where: { session_id: sessionId }, orderBy: { url: 'asc' } });
+        if (links.length === 0) return res.status(404).send('Nenhum link encontrado.');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Links');
+        worksheet.columns = [
+        { header: 'URL', key: 'url', width: 70 }, { header: 'Status', key: 'status', width: 20 },
+        { header: 'Codigo HTTP', key: 'httpCode', width: 15 }, { header: 'Tipo', key: 'tipo', width: 15 },
+        { header: 'Origem', key: 'origem', width: 70 }, { header: 'URL Final', key: 'finalUrl', width: 70 },
+        ];
+        worksheet.addRows(links);
+        const fileName = `relatorio_${sessionId.substring(0, 8)}.xlsx`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) { res.status(500).send('Erro ao gerar o relatório Excel.'); }
 });
 
 async function initialCleanup() {
-  try {
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-    const deleted = await prisma.link.deleteMany({ where: { createdAt: { lt: twelveHoursAgo } } });
-    if (deleted.count > 0) { console.log(`🧹 Limpeza inicial: ${deleted.count} links antigos removidos.`); }
-  } catch (error) { console.error('❌ Erro na limpeza inicial:', error); }
+    try {
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+        const deleted = await prisma.link.deleteMany({ where: { createdAt: { lt: twelveHoursAgo } } });
+        if (deleted.count > 0) { console.log(`🧹 Limpeza inicial: ${deleted.count} links antigos removidos.`); }
+    } catch (error) { console.error('❌ Erro na limpeza inicial:', error); }
 }
 
 // --- FUNÇÃO DE LIMPEZA PARA SESSÕES NÃO ENCERRADAS ---
 async function cleanupZombieScans() {
   try {
-    const zombieScans = await prisma.scanSession.findMany({
-      where: { status: 'iniciado' },
-    });
+        const zombieScans = await prisma.scanSession.findMany({
+            where: { status: 'iniciado' },
+        });
 
-    if (zombieScans.length > 0) {
-      console.log(`🧹 Limpando ${zombieScans.length} varredura(s) "zumbi" da última execução...`);
-      await prisma.scanSession.updateMany({
-        where: { status: 'iniciado' },
-        data: { status: 'interrompido' },
-      });
-      console.log('🧹 Limpeza concluída.');
+        if (zombieScans.length > 0) {
+            console.log(`🧹 Limpando ${zombieScans.length} varredura(s) "zumbi" da última execução...`);
+            await prisma.scanSession.updateMany({
+                where: { status: 'iniciado' },
+                data: { status: 'interrompido' },
+            });
+            console.log('🧹 Limpeza concluída.');
+        }
+    } catch (error) {
+        console.error('❌ Erro durante a limpeza de varreduras zumbis:', error);
     }
-  } catch (error) {
-    console.error('❌ Erro durante a limpeza de varreduras zumbis:', error);
-  }
 }
 
 // ROTA PARA TESTE - FORÇAR EXPIRAÇÃO DO PRAZO
 app.post('/api/teste/expirar-recurso/:id', authenticateToken, authenticateOnlyAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
+    try {
+        const { id } = req.params;
     
-    const prazoExpirado = new Date();
-    prazoExpirado.setSeconds(prazoExpirado.getSeconds() - 1);
+        const prazoExpirado = new Date();
+        prazoExpirado.setSeconds(prazoExpirado.getSeconds() - 1);
     
-    await prisma.avaliacao.update({
-      where: { id: parseInt(id) },
-      data: {
-        prazoRecurso: prazoExpirado
-      },
-    });
+        await prisma.avaliacao.update({
+            where: { id: parseInt(id) },
+            data: {
+                prazoRecurso: prazoExpirado
+            },
+        });
     
-    await expirarRecursos();
+        await expirarRecursos();
     
-    res.json({ 
-      success: true, 
-      message: 'Recurso expirado manualmente para testes',
-      avaliacaoId: id
-    });
-  } catch (error) {
-    console.error("Erro no teste de expiração:", error);
-    res.status(500).json({ error: 'Erro ao expirar recurso manualmente' });
-  }
+        res.json({ 
+            success: true, 
+            message: 'Recurso expirado manualmente para testes',
+            avaliacaoId: id
+        });
+    } catch (error) {
+        console.error("Erro no teste de expiração:", error);
+        res.status(500).json({ error: 'Erro ao expirar recurso manualmente' });
+    }
 });
 
 app.get('/api/teste/prazo/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const avaliacao = await prisma.avaliacao.findUnique({
-      where: { id: parseInt(id) }
-    });
+    try {
+        const { id } = req.params;
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { id: parseInt(id) }
+        });
     
-    if (!avaliacao) {
-      return res.status(404).json({ error: 'Avaliação não encontrada' });
+        if (!avaliacao) {
+            return res.status(404).json({ error: 'Avaliação não encontrada' });
+        }
+    
+        const dataLimite = new Date(avaliacao.prazoRecurso);
+    
+        res.json({
+            avaliacaoId: id,
+            prazoRecurso: avaliacao.prazoRecurso,
+            formatoISO: dataLimite.toISOString(),
+            formatoBrasil: dataLimite.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+            hora: dataLimite.getHours(),
+            minutos: dataLimite.getMinutes(),
+            segundos: dataLimite.getSeconds()
+        });
+    
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-    
-    const dataLimite = new Date(avaliacao.prazoRecurso);
-    
-    res.json({
-      avaliacaoId: id,
-      prazoRecurso: avaliacao.prazoRecurso,
-      formatoISO: dataLimite.toISOString(),
-      formatoBrasil: dataLimite.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
-      hora: dataLimite.getHours(),
-      minutos: dataLimite.getMinutes(),
-      segundos: dataLimite.getSeconds()
-    });
-    
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 // --- FUNÇÃO PARA EXPIRAR RECURSOS VENCIDOS ---
 async function expirarRecursos() {
-  try {
-    const agora = new Date();
+    try {
+        const agora = new Date();
     
-    console.log(`Verificando recursos expirados em: ${agora.toISOString()}`);
+        console.log(`Verificando recursos expirados em: ${agora.toISOString()}`);
     
-    const avaliacoesExpiradas = await prisma.avaliacao.findMany({
-      where: {
-        status: 'AGUARDANDO_RECURSO',
-        prazoRecurso: { lt: agora },
-        recursoExpirado: false
-      },
-      include: {
-        secretaria: true,
-        respostas: {
-          include: {
-            requisito: true
-          }
-        }
-      }
-    });
-    
-    if (avaliacoesExpiradas.length > 0) {
-      console.log(` ${avaliacoesExpiradas.length} recursos expirados encontrados`);
-      
-      for (const avaliacao of avaliacoesExpiradas) {
-        console.log(`⏰ Processando avaliação ${avaliacao.id} - Prazo: ${avaliacao.prazoRecurso}`);
-        
-        await prisma.avaliacao.update({
-          where: { id: avaliacao.id },
-          data: {
-            recursoExpirado: true,
-            status: 'EM_ANALISE_DE_RECURSO'
-          }
+        const avaliacoesExpiradas = await prisma.avaliacao.findMany({
+            where: {
+                status: 'AGUARDANDO_RECURSO',
+                prazoRecurso: { lt: agora },
+                recursoExpirado: false
+            },
+            include: {
+                secretaria: true,
+                respostas: {
+                    include: {
+                        requisito: true
+                    }
+                }
+            }
         });
-
-        console.log(`✅ Avaliação ${avaliacao.id} movida para EM_ANALISE_DE_RECURSO (prazo expirado)`);
+    
+        if (avaliacoesExpiradas.length > 0) {
+            console.log(` ${avaliacoesExpiradas.length} recursos expirados encontrados`);
+      
+            for (const avaliacao of avaliacoesExpiradas) {
+                console.log(`⏰ Processando avaliação ${avaliacao.id} - Prazo: ${avaliacao.prazoRecurso}`);
         
-        await enviarEmailRecursoExpirado(avaliacao);
-      }
-    } else {
-      console.log('Nenhum recurso expirado encontrado');
+                await prisma.avaliacao.update({
+                    where: { id: avaliacao.id },
+                    data: {
+                        recursoExpirado: true,
+                        status: 'EM_ANALISE_DE_RECURSO'
+                    }
+                });
+
+                console.log(`✅ Avaliação ${avaliacao.id} movida para EM_ANALISE_DE_RECURSO (prazo expirado)`);
+            
+                await enviarEmailRecursoExpirado(avaliacao);
+            }
+        } else {
+        console.log('Nenhum recurso expirado encontrado');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao expirar recursos:', error);
     }
-  } catch (error) {
-    console.error('❌ Erro ao expirar recursos:', error);
-  }
 }
 
 // FUNÇÃO PARA ENVIAR EMAIL DE RECURSO EXPIRADO (NOTA SCGE)
 async function enviarEmailRecursoExpirado(avaliacao) {
-  try {
-    let pontuacaoSCGE = 0;
-    let pontuacaoTotal = 0;
+    try {
+        let pontuacaoSCGE = 0;
+        let pontuacaoTotal = 0;
 
-    if (avaliacao.respostas && Array.isArray(avaliacao.respostas)) {
-      avaliacao.respostas.forEach(resposta => {
-        const pontuacaoRequisito = resposta.requisito.pontuacao;
-        pontuacaoTotal += pontuacaoRequisito;
+        if (avaliacao.respostas && Array.isArray(avaliacao.respostas)) {
+            avaliacao.respostas.forEach(resposta => {
+                const pontuacaoRequisito = resposta.requisito.pontuacao;
+                pontuacaoTotal += pontuacaoRequisito;
 
-        const isSplit = resposta.atendeDisponibilidade !== null || resposta.atendeSerieHistorica !== null;
+                const isSplit = resposta.atendeDisponibilidade !== null || resposta.atendeSerieHistorica !== null;
 
-        if (isSplit) {
-          if (resposta.validacaoDisponibilidade === 'aprovado') pontuacaoSCGE += pontuacaoRequisito / 2;
-          if (resposta.validacaoSerieHistorica === 'aprovado') pontuacaoSCGE += pontuacaoRequisito / 2;
-        } else {
-          if (resposta.statusValidacao === 'aprovado') pontuacaoSCGE += pontuacaoRequisito;
+                if (isSplit) {
+                    if (resposta.validacaoDisponibilidade === 'aprovado') pontuacaoSCGE += pontuacaoRequisito / 2;
+                    if (resposta.validacaoSerieHistorica === 'aprovado') pontuacaoSCGE += pontuacaoRequisito / 2;
+                } else {
+                    if (resposta.statusValidacao === 'aprovado') pontuacaoSCGE += pontuacaoRequisito;
+                }
+            });
         }
-      });
-    }
 
-    const mailOptions = {
-        from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-        to: avaliacao.emailResponsavel,
-        subject: `Prazo de Recurso Expirado - ${avaliacao.secretaria.sigla}`,
-        html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-                .header { background: #002776; color: white; padding: 25px; text-align: center; }
-                .content { padding: 25px; background: #f9f9f9; }
-                .footer { background: #e9ecef; padding: 20px; text-align: center; font-size: 12px; color: #666; }
-                .alerta { background: #fff3cd; border: 2px solid #ffc107; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                .nota-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #002776; }
-                .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; color: white; font-weight: bold; }
-                .nota { background: #002776; }
-                .destaque-scge { background: #e8f5e8; border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h2>Controladoria Geral do Estado</h2>
-                <h3>Sistema de Monitoramento da Transparência</h3>
-            </div>
-            
-            <div class="content">
-                <h3>Prazo de Recurso Expirado</h3>
-                
-                <div class="alerta">
-                    <p><strong>Informamos que o prazo para envio de recurso expirou.</strong></p>
+        const mailOptions = {
+            from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+            to: avaliacao.emailResponsavel,
+            subject: `Prazo de Recurso Expirado - ${avaliacao.secretaria.sigla}`,
+            html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+                    .header { background: #002776; color: white; padding: 25px; text-align: center; }
+                    .content { padding: 25px; background: #f9f9f9; }
+                    .footer { background: #e9ecef; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+                    .alerta { background: #fff3cd; border: 2px solid #ffc107; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                    .nota-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #002776; }
+                    .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; color: white; font-weight: bold; }
+                    .nota { background: #002776; }
+                    .destaque-scge { background: #e8f5e8; border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2>Controladoria Geral do Estado</h2>
+                    <h3>Sistema de Monitoramento da Transparência</h3>
                 </div>
                 
-                <div class="destaque-scge">
-                    <h4>Resultado Final da SCGE</h4>
-                    <p>Como não foi enviado recurso, será mantida a validação original da Controladoria-Geral do Estado.</p>
+                <div class="content">
+                    <h3>Prazo de Recurso Expirado</h3>
+                    
+                    <div class="alerta">
+                        <p><strong>Informamos que o prazo para envio de recurso expirou.</strong></p>
+                    </div>
+                    
+                    <div class="destaque-scge">
+                        <h4>Resultado Final da SCGE</h4>
+                        <p>Como não foi enviado recurso, será mantida a validação original da Controladoria-Geral do Estado.</p>
+                    </div>
+                    
+                    <div class="nota-box">
+                        <h4>Nota Validada pela SCGE</h4>
+                        <p><strong>Órgão/Entidade:</strong> ${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})</p>
+                        <p><strong>URL Avaliada:</strong> ${avaliacao.urlSecretaria}</p>
+                        <p><strong>Nota Final (SCGE):</strong> <span class="badge nota">${pontuacaoSCGE} / ${pontuacaoTotal} pontos</span></p>
+                        <p><strong>Data de Expiração:</strong> ${new Date(avaliacao.prazoRecurso).toLocaleDateString('pt-BR')}</p>
+                        <p><strong>Status:</strong> EM ANÁLISE FINAL PELA SCGE</p>
+                    </div>
+                    
+                    <p><strong>Próximos Passos:</strong></p>
+                    <ul>
+                        <li>A avaliação voltou para análise final da Controladoria Geral do Estado</li>
+                        <li>Será considerada exclusivamente a validação realizada pela SCGE</li>
+                        <li>O resultado final será publicado em breve</li>
+                        <li>Esta nota reflete a análise técnica da Controladoria-Geral</li>
+                    </ul>
+                    
+                    <p>Atenciosamente,<br>
+                    <strong>Equipe da Controladoria Geral do Estado de Pernambuco</strong></p>
                 </div>
                 
-                <div class="nota-box">
-                    <h4>Nota Validada pela SCGE</h4>
-                    <p><strong>Órgão/Entidade:</strong> ${avaliacao.secretaria.nome} (${avaliacao.secretaria.sigla})</p>
-                    <p><strong>URL Avaliada:</strong> ${avaliacao.urlSecretaria}</p>
-                    <p><strong>Nota Final (SCGE):</strong> <span class="badge nota">${pontuacaoSCGE} / ${pontuacaoTotal} pontos</span></p>
-                    <p><strong>Data de Expiração:</strong> ${new Date(avaliacao.prazoRecurso).toLocaleDateString('pt-BR')}</p>
-                    <p><strong>Status:</strong> EM ANÁLISE FINAL PELA SCGE</p>
+                <div class="footer">
+                    <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
+                    <p>Controladoria Geral do Estado de Pernambuco<br>
+                    R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
                 </div>
-                
-                <p><strong>Próximos Passos:</strong></p>
-                <ul>
-                    <li>A avaliação voltou para análise final da Controladoria Geral do Estado</li>
-                    <li>Será considerada exclusivamente a validação realizada pela SCGE</li>
-                    <li>O resultado final será publicado em breve</li>
-                    <li>Esta nota reflete a análise técnica da Controladoria-Geral</li>
-                </ul>
-                
-                <p>Atenciosamente,<br>
-                <strong>Equipe da Controladoria Geral do Estado de Pernambuco</strong></p>
-            </div>
-            
-            <div class="footer">
-                <p><em>Este é um email automático do Sistema de Monitoramento da Transparência.</em></p>
-                  <p>Controladoria Geral do Estado de Pernambuco<br>
-                  R. Santo Elias, 535 - Espinheiro, Recife-PE, 52020-090</p>
-            </div>
-        </body>
-        </html>
-      `
-    };
+            </body>
+            </html>
+        `
+        };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Email de expiração enviado para: ${avaliacao.emailResponsavel} - Nota SCGE: ${pontuacaoSCGE}/${pontuacaoTotal}`);
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Email de expiração enviado para: ${avaliacao.emailResponsavel} - Nota SCGE: ${pontuacaoSCGE}/${pontuacaoTotal}`);
     
-  } catch (error) {
-    console.error(`❌ Erro ao enviar email para ${avaliacao.emailResponsavel}:`, error);
-  }
+    } catch (error) {
+        console.error(`❌ Erro ao enviar email para ${avaliacao.emailResponsavel}:`, error);
+    }
 }
 
 // FUNÇÃO PARA ENVIAR EMAIL DE NOTA FINAL PUBLICADA
@@ -4021,7 +4231,7 @@ async function enviarEmailNotaFinal(avaliacao) {
     const mailOptions = {
         from: `"Controladoria Geral do Estado - PE" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
         to: avaliacao.emailResponsavel,
-        subject: `Nota Final Publicada - Avaliação de Transparência - ${avaliacao.secretaria.sigla} - Ciclo 2025`,
+        subject: `Nota Final Publicada - Avaliação de Transparência - ${avaliacao.secretaria.sigla} - Ciclo 2026`,
         html: `
             <!DOCTYPE html>
             <html>
@@ -4117,7 +4327,7 @@ async function enviarEmailNotaFinal(avaliacao) {
                         <h3>Nota Final Publicada</h3>
                         
                         <p>Prezado(a) ${avaliacao.nomeResponsavel || 'Responsável'},</p>
-                        <p>O processo de avaliação da transparência ativa (Ciclo 2025) foi concluído e sua nota final está disponível para consulta.</p>
+                        <p>O processo de avaliação da transparência ativa (Ciclo 2026) foi concluído e sua nota final está disponível para consulta.</p>
                         
                         <div class="resultado-final">
                             <h4>Resultado Final da Avaliação</h4>
