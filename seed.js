@@ -203,6 +203,13 @@ async function main() {
       nome: 'Administrador',
       secretariaSigla: 'SCGE',
       role: 'ADMIN' 
+    },
+    {
+      email: 'ricardo.v-costa@cge.pe.gov.br',
+      password: 'ricardo.v-costa', 
+      nome: 'Administrador',
+      secretariaSigla: 'SCGE',
+      role: 'ADMIN' 
     }
   ];
 
