@@ -1,5 +1,6 @@
 FROM node:18-alpine
 
+# Instalar dependências do sistema (incluindo todas necessárias para Chromium)
 RUN apk add --no-cache \
     python3 \
     py3-pip \
@@ -9,8 +10,30 @@ RUN apk add --no-cache \
     nss \
     freetype \
     ttf-freefont \
-    fontconfig
+    fontconfig \
+    dbus \
+    tzdata \
+    udev \
+    xrandr \
+    xdpyinfo \
+    mesa-gl \
+    gtk+3.0 \
+    cups-libs \
+    libxkbcommon \
+    libxcomposite \
+    libxdamage \
+    libxrandr \
+    libxi \
+    libxtst \
+    # Utilitários
+    curl \
+    wget \
+    bash
 
+# Configurar fontes
+RUN fc-cache -f
+
+# Configurar Python
 RUN python3 -m venv /venv
 ENV PATH="/venv/bin:$PATH"
 
@@ -22,18 +45,26 @@ RUN pip3 install \
     beautifulsoup4 \
     lxml
 
-RUN ln -sf python3 /usr/bin/python
-
 WORKDIR /app
 
+# Copiar arquivos de dependências
 COPY package*.json ./
 COPY prisma ./prisma/
 
+# Instalar dependências Node
 RUN npm install
 RUN npx prisma generate
 
+# Copiar código fonte
 COPY . .
+
+# Criar diretório para dados do Chrome com permissões adequadas
+RUN mkdir -p /tmp/chrome-user-data && chmod 777 /tmp/chrome-user-data
+
+# Script de entrada
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 3000
 
-CMD ["node", "index.js"]
+ENTRYPOINT ["/entrypoint.sh"]

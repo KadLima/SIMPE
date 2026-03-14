@@ -23,7 +23,7 @@ class PreValidador:
         self.logger = logging.getLogger(__name__)
         
 
-        self.user_data_dir = tempfile.mkdtemp()
+        self.user_data_dir = "/tmp/chrome-user-data"
         
         try:
             chrome_options = Options()
@@ -33,10 +33,26 @@ class PreValidador:
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
 
+            chrome_options.add_argument("--disable-setuid-sandbox")
+            chrome_options.add_argument("--disable-accelerated-2d-canvas")
+            chrome_options.add_argument("--disable-gl-drawing-for-tests")
+            chrome_options.add_argument("--disable-software-rasterizer")
+            chrome_options.add_argument("--remote-debugging-port=9222")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+            chrome_options.add_argument("--disable-features=TranslateUI")
+            chrome_options.add_argument("--disable-extensions")
+
+            chrome_options.add_argument("--disable-gpu-sandbox")
+
             chrome_options.add_argument(f"--user-data-dir={self.user_data_dir}")
+
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
             
             self.driver = webdriver.Chrome(options=chrome_options)
-            self.driver.set_page_load_timeout(45)
+            self.driver.set_page_load_timeout(60)
+            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         except Exception as e:
             self.logger.critical(f"ERRO CRÍTICO AO INICIAR O WEBDRIVER: {e}", exc_info=True)
             raise
